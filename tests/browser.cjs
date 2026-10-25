@@ -26,7 +26,7 @@ const engine = useChromium ? 'Chromium' : 'WebKit';
       const surface = document.querySelector('[data-openread-host]').shadowRoot.querySelector('.popover');
       return surface?.dataset.openreadMaterial === 'preview' && getComputedStyle(surface).backdropFilter.includes('blur');
     });
-    assert.equal(await popover.locator('.document-title').textContent(), 'A little room to think.');
+    assert.equal(await popover.locator('.document-title').textContent(), 'Athene Visits Telemachus');
     assert.equal(await popover.locator('#voice option').count(), 49);
     assert.equal(await popover.locator('.reading-text').count(), 0);
     assert.equal(await popover.locator('.listen').getAttribute('data-openread-material'), 'control');

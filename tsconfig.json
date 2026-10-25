@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "target": "ES2022", "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext", "moduleResolution": "Bundler", "jsx": "react-jsx",
+    "strict": true, "skipLibCheck": true, "noEmit": true,
+    "resolveJsonModule": true, "allowSyntheticDefaultImports": true,
+    "paths": { "@/*": ["./*"] }
+  },
+  "include": ["companion/src/**/*.ts", "companion/src/**/*.tsx", "components/**/*.tsx", "lib/**/*.ts"]
+}

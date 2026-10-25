@@ -6,4 +6,5 @@ fs.writeFileSync(corePath, fs.readFileSync(corePath, 'utf8').replace(/  const vo
 fs.copyFileSync(path.resolve(__dirname, '../ui/glass-entry.js'), path.resolve(__dirname, '../extension/glass.js'));
 fs.copyFileSync(path.resolve(__dirname, '../LICENSE'), path.resolve(__dirname, '../extension/LICENSE'));
 fs.copyFileSync(path.resolve(__dirname, '../LICENSING.md'), path.resolve(__dirname, '../extension/LICENSING.md'));
+require('./build-app.cjs')();
 console.log('Updated voice catalog, native surface adapter and extension licence notices.');

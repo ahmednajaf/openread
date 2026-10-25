@@ -30,13 +30,33 @@ def align_transcript(text, recognized, duration):
     for block in SequenceMatcher(None, source, actual, autojunk=False).get_matching_blocks():
         for delta in range(block.size):
             matches[block.a + delta] = recognized[block.b + delta]
+    # Spread each unrecognized run across the gap between real anchors. Giving
+    # that entire gap to its first word leaves every subsequent word at zero.
+    bounds = {}
+    cursor = 0
+    while cursor < len(tokens):
+        if cursor in matches:
+            bounds[cursor] = (float(matches[cursor].start), float(matches[cursor].end))
+            cursor += 1
+            continue
+        end = cursor + 1
+        while end < len(tokens) and end not in matches:
+            end += 1
+        start_time = bounds[cursor - 1][1] if cursor else 0.0
+        end_time = max(start_time, float(matches[end].start) if end in matches else duration)
+        weights = [max(1, len(source[i])) for i in range(cursor, end)]
+        total = sum(weights)
+        elapsed = 0
+        for index, weight in zip(range(cursor, end), weights):
+            bounds[index] = (start_time + (end_time - start_time) * elapsed / total,
+                             start_time + (end_time - start_time) * (elapsed + weight) / total)
+            elapsed += weight
+        cursor = end
     words = []
     for index, token in enumerate(tokens):
         if not source[index]:
             continue
-        match = matches.get(index)
-        start = float(match.start) if match else words[-1]['end'] if words else 0.0
-        end = float(match.end) if match else next((float(matches[i].start) for i in range(index + 1, len(tokens)) if i in matches), duration)
+        start, end = bounds[index]
         start = max(words[-1]['start'] if words else 0.0, min(duration, start))
         words.append({'offset': len(text[:token.start()].encode('utf-16-le')) // 2, 'length': len(token.group().encode('utf-16-le')) // 2,
             'start': round(start, 4), 'end': round(max(start, min(duration, end)), 4), 'estimated': True})

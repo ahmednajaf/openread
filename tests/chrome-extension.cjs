@@ -33,7 +33,7 @@ const wait = ms => new Promise(resolve=>setTimeout(resolve,ms));
     }
     let popup=await openPopup();
     const view=await popup.evaluate('({count:document.querySelectorAll("#voice option").length,voice:document.querySelector("#voice").value,max:document.querySelector("#speed").max,platform:document.documentElement.className,title:document.querySelector(".document-title").textContent})');
-    assert.equal(view.count,49);assert.equal(view.voice,'kitten:kiki');assert.equal(view.max,'5');assert.equal(view.platform,'chrome-popup');assert.match(view.title,/room to think/);
+    assert.equal(view.count,49);assert.equal(view.voice,'kitten:kiki');assert.equal(view.max,'5');assert.equal(view.platform,'chrome-popup');assert.match(view.title,/Athene Visits Telemachus/);
     const image=await send(popup.sessionId,'Page.captureScreenshot');fs.writeFileSync(path.join(root,'test-results/chrome-extension-popup.png'),Buffer.from(image.data,'base64'));
     const tabId=await worker.evaluate(async()=>{const[t]=await chrome.tabs.query({active:true,currentWindow:true});return t.id;});
     const command=(action,value)=>worker.evaluate(({tabId,action,value})=>chrome.tabs.sendMessage(tabId,{type:'openread:command',action,value}),{tabId,action,value});

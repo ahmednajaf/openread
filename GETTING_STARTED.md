@@ -49,7 +49,7 @@ To update: replace the source files, click the reload arrow on OpenRead’s card
 4. Enable OpenRead in **Settings → Extensions** for your Safari profile.
 5. Open an article and click the book icon. Choose **Listen to page**.
 
-Temporary extensions may need adding/enabling again after Safari restarts. A signed, permanent Safari app needs Apple distribution/signing; this folder install is the free development route. If your Safari version doesn't offer **Add Temporary Extension**, the Xcode wrapper instructions are in README.md.
+Temporary extensions may need adding/enabling again after Safari restarts. A signed, permanent Safari app needs Apple distribution/signing; this folder install is the free development route. If your Safari version doesn't offer **Add Temporary Extension**, the Xcode wrapper instructions are in docs/DEVELOPMENT.md.
 
 Safari supplies its own native glass for the toolbar popup. Device appearance is automatic. If Safari asks for one click on the webpage to authorize audio, click the temporary **Start listening** pill there.
 
@@ -78,16 +78,16 @@ This is a separate one-time download of approximately **2.5 GB** plus the Ollama
 1. Install and open the free [Ollama app](https://ollama.com/download).
 2. Double-click **Set Up AI.command** in OpenRead’s folder.
 3. Keep Ollama running. Open **Library & tools**.
-4. Load a reading and choose **Summary**, **Ask a question**, or **Audio overview**.
+4. Load a reading, open **Reading tools** (the sparkle icon), and choose **Summarize**, **Ask**, or **Discuss**.
 
 This downloads **Qwen3 4B**, an Apache-2.0 model. OpenRead always calls the local Ollama address and this local model; it never selects a cloud model or asks for a paid key. Summaries cover the document in sections. Question answering retrieves relevant excerpts and shows them beneath the answer. It can miss relevant passages. Verify AI output against the original.
 
-Audio overview generates a short two-host script, then **Generate two-voice audio** turns it into a playable/downloadable WAV using Kitten Kiki and Jasper. This is a generated interpretation, not a verbatim audiobook.
+Audio overview generates a short two-host script, then **Make the audio** turns it into a playable/downloadable WAV using Kitten Kiki and Jasper. This is a generated interpretation, not a verbatim audiobook.
 
 ## Dictation and meeting notes
 
 1. Whisper Base (~150 MB) is included in the current voice setup for word alignment, so dictation uses that same local model. Older installs can double-click **Set Up Dictation.command**.
-2. In **Library & tools → Dictation & notes**, choose **Start recording** or **Import audio**.
+2. In **Library & tools → Reading tools → Dictate**, choose **Start recording** or **Import audio**.
 3. Your browser asks for microphone access only when you start recording. Stop recording to transcribe it on this computer.
 4. Use **Copy transcript** to paste into any app, or **Use transcript as reading** to listen to it.
 5. With optional AI set up too, **Create meeting notes** extracts decisions and action items from the transcript. Speakers are not automatically identified.
@@ -117,3 +117,9 @@ The models occupy disk space locally: `.local/models` for voices, `.local/whispe
 | Safari Reader hides word highlights | Highlights belong to the original webpage. Safari’s protected Reader view is outside that page. |
 
 For exact coverage and current limits, see [docs/FEATURES.md](docs/FEATURES.md).
+
+## Updating to the new reading app
+
+Download the updated repository and keep your existing `.local/` folder if you are updating in place. Stop the helper with Control-C, then double-click **Start OpenRead.command** and refresh the library page. Saved readings, bookmarks and progress keep the same storage format. Reload the extension in Safari/Chrome settings and refresh article tabs to update its controls.
+
+The library opens with a glass landing page. Choose **Try with The Odyssey**, **Bring your own text**, or **Library**. The floating player holds voice, playback and speed; the sparkle icon opens summaries, questions, conversations and dictation. The three-dot menu contains bookmarks, exports, reading options and setup/privacy. Library backup/restore is inside **Library**. Appearance follows the device.

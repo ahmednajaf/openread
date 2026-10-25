@@ -19,5 +19,6 @@ jobs:
           python-version: '3.12'
       - run: npm ci
       - run: npm run build
-      - run: git diff --exit-code -- extension/
+      - run: npm run typecheck
+      - run: git diff --exit-code -- extension/ companion/app.js companion/app.css companion/index.html
       - run: npm test

@@ -1,9 +1,12 @@
 {
   "name": "openread",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "license": "GPL-3.0-or-later",
-  "repository": { "type": "git", "url": "https://github.com/ahmednajaf/openread.git" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ahmednajaf/openread.git"
+  },
   "description": "A free, local-first Safari and Chrome reading companion.",
   "scripts": {
     "build": "node scripts/build-ui.cjs",
@@ -12,6 +15,24 @@
     "test": "node --test tests/*.test.cjs && python3 -m unittest discover -s tests -p '*_test.py'",
     "preview": "node scripts/preview.cjs",
     "safari": "node scripts/safari.cjs",
-    "chrome": "npm run build && node scripts/chrome.cjs"
+    "chrome": "npm run build && node scripts/chrome.cjs",
+    "design:build": "node scripts/build-design.cjs",
+    "design": "node scripts/design-preview.cjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.61.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tailwind-merge": "^3.7.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "esbuild": "^0.28.2",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2"
   }
 }

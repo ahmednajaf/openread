@@ -79,6 +79,30 @@ class LibraryTests(unittest.TestCase):
 
 
 class AITests(unittest.TestCase):
+    def test_model_returns_only_final_content_across_reasoning_formats(self):
+        cases = [
+            {'content': 'Final answer.', 'thinking': 'Private working notes.'},
+            {'content': '<think>Working notes.</think>Final answer.'},
+            {'content': 'Prefilled working notes.</think>Final answer.'},
+            {'content': '{"title":"Final answer."}'},
+        ]
+        messages = [{'role': 'system', 'content': 'Source-only assistant.'}, {'role': 'user', 'content': 'Summarize.'}]
+        for message in cases:
+            with self.subTest(message=message), patch.object(f, 'ollama_request', return_value={'message': message}) as request:
+                expected = '{"title":"Final answer."}' if message['content'].startswith('{') else 'Final answer.'
+                self.assertEqual(f.chat_model(messages), expected)
+                self.assertFalse(request.call_args.args[1]['think'])
+        self.assertEqual(messages[0]['content'], 'Source-only assistant.')
+
+    def test_model_rejects_incomplete_or_empty_final_answers(self):
+        for content in ['<think>Incomplete notes', '<think>Notes</think>', 'Prefilled notes</think>']:
+            with self.subTest(content=content), patch.object(f, 'ollama_request', return_value={'message': {'content': content}}):
+                with self.assertRaises(f.ToolError):
+                    f.chat_model([{'role': 'system', 'content': 'Assistant.'}])
+        with patch.object(f, 'ollama_request', return_value={'done_reason': 'length', 'message': {'content': 'Unfinished working notes'}}):
+            with self.assertRaises(f.ToolError):
+                f.chat_model([{'role': 'system', 'content': 'Assistant.'}])
+
     def test_summary_processes_first_and_last_sections(self):
         calls = []
         def model(messages, json_output=False):

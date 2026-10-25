@@ -290,10 +290,24 @@ def capabilities():
 
 
 def chat_model(messages, json_output=False, schema=None):
+    # Keep final answers separate even with older runner/templates that emit
+    # reasoning delimiters in content instead of the separate thinking field.
+    messages = [dict(message) for message in messages]
+    for message in messages:
+        if message['role'] == 'system':
+            message['content'] += '\nReturn only the requested final answer. /no_think'
+            break
     result = ollama_request('/api/chat', {'model': AI_MODEL, 'messages': messages, 'stream': False, 'think': False,
         'keep_alive': '5m', 'options': {'temperature': .25, 'num_ctx': 8192, 'num_predict': 2000 if json_output else 1200},
         **({'format': schema or 'json'} if json_output else {})}, timeout=300)
+    if result.get('done_reason') == 'length':
+        raise ToolError('The local model stopped before completing its answer. Try a shorter excerpt.')
     value = result.get('message', {}).get('content', '').strip()
+    # Some templates prefill <think>, leaving only its closing tag in content.
+    if '</think>' in value:
+        value = value.rsplit('</think>', 1)[1].strip()
+    if '<think>' in value:
+        raise ToolError('The local model stopped before its final answer. Try again.')
     if not value:
         raise ToolError('The local model returned an empty answer. Try again.')
     return value
@@ -455,8 +469,11 @@ def whisper_model():
 
 def whisper_word_timings(audio, text):
     with WHISPER_LOCK:
+        # Feeding the full passage as a previous-transcript prompt can make
+        # Whisper resume at its end, collapsing all earlier word boundaries.
+        # Recognize the audio independently, then align it to the source.
         segments, _info = whisper_model().transcribe(audio, language='en', beam_size=3, word_timestamps=True,
-            initial_prompt=text, condition_on_previous_text=False, vad_filter=False)
+            condition_on_previous_text=False, vad_filter=False)
         return [word for segment in segments for word in (segment.words or [])]
 
 

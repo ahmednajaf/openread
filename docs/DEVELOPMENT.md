@@ -6,7 +6,7 @@ Build instructions, packaging, implementation details and verification for contr
 
 For a temporary Safari install, the committed `extension/` folder already contains the bundled UI. Node isn't needed just to load that folder.
 
-For development: Node 18+, Python **3.11–3.13**, macOS with Safari or Chrome. Optional model integrations can be set up separately.
+For development: Node 22+, Python **3.11–3.13**, macOS with Safari or Chrome. Optional model integrations can be set up separately.
 
 ```sh
 npm ci
@@ -92,7 +92,7 @@ Word highlighting targets the **original webpage**. Safari's protected Reader in
 
 Safari provides the actual native toolbar material. The extension keeps its popup background transparent so that surface remains visible. The in-page development preview uses an independent CSS blur; it is not the native macOS material. Chrome uses its own device-matched popup surface. Light/dark appearance follows the device, with reduced motion and reduced transparency respected.
 
-`ui/glass-entry.js` is a small DOM adapter copied to `extension/glass.js` by the build. No React, third-party glass implementation, CDN or remote UI dependencies are shipped.
+`ui/glass-entry.js` is a small DOM adapter copied to `extension/glass.js` by the build. The toolbar has no React runtime. The reading workspace uses bundled React and the MIT-licensed Glass Headline Hero; see THIRD_PARTY.md and notices/. No CDN or remote UI assets are fetched.
 
 The generated logo master is `assets/openread-logo.png`; its exact prompt/mode is `assets/logo-prompt.txt`. Runtime icon sizes live in `extension/icons/`.
 
@@ -144,3 +144,9 @@ node tests/chrome-extension.cjs
 ```
 
 The Python checks need their corresponding optional packages/models. Browser tests need an external Playwright install and its browser binaries. `workspace-browser.cjs` starts a separate helper on port 8766 with a temporary library; it does not change your saved readings. The Chrome extension test uses a disposable Chromium profile. These are development checks, not installation requirements. Windows/Linux helper setup is manual and not verified in this release; Vision OCR and Finder launchers require macOS.
+
+## Reading app UI
+
+`companion/src/` contains the React/TypeScript reading workspace. `components/ui/` holds shared controls and the attributed glass headline. `npm run build` produces committed `companion/app.js`, `companion/app.css` and `companion/index.html`; Finder users do not need Node. Restart the helper after updating, then refresh http://127.0.0.1:8765/. Existing saved readings remain in the same library file.
+
+`npm run design` runs the same app in an isolated development server at port 4180, using a separate library on its helper at 8767. It is a developer preview of the production source, not a separate design implementation.

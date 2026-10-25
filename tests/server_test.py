@@ -81,6 +81,18 @@ class EndpointTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(json.loads(body)['voice'], 'bf_emma')
 
+    def test_reading_app_serves_built_local_assets_without_opening_api_access(self):
+        status, headers, body = self.request('GET', '/')
+        self.assertEqual(status, 200)
+        self.assertIn(b'id="root"', body)
+        self.assertIn(b'src="/app.js"', body)
+        self.assertNotIn(b'openread-api-prefix', body)
+        self.assertIn("script-src 'self';", headers['Content-Security-Policy'])
+        self.assertIn("frame-ancestors 'none'", headers['Content-Security-Policy'])
+        self.assertEqual(self.request('GET', '/app.js')[0], 200)
+        self.assertEqual(self.request('GET', '/', headers={'Origin': 'https://example.com'})[0], 403)
+        self.assertEqual(self.request('GET', '/health')[0], 403)
+
     def test_website_and_headerless_requests_are_rejected(self):
         self.assertEqual(self.request("GET", "/health")[0], 403)
         self.assertEqual(self.request("GET", "/health", headers={"X-OpenRead": "1", "Origin": "https://example.com"})[0], 403)
