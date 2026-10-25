@@ -106,6 +106,8 @@ Article extraction is heuristic and won't be perfect on every site. The extensio
 
 ## Privacy and permissions
 
+On `web.whatsapp.com`, the extension defaults to chat mode and extracts loaded message bodies inside `#main`, in DOM order, using `data-pre-plain-text` sender metadata. Outgoing bubbles use “You said”. Sender introductions have no highlight ranges; message text keeps its exact DOM mapping. Quoted copies, controls and drafts are excluded. There is no automatic incoming-message playback or background chat collection. Refresh explicitly replaces the snapshot. A source validator and mutation observer stop stale conversation audio, including synthesis already in flight. WhatsApp's undocumented markup can change; empty/unsupported layouts do not fall back to whole-page extraction.
+
 - `activeTab` and `scripting` open the reader only when invoked on a tab; no automatic all-site content scripts or history permission.
 - Extension/browser preferences remember voice, speed and reading options. Ordinary webpage playback remains in memory. Only an explicit Save creates a local library entry; saved documents/bookmarks/progress live in `.local/library.sqlite3`. The companion can export text/audio/backups at your request. Uploaded recordings are processed in memory, not intentionally retained as files.
 - Loopback host permission lets the background contact only the local helper at `127.0.0.1:8765`. Text is never sent to a cloud speech provider.
@@ -129,6 +131,8 @@ npm test
 ```
 
 The automated tests cover timing alignment/UTF-16, voice validation, local-service access rules, playback cancellation races, audio-clock word events, prefetch, and position-preserving speed changes.
+
+`node dev/tests/whatsapp-browser.cjs` tests chat extraction, sender announcements, exact DOM ranges, playback order, refresh and conversation-change cancellation in WebKit. Use `BROWSER=chromium` for Chromium. Every network request is intercepted and messages come from a synthetic fixture; no WhatsApp account is used. Live WhatsApp compatibility still needs checking against its current layout. As with the other browser checks, Playwright and its browser binaries are development-only dependencies.
 
 `dev/tests/browser.cjs`, `dev/tests/reading-browser.cjs`, and `dev/tests/popup-browser.cjs` use an isolated Playwright WebKit browser with the running preview/helper. Set `NODE_PATH` to your Playwright installation if it is outside this project. They test native-popup transparency and preview surfaces, real speech, original-page highlighting, nested lists, skipped/hidden content, inline markup, partial selections, stale DOM maps, dark/narrow layouts, and non-destructive page handling. The full reading test completes all passages with real speech, checks linked-word highlights and metadata exclusion, and verifies that old marks are removed. Set `BROWSER=chromium` for the Chrome variant; loopback permission is granted only to that isolated test profile. Playwright isn't a runtime dependency.
 

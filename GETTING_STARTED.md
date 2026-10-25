@@ -63,6 +63,12 @@ Safari supplies its own native glass for the toolbar popup. Device appearance is
 - Export a reading as a WAV audio file. Exports use the selected voice at natural speed; playback speed is adjustable in your audio player. Generating a long file takes time.
 - Choose a file from your installed Google Drive, Dropbox, OneDrive, or iCloud **synced folder** in the file picker. OpenRead does not log into those providers or directly connect their APIs.
 
+### WhatsApp Web
+
+Open a conversation at **web.whatsapp.com**, then click OpenRead and **Listen to chat**. Chat mode reads the loaded text messages from oldest to newest and announces the sender; your own messages begin “You said”. In **Reading options**, you can turn off **Announce senders** or **Refresh loaded messages** after scrolling up to load older messages. Refresh also includes newly arrived messages; they never start playing automatically.
+
+Chat text is processed by the same local voice helper. It is not saved to your library unless you choose **Save this reading**. Photos, stickers, voice notes, quoted repeats, timestamps and chat controls are skipped. Switching conversations or changing the message being read stops playback. WhatsApp's layout can change; if no messages are found, select the message text and use **Selected text** instead. This mode is for WhatsApp Web, not the desktop or phone apps.
+
 ## Featured voices
 
 The main setup includes **Kitten TTS Mini 0.8**. Its eight voices are Bella, Jasper, Luna, Bruno, Rosie, Hugo, Kiki and Leo. Kiki, Rosie and Jasper appear first under **Featured · Kitten**; Kiki is the default. For an older OpenRead install, double-click **setup/Set Up More Voices.command**, then restart OpenRead and reload the extension.

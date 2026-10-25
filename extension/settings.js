@@ -29,9 +29,12 @@
         <div class="option"><label for="sleep">Sleep timer</label><select id="sleep"><option value="0">Off</option><option value="5">5 minutes</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option></select></div>
         <button class="workspace secondary">Library &amp; tools<span aria-hidden="true">↗</span></button>
         <button class="save-document secondary">Save this reading<span aria-hidden="true">＋</span></button>
-        <div class="option"><label for="source">Read from</label><select id="source"><option value="page">This page</option><option value="selection">Selected text</option></select></div>
+        <div class="option"><label for="source">Read from</label><select id="source"><option value="page">This page</option><option value="selection">Selected text</option><option value="chat" hidden>WhatsApp chat</option></select></div>
+        <label class="option chat-option" hidden><span>Announce senders</span><input id="announceSenders" type="checkbox" role="switch" checked></label>
+        <button class="refresh-chat secondary" hidden>Refresh loaded messages<span aria-hidden="true">↻</span></button>
+        <p class="reader-help chat-help" hidden></p>
         <button class="reader-option secondary" aria-label="Safari Reader">${icon('reader')}<span>Safari Reader</span><kbd>⇧⌘R</kbd></button>
-        <p class="reader-help" hidden>Use Safari’s Show Reader shortcut, ⇧⌘R. OpenRead cannot switch Safari’s native Reader itself. Word highlighting stays on the original webpage.</p>
+        <p class="reader-help safari-reader-help" hidden>Use Safari’s Show Reader shortcut, ⇧⌘R. OpenRead cannot switch Safari’s native Reader itself. Word highlighting stays on the original webpage.</p>
         <button class="paste-toggle secondary">Paste text<span aria-hidden="true">＋</span></button>
         <div class="paste-box" hidden><label class="sr-only" for="paste">Text to read</label><textarea id="paste" maxlength="100000" placeholder="Paste something to listen to…"></textarea><button class="load-paste">Use this text</button></div>
         <p class="licence-notice">© 2026 Ahmed Najaf and contributors. <a href="https://github.com/ahmednajaf/openread/blob/master/LICENSING.md" target="_blank" rel="noreferrer">Free software · GPL-3.0-or-later · source</a>. You may modify and share it under those terms. No warranty.</p>
@@ -71,7 +74,8 @@
         const rate = Number(event.target.value); this.speed(rate); send('set-rate', rate);
       });
       this.$('#voice').addEventListener('change', event => send('set-voice', event.target.value));
-      for (const key of ['highlight', 'follow']) this.$(`#${key}`).addEventListener('change', event => send('set-preference', { key, value: event.target.checked }));
+      for (const key of ['highlight', 'follow', 'announceSenders']) this.$(`#${key}`).addEventListener('change', event => send('set-preference', { key, value: event.target.checked }));
+      this.$('.refresh-chat').addEventListener('click', () => send('refresh-chat'));
       this.$('.workspace').addEventListener('click', () => send('open-workspace'));
       this.$('.save-document').addEventListener('click', () => send('save-document'));
       this.$('#sleep').addEventListener('change', event => send('set-sleep', Number(event.target.value)));
@@ -81,8 +85,8 @@
         this.$('.options-button').setAttribute('aria-expanded', String(!options.hidden));
       });
       const isSafari = /Safari/u.test(navigator.userAgent) && !/Chrome|Chromium/u.test(navigator.userAgent);
-      this.$('.reader-option').hidden = !isSafari; this.$('.reader-help').hidden = true;
-      this.$('.reader-option').addEventListener('click', () => { this.$('.reader-help').hidden = !this.$('.reader-help').hidden; });
+      this.$('.reader-option').hidden = !isSafari; this.$('.safari-reader-help').hidden = true;
+      this.$('.reader-option').addEventListener('click', () => { this.$('.safari-reader-help').hidden = !this.$('.safari-reader-help').hidden; });
       this.$('.paste-toggle').addEventListener('click', () => { this.$('.paste-box').hidden = !this.$('.paste-box').hidden; if (!this.$('.paste-box').hidden) this.$('#paste').focus(); });
       this.$('.load-paste').addEventListener('click', () => { send('paste', this.$('#paste').value); this.$('.paste-box').hidden = true; });
       this.onKey = event => { if (event.key === 'Escape' && !this.popover.hidden) { event.preventDefault(); this.hide(); } };
@@ -105,7 +109,7 @@
       const oldError = this.state.error; this.state = state;
       const { status, index, total, preferences } = state;
       const active = ['playing', 'loading'].includes(status);
-      const label = status === 'loading' ? 'Preparing…' : status === 'playing' ? 'Pause' : status === 'paused' ? 'Resume listening' : status === 'ended' ? 'Listen again' : 'Listen to page';
+      const label = status === 'loading' ? 'Preparing…' : status === 'playing' ? 'Pause' : status === 'paused' ? 'Resume listening' : status === 'ended' ? 'Listen again' : state.source === 'chat' ? 'Listen to chat' : 'Listen to page';
       this.$('.glass-button-content').innerHTML = `${this.icon(active ? 'pause' : 'play')}<span>${label}</span>`;
       this.$('.listen').setAttribute('aria-label', active ? 'Pause' : label);
       this.$('.listen').classList.toggle('loading', status === 'loading'); this.$('.listen').disabled = !total;
@@ -116,11 +120,17 @@
       this.$('.source-name').textContent = state.sourceName;
       this.$('.document-duration').textContent = `${state.minutes} min`;
       this.$('#sleep').value = String(state.sleepMinutes || 0);
-      this.$('#source').value = state.source === 'selection' ? 'selection' : 'page';
+      this.$('#source option[value=chat]').hidden = !state.chatAvailable;
+      this.$('#source option[value=chat]').disabled = !state.chatAvailable;
+      this.$('#source').value = ['selection', 'chat'].includes(state.source) ? state.source : 'page';
+      const chat = state.source === 'chat';
+      for (const selector of ['.chat-option', '.refresh-chat', '.chat-help']) this.$(selector).hidden = !chat;
+      this.$('.chat-help').textContent = `${state.messageCount || 0} loaded text messages · oldest first. Scroll up in the chat and refresh to include older messages. New messages need a refresh too. Photos, stickers and voice notes are skipped.`;
       this.$('#source option[value=selection]').disabled = !state.hasSelection;
       for (const option of this.$('#voice').options) { const voice = OpenReadCore.voices.find(v => v.id === option.value); option.disabled = !!voice?.pack && !(state.availableVoices || []).includes(option.value); option.textContent = `${voice.name} · ${voice.pack ? 'English' : voice.detail.split(' · ')[0]}${option.disabled ? ' (setup needed)' : ''}`; }
       this.$('#voice').value = preferences.voice; this.speed(preferences.rate);
       for (const key of ['highlight', 'follow']) this.$(`#${key}`).checked = preferences[key];
+      this.$('#announceSenders').checked = preferences.announceSenders !== false;
       this.appearance();
       const previewing = ['playing', 'loading'].includes(state.previewStatus);
       this.$('.preview').innerHTML = this.icon(previewing ? 'stop' : 'play');

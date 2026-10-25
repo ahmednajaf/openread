@@ -119,3 +119,22 @@ test('choosing a voice before playback keeps a fresh reading idle', () => {
   player.load([{text:'A fresh reading.'}]); player.configure({voice:'kitten:kiki'});
   assert.equal(player.status,'idle'); assert.equal(player.voice,'kitten:kiki');
 });
+
+test('a changed chat cannot play a synthesis result that was already in flight', async () => {
+  let resolve; let valid = true;
+  const { player, audio, errors } = fixture({
+    validate: () => { if (!valid) throw new Error('Conversation changed'); },
+    request: () => new Promise(done => { resolve = done; })
+  });
+  const playing = player.play(); valid = false; resolve(result); await playing;
+  assert.equal(player.status, 'paused'); assert.deepEqual(errors, ['Conversation changed']);
+  assert.equal(audio[0].playing, false); player.destroy();
+});
+
+test('a cached chat passage is validated again before resuming', async () => {
+  let valid = true;
+  const { player, audio, errors } = fixture({ validate: () => { if (!valid) throw new Error('Conversation changed'); } });
+  await player.play(); player.pause(); valid = false; await player.play();
+  assert.equal(player.status, 'paused'); assert.equal(audio[0].playing, false);
+  assert.deepEqual(errors, ['Conversation changed']); player.destroy();
+});

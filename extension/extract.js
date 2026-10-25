@@ -5,9 +5,20 @@
   const NOISE = /(?:^|[-_\s])(?:advert(?:isement)?|ad-slot|cookie|newsletter|social|share|related|recommended|breadcrumbs?|pagination|subscribe|promo|byline|author|metadata|(?:article|post|entry)-meta|reading-time|read-time|reading-duration|kicker|eyebrow|dateline)(?:$|[-_\s])/iu;
   const READ_TIME = /^(?:(?:estimated\s+)?(?:reading\s+time|time\s+to\s+read)\s*[:·—–-]?\s*)?(?:\d+(?:[.,]\d+)?|one|two|three|four|five|six|seven|eight|nine|ten)\s*(?:min(?:ute)?s?|hours?|hrs?)\s*(?:(?:to\s+)?read(?:ing)?)?\s*[.!]?$/iu;
   const URL = /(?:https?:\/\/|www\.)[^\s]+/giu;
+  // WhatsApp's DOM is private and can change. Fail closed to an empty chat,
+  // rather than falling back to reading navigation or another conversation.
+  const CHAT_SKIP = 'button,input,textarea,select,script,style,svg,[role="button"],[role="textbox"],[contenteditable="true"],[data-testid="quoted-message"],[data-testid="quoted-message-container"],[data-testid="quoted-msg"],[data-testid="msg-meta"],[data-testid="reactions"],[data-icon],[hidden],[aria-hidden="true"],[inert]';
+  const chatAvailable = doc => doc.location?.hostname === 'web.whatsapp.com';
+  function chatIdentity(doc) {
+    const root = doc.querySelector('#main');
+    const heading = root?.querySelector('header [data-testid="conversation-info-header-chat-title"]')
+      || root?.querySelector('header span[title]') || root?.querySelector('header [dir="auto"]');
+    return { root, title: globalThis.OpenReadCore.normalize(heading?.getAttribute('title') || heading?.textContent || 'WhatsApp conversation') };
+  }
   function extract(doc = document, options = {}) {
     const { normalize, words, chunks } = globalThis.OpenReadCore;
-    const { selection = null } = options;
+    const { selection = null, mode = 'page', announceSenders = true } = options;
+    const chat = mode === 'chat';
     const view = doc.defaultView; const visibility = new WeakMap();
     function metadata(el) {
       const label = `${el.id} ${el.getAttribute('class') || ''} ${el.getAttribute('data-testid') || ''}`.replace(/([a-z\d])([A-Z])/gu, '$1-$2');
@@ -25,23 +36,27 @@
       if (visibility.has(el)) return visibility.get(el);
       const header = el.tagName === 'HEADER' && !el.closest('article,main,[role="main"]');
       const style = view.getComputedStyle(el);
-      const okay = !el.matches(SKIP) && !header && (selection || !metadata(el))
+      const okay = !el.matches(chat ? CHAT_SKIP : SKIP) && (chat || !header) && (chat || selection || !metadata(el))
         && style.display !== 'none' && style.visibility !== 'hidden' && style.visibility !== 'collapse'
         && style.opacity !== '0' && style.contentVisibility !== 'hidden' && eligible(el.parentElement);
       visibility.set(el, okay); return okay;
     }
     function collect(root, range) {
-      const groups = []; const walker = doc.createTreeWalker(root, 4); let group;
-      const heading = !range && [...root.querySelectorAll('h1')].find(eligible);
+      const groups = []; const walker = doc.createTreeWalker(root, chat ? 5 : 4); let group;
+      const heading = !chat && !range && [...root.querySelectorAll('h1')].find(eligible);
       while (walker.nextNode()) {
         const node = walker.currentNode;
+        if (node.nodeType === 1) {
+          if (eligible(node) && group && (node.tagName === 'BR' || node.matches('div,p,li'))) group.pieces.push({ lineBreak: true });
+          continue;
+        }
         if (!eligible(node.parentElement) || !node.parentElement.getClientRects().length) continue;
         if (heading && !heading.contains(node) && (node.compareDocumentPosition(heading) & 4)) continue;
         if (range && !range.intersectsNode(node)) continue;
         const from = range?.startContainer === node ? range.startOffset : 0;
         const to = range?.endContainer === node ? range.endOffset : node.length;
         if (from >= to) continue;
-        const block = node.parentElement.closest(BLOCK) || node.parentElement;
+        const block = chat ? root : node.parentElement.closest(BLOCK) || node.parentElement;
         // Consecutive groups preserve parent text, nested bullets and trailing text.
         if (!group || group.element !== block) {
           group = { element: block, pieces: [], kind: block.closest('li') ? 'list' : 'prose' }; groups.push(group);
@@ -56,11 +71,12 @@
       return groups.map((group) => {
         let text = ''; const runs = []; let gap = null;
         for (const piece of group.pieces) {
+          if (piece.lineBreak) { if (text) gap = { node: null }; continue; }
           const value = piece.node.data.slice(piece.from, piece.to);
           for (const match of value.matchAll(/\s+|\S+/gu)) {
             const from = piece.from + match.index;
             if (/^\s/u.test(match[0])) { if (text) gap = { node: piece.node, from, to: from + 1 }; continue; }
-            if (gap) { runs.push({ ...gap, start: text.length, end: text.length + 1, snapshot: gap.node.data }); text += ' '; gap = null; }
+            if (gap) { if (gap.node) runs.push({ ...gap, start: text.length, end: text.length + 1, snapshot: gap.node.data }); text += ' '; gap = null; }
             runs.push({ node: piece.node, from, to: from + match[0].length, start: text.length, end: text.length + match[0].length, snapshot: piece.node.data });
             text += match[0];
           }
@@ -68,8 +84,36 @@
         return { text, runs, element: group.element, kind: group.kind };
       }).filter((group) => group.text && /[\p{L}\p{N}]/u.test(group.text));
     }
-    let root; let groups;
-    if (selection && !selection.collapsed) {
+    let root; let groups; let identity; let messageCount = 0;
+    if (chat) {
+      identity = chatIdentity(doc); root = identity.root; groups = [];
+      if (chatAvailable(doc) && root && eligible(root)) {
+        // DOM order is the conversation order. Only loaded message bodies are
+        // collected: no sidebar, date separators, receipts, captions on buttons,
+        // composer drafts, or quoted copies of an earlier message.
+        const envelopes = [...root.querySelectorAll('[data-pre-plain-text]')]
+          .filter(el => !el.parentElement.closest('[data-pre-plain-text]') && eligible(el));
+        for (const envelope of envelopes) {
+          const bodies = [...envelope.querySelectorAll('.selectable-text')]
+            .filter(el => !el.parentElement.closest('.selectable-text') && eligible(el));
+          const parts = bodies.flatMap(body => collect(body));
+          if (!parts.length) continue;
+          const header = envelope.getAttribute('data-pre-plain-text') || '';
+          const name = normalize(header.match(/^\[[^\]]*\]\s*([\s\S]+):\s*$/u)?.[1] || '');
+          const sender = envelope.closest('.message-out') ? 'You' : name;
+          const prefix = announceSenders ? sender === 'You' ? 'You said: ' : sender ? `${sender} says: ` : 'Message: ' : '';
+          let text = prefix; const runs = [];
+          for (const part of parts) {
+            if (text.length > prefix.length) text += ' ';
+            const shift = text.length;
+            runs.push(...part.runs.map(run => ({ ...run, start: run.start + shift, end: run.end + shift })));
+            text += part.text;
+          }
+          messageCount++;
+          groups.push({ text, runs, element: envelope, kind: 'chat', sender, chatHeader: header, speechPrefixLength: prefix.length });
+        }
+      }
+    } else if (selection && !selection.collapsed) {
       root = selection.commonAncestorContainer.nodeType === 3 ? selection.commonAncestorContainer.parentElement : selection.commonAncestorContainer;
       groups = collect(root, selection);
     } else {
@@ -81,14 +125,15 @@
       root = scored[0]?.score > 0 ? scored[0].root : doc.body;
       groups = scored[0]?.score > 0 ? scored[0].groups : collect(root);
     }
-    const heading = root.querySelector?.('h1') || doc.querySelector('h1');
-    const title = selection ? 'Selected text' : normalize(heading?.innerText || heading?.textContent || doc.title || 'This page');
-    const lang = root.lang || doc.documentElement.lang || 'en';
+    const heading = root?.querySelector?.('h1') || doc.querySelector('h1');
+    const title = chat ? identity.title : selection ? 'Selected text' : normalize(heading?.innerText || heading?.textContent || doc.title || 'This page');
+    const lang = root?.lang || doc.documentElement.lang || 'en';
     const items = groups.flatMap((block, paragraph) => chunks(block.text, lang).map((chunk) => ({
       ...chunk, paragraph, kind: block.kind, element: block.element, runs: block.runs,
-      blockStart: chunk.start, blockEnd: chunk.end
+      blockStart: chunk.start, blockEnd: chunk.end, ...(chat ? { speechPrefixLength: block.speechPrefixLength, chatHeader: block.chatHeader } : {})
     })));
-    return { title, lang, source: selection ? 'selection' : 'page', text: groups.map((g) => g.text).join('\n\n'), items, blocks: groups };
+    return { title, lang, source: chat ? 'chat' : selection ? 'selection' : 'page', text: groups.map((g) => g.text).join('\n\n'), items, blocks: groups,
+      ...(chat ? { messageCount, chatRoot: identity.root } : {}) };
   }
   function rangesFor(item, offset, length, doc = document) {
     const start = item.blockStart + offset; const end = Math.min(item.blockEnd, start + length); const ranges = [];
@@ -102,4 +147,5 @@
     return ranges;
   }
   globalThis.OpenReadExtract = extract; globalThis.OpenReadRanges = rangesFor;
+  globalThis.OpenReadChat = { available: chatAvailable, identity: chatIdentity };
 })();

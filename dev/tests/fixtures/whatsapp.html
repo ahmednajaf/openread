@@ -1,0 +1,21 @@
+<!doctype html>
+<!-- Synthetic DOM regression fixture, not captured personal messages. -->
+<html lang="en"><head><meta charset="utf-8"><title>Chat fixture</title></head><body>
+<aside><div data-pre-plain-text="[08:00, 25/10/2026] Sidebar:"><span class="selectable-text">Private sidebar preview must not be read.</span></div></aside>
+<div id="main">
+  <header><span data-testid="conversation-info-header-chat-title" title="Weekend plans">Weekend plans</span><button>Search conversation</button></header>
+  <div role="application" style="height:400px;overflow:auto">
+    <div>Yesterday</div>
+    <div class="message-in"><div id="first" class="copyable-text" data-pre-plain-text="[23:59, 24/10/2026] Alex:"><span class="selectable-text copyable-text">Hello <strong>everyone</strong>! See the <a href="https://example.com">walking route</a>.<br>Bring water.</span><span data-testid="msg-meta">23:59 Read</span><button>React</button></div></div>
+    <div class="message-in"><div class="copyable-text" data-pre-plain-text="[00:01, 25/10/2026] Sam: Hiking:"><div data-testid="quoted-message"><div data-pre-plain-text="[23:59, 24/10/2026] Alex:"><span class="selectable-text">Quoted duplicate must not be read.</span></div></div><span class="selectable-text copyable-text">Sounds good 🙂</span></div></div>
+    <div class="message-out"><div class="copyable-text" data-pre-plain-text="[00:02, 25/10/2026] My profile name:"><span class="selectable-text copyable-text">I’ll bring snacks.</span><span data-testid="reactions"><span class="selectable-text">2 reactions</span></span></div></div>
+    <div class="message-in"><div class="copyable-text" data-pre-plain-text="[00:03, 25/10/2026] Alex:"><span class="selectable-text copyable-text">Same here.</span></div></div>
+    <div class="message-in"><div class="copyable-text" data-pre-plain-text="[00:04, 25/10/2026] Alex:"><span class="selectable-text copyable-text">Same here.</span></div></div>
+    <div hidden><div data-pre-plain-text="[00:05, 25/10/2026] Hidden:"><span class="selectable-text">Hidden message</span></div></div>
+    <div class="message-in"><div data-pre-plain-text="[00:06, 25/10/2026] Alex:"><button><span class="selectable-text">Play voice note</span></button></div></div>
+    <div class="message-in"><div data-pre-plain-text="[00:07, 25/10/2026] Alex:"><span data-testid="msg-meta">Photo 00:07</span></div></div>
+    <div class="message-in"><div data-pre-plain-text="unrecognized format"><span class="selectable-text">Unknown sender, still a message.</span></div></div>
+  </div>
+  <footer><div contenteditable="true" role="textbox"><span class="selectable-text">Unsent draft must not be read.</span></div><button>Send</button></footer>
+</div>
+</body></html>

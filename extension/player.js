@@ -1,8 +1,8 @@
 /* Neural speech only. The media clock drives word highlighting. */
 (() => {
   class Player {
-    constructor({ request, AudioClass, onChange = () => {}, onWord = () => {}, onWordClear = () => {}, onError = () => {}, frame, cancelFrame }) {
-      Object.assign(this, { request, AudioClass, onChange, onWord, onWordClear, onError });
+    constructor({ request, AudioClass, onChange = () => {}, onWord = () => {}, onWordClear = () => {}, onError = () => {}, validate = () => {}, frame, cancelFrame }) {
+      Object.assign(this, { request, AudioClass, onChange, onWord, onWordClear, onError, validate });
       this.frame = frame || globalThis.requestAnimationFrame?.bind(globalThis) || ((fn) => setTimeout(fn, 30));
       this.cancelFrame = cancelFrame || globalThis.cancelAnimationFrame?.bind(globalThis) || clearTimeout;
       this.items = []; this.index = 0; this.status = 'idle'; this.rate = 1; this.voice = 'af_heart';
@@ -25,6 +25,7 @@
     }
     async play() {
       if (!this.items.length || ['playing', 'loading'].includes(this.status)) return;
+      try { this.validate(this.items[this.index]); } catch (error) { this.fail(error.message); return; }
       if (this.status === 'ended') this.index = 0;
       if (this.status === 'paused' && this.ready && this.audio) {
         const generation = this.generation; const audio = this.audio;
@@ -47,6 +48,7 @@
       this.cancel(); this.voice = voice; this.cache.clear(); this.status = active ? 'paused' : previousStatus; this.emit(); if (active) void this.speak();
     }
     async generate(index) {
+      this.validate(this.items[index]);
       const key = `${this.session}:${this.voice}:${index}`;
       if (this.cache.has(key)) return this.cache.get(key);
       const pending = this.request({ type: 'synthesize', text: this.items[index].text, voice: this.voice }).then((result) => {
@@ -78,12 +80,14 @@
       if (!this.items[this.index]) return;
       this.status = 'loading'; this.emit();
       try {
+        this.validate(this.items[this.index]);
         const audio = this.audio || new this.AudioClass(); this.audio = audio;
         if (prime) {
           audio.src = 'data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAwF0AAIC7AAACABAAZGF0YQIAAAAAAA==';
           void audio.play().catch(() => {});
         }
         const result = await this.generate(this.index); if (!current()) return;
+        this.validate(this.items[this.index]);
         this.timings = result.words; this.wordIndex = -1; this.ready = true;
         audio.src = `data:audio/wav;base64,${result.audio}`; audio.playbackRate = this.rate; audio.preservesPitch = true;
         audio.onended = () => {

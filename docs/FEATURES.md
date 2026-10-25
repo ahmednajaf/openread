@@ -1,4 +1,4 @@
-# Feature coverage — OpenRead 0.3.0
+# Feature coverage — OpenRead 0.4.1
 
 Compared with the **Speechify Reader Premium** list checked on **25 October 2026** at [Speechify’s pricing page](https://speechify.com/pricing/). Speechify Studio and its developer API are separate products; their voice cloning, dubbing and licensed celebrity voices are not included in this comparison. OpenRead is independent and does not use Speechify code or voices.
 
@@ -18,6 +18,7 @@ Compared with the **Speechify Reader Premium** list checked on **25 October 2026
 | Saved library | Explicit saves, resume position, bookmarks, search, backup/restore | Stored on this computer; 200 documents, 200 bookmarks each. No hosted sync/mobile apps. |
 | Offline audio | Export selected voice to WAV; podcast audio playable/downloadable | Up to 50,000 characters per reading export, 150 MB output safety limit. Natural-speed export, no MP3 transcoder. |
 | In-page reading | Audio-clock word highlighting, inline link text, ordered/nested lists, optional scrolling, page/selection/paste | Restricted pages, embedded frames, closed shadow roots and Safari Reader's protected DOM are outside scope. |
+| WhatsApp Web chats | Reads loaded text messages in order, with optional sender announcements and word highlighting | Explicit refresh for older/new messages. Photos, stickers, voice notes and quoted repeats are skipped. Depends on WhatsApp's page layout; verified with synthetic chat fixtures, not a signed-in live account. |
 | Safari and Chrome | One MV3 source folder, native toolbar controls; separate Chrome ZIP packager | macOS is the tested helper platform. Other desktop systems need manual Python setup; native OCR is Mac-only. No store listing yet. |
 
 ## Models and setup

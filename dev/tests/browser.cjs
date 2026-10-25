@@ -80,7 +80,7 @@ const engine = useChromium ? 'Chromium' : 'WebKit';
     assert.equal(await popover.getByRole('switch', { name: 'Skip links' }).count(), 0);
     if (!useChromium) {
       await popover.getByRole('button', { name: 'Safari Reader', exact: true }).click();
-      assert.match(await popover.locator('.reader-help').textContent(), /cannot switch/);
+      assert.match(await popover.locator('.safari-reader-help').textContent(), /cannot switch/);
     } else assert.equal(await popover.locator('.reader-option').isVisible(), false);
     await popover.getByRole('button', { name: 'Paste text', exact: true }).click();
     await popover.locator('#paste').fill('<img src=x onerror="window.injected=true"> Test text.');

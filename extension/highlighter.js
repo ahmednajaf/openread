@@ -9,6 +9,8 @@
       window.addEventListener('scroll', this.reposition, { passive: true, capture: true }); window.addEventListener('resize', this.reposition);
     }
     show(item, offset, length) {
+      // Spoken sender introductions have no corresponding words in the bubble.
+      if (item.kind === 'chat' && item.blockStart + offset < item.speechPrefixLength) { this.clear(); return; }
       const ranges = globalThis.OpenReadRanges(item, offset, length);
       if (!ranges.length) { this.clear(); if (item.runs?.length) this.onStale(); return; }
       this.current = ranges;
@@ -16,7 +18,8 @@
       const rect = ranges[0].getBoundingClientRect();
       if (this.follow && (rect.top < 70 || rect.bottom > window.innerHeight - 70) && Date.now() - this.lastScroll > 800) {
         this.lastScroll = Date.now();
-        window.scrollBy({ top: rect.top - window.innerHeight * .42, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+        if (item.kind === 'chat') ranges[0].startContainer.parentElement?.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' });
+        else window.scrollBy({ top: rect.top - window.innerHeight * .42, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
       }
     }
     paint(ranges) {
