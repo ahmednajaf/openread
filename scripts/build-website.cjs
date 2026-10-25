@@ -5,7 +5,7 @@ fs.mkdirSync(out, { recursive: true });
 require('esbuild').buildSync({ entryPoints: [path.join(root, 'website/src/app.tsx')], outfile: path.join(out, 'site.js'), bundle: true, minify: true, target: ['safari17.2'], jsx: 'automatic', define: { 'process.env.NODE_ENV': '"production"' }, tsconfig: path.join(root, 'tsconfig.json'), legalComments: 'eof' });
 fs.copyFileSync(path.join(root, 'website/src/site.css'), path.join(out, 'site.css'));
 fs.cpSync(path.join(root, 'website/public'), out, { recursive: true });
-const host = process.env.SITE_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? 'https://' + process.env.VERCEL_PROJECT_PRODUCTION_URL : '');
+const host = process.env.SITE_URL || 'https://getopenread.vercel.app';
 let social = '<meta property="og:image" content="/social.png"><meta name="twitter:image" content="/social.png">';
 if (host) {
   const url = new URL(host); if (url.protocol !== 'https:') throw new Error('SITE_URL must use HTTPS.');
