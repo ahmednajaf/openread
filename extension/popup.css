@@ -1,0 +1,7 @@
+html,body{margin:0;width:354px;background:transparent;overflow:hidden;color-scheme:light dark}
+body{min-height:490px;max-height:600px;font:13px/1.5 -apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif}
+#connection{padding:20px;color:#626c7e;width:354px;box-sizing:border-box}
+.toolbar-popup .popover{position:relative;inset:auto;margin:0;width:354px;max-width:none;border-radius:0;padding:20px;background:transparent;box-shadow:none;border:0;backdrop-filter:none;-webkit-backdrop-filter:none}
+.toolbar-popup .glass-content{max-height:450px;overflow-y:auto;overscroll-behavior:contain}
+
+html.chrome-popup,html.chrome-popup body{background:#f5f6f8}@media(prefers-color-scheme:dark){html.chrome-popup,html.chrome-popup body{background:#292a2e}}

@@ -1,0 +1,4 @@
+kokoro-onnx==0.6.1
+pypdf==6.21.2
+pyobjc-framework-Vision==12.2.2; sys_platform == 'darwin'
+faster-whisper==1.2.1

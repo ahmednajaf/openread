@@ -1,0 +1,10 @@
+.DS_Store
+build/
+.venv/
+.local/
+__pycache__/
+*.pyc
+test-results/
+*.xcuserstate
+xcuserdata/
+node_modules/

@@ -1,0 +1,45 @@
+X launch post — use after the repository is public
+
+Reading support shouldn’t need another subscription.
+
+I built OpenRead for Safari + Chrome: local voices, word highlighting, scans and optional local AI. No account or subscription.
+
+The prototype started in minutes. Now free and open source:
+https://github.com/ahmednajaf/openread
+
+
+Follow-up — contributions and optional support
+
+Contributions welcome—code, accessibility feedback, docs or bug reports. I’ll review the PRs.
+
+If you find OpenRead useful, optional donations will help maintain it once I’ve set up a support page. Every feature stays free. A star or share helps too.
+
+
+Optional detail post
+
+The aim is to make reading less exhausting without another monthly bill.
+
+Voice runs on your device. Optional local models add summaries, questions, dictation and audio overviews. They need a one-time download and use your computer’s resources.
+
+This is an early build. English is strongest; it doesn’t match every Speechify feature, there’s no hosted sync, and installation still takes a few steps.
+
+The prototype began with minutes of vibe coding. Getting playback, highlighting and local models working reliably took further iteration and testing.
+
+
+After setting up donations
+
+Replace the support-page sentence with “If OpenRead helps you, you can buy me a coffee: [verified support URL]. Completely optional—every feature stays free.” Add that same verified URL to README.md and the appropriate .github/FUNDING.yml provider entry. Do not publish a guessed username or payment link.
+
+
+Future App Store support copy — only once that edition exists
+
+The source stays free. A paid App Store edition helps support maintenance and easier installation. Paying is optional; access to the source isn’t.
+
+
+Notes (not part of the posts)
+
+- GPL-3.0-or-later applies to OpenRead; models retain their upstream licences.
+- Do not claim the finished product was built/tested in five minutes.
+- Do not promise identical Speechify quality or complete Premium parity.
+- Do not present a future App Store purchase as available today or support payments as tax-deductible charity donations.
+- These drafts have not been posted to X.
