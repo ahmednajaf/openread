@@ -25,7 +25,7 @@ def ollama_binary():
 def ensure_ollama():
     binary = ollama_binary()
     if not binary:
-        raise SystemExit('Install the free Ollama app from https://ollama.com/download first. Open it once, then run Set Up AI.command again. No account or paid API key is needed.')
+        raise SystemExit('Install the free Ollama app from https://ollama.com/download first. Open it once, then run setup/Set Up AI.command again. No account or paid API key is needed.')
     try:
         request('/api/tags')
     except (OSError, ValueError):

@@ -118,7 +118,7 @@ Article extraction is heuristic and won't be perfect on every site. The extensio
 
 Contributions are welcome: report a bug, improve installation instructions, help with accessibility, or send a focused pull request. [CONTRIBUTING.md](../CONTRIBUTING.md) explains how. Ahmed (@ahmednajaf) reviews proposed changes and decides what to merge. Community contributions are optional; using OpenRead requires no contribution or payment.
 
-If OpenRead helps you, voluntary donations are welcome to support maintenance. A verified support link will be added once a donation page is set up. Until then, starring the repository, sharing it and reporting problems help too. Donations will not unlock features or buy priority reviews.
+If OpenRead helps you, [optional donations on Ko-fi](https://ko-fi.com/pickledjones) support maintenance. Starring the repository, sharing it and reporting problems help too. Donations do not unlock features or buy priority reviews.
 
 Local speech and AI have no per-minute API or OpenRead hosting fees; they use your computer’s processing, memory, disk and electricity. A future paid distribution may support easier installation and maintenance while source access remains free. No paid/store edition is available in this release; store terms and GPL distribution obligations need review before that separate release.
 
@@ -147,6 +147,27 @@ The Python checks need their corresponding optional packages/models. Browser tes
 
 ## Reading app UI
 
-`companion/src/` contains the React/TypeScript reading workspace. `components/ui/` holds shared controls and the attributed glass headline. `npm run build` produces committed `companion/app.js`, `companion/app.css` and `companion/index.html`; Finder users do not need Node. Restart the helper after updating, then refresh http://127.0.0.1:8765/. Existing saved readings remain in the same library file.
+`companion/src/` contains the React/TypeScript reading workspace. `components/ui/` holds shared controls and the attributed glass headline. `npm run build` produces the committed files in `companion/dist/`; Finder users do not need Node. Restart the helper after updating, then refresh http://127.0.0.1:8765/. Existing saved readings remain in the same library file.
 
 `npm run design` runs the same app in an isolated development server at port 4180, using a separate library on its helper at 8767. It is a developer preview of the production source, not a separate design implementation.
+
+## Repository map
+
+| Folder | Contents |
+| --- | --- |
+| `extension/` | Installable Safari/Chrome extension and bundled toolbar controls |
+| `companion/src/`, `companion/dist/` | Reading app source and committed installation assets |
+| `components/`, `lib/`, `ui/` | Shared UI and extension surface adapter |
+| `voice/` | Local speech helper, document tools and model setup |
+| `setup/` | Optional AI, dictation and extra voice launchers |
+| `website/` | Public landing page, recorded demo and privacy notice |
+| `scripts/`, `tests/` | Build tools, checks and development article fixtures |
+| `docs/`, `notices/`, `assets/` | Contributor guides, licences and brand source |
+
+`build/`, `.local/`, `.venv/`, `.vercel/`, `website/dist/` and local launch drafts are ignored. They contain generated packages, local data or deployment state; never commit them.
+
+## Public website
+
+Run `npm run site:dev` to build and preview the static site at http://127.0.0.1:4190/. The page uses a prerecorded Kiki sample and demo; it does not expose the Python helper or accept document uploads. See [website notes](../website/README.md) for the asset inventory.
+
+Vercel builds with `npm ci` and `npm run site:build`, serving only `website/dist/` as configured in `vercel.json`. Set `SITE_URL` to the production HTTPS origin for canonical and social links, or use Vercel's production-domain environment variable. Deploy with the official Vercel CLI after signing in; authentication and `.vercel/` stay local. The app and model downloads continue to run on each user's Mac.

@@ -274,7 +274,7 @@ def ollama_request(path, payload=None, timeout=4):
         with urllib.request.build_opener(urllib.request.ProxyHandler({})).open(request, timeout=timeout) as response:
             return json.loads(response.read(2 * 1024 * 1024))
     except (OSError, ValueError, urllib.error.URLError):
-        raise ToolError('Local AI is unavailable. Run Set Up AI.command, then start Ollama and try again.') from None
+        raise ToolError('Local AI is unavailable. Run setup/Set Up AI.command, then start Ollama and try again.') from None
 
 
 def capabilities():
@@ -460,7 +460,7 @@ def whisper_model():
     global _whisper_model
     path = ROOT / '.local/whisper-base'
     if not (path / 'model.bin').exists():
-        raise ToolError('Dictation needs its local model. Run Set Up Dictation.command once.')
+        raise ToolError('Dictation needs its local model. Run setup/Set Up Dictation.command once.')
     if _whisper_model is None:
         from faster_whisper import WhisperModel
         _whisper_model = WhisperModel(str(path), device='cpu', compute_type='int8', local_files_only=True, cpu_threads=4)

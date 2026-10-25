@@ -1,0 +1,272 @@
+{
+  "text": "Tell me, Muse, the story of that resourceful man who was driven to wander far and wide after he had sacked the holy citadel of Troy. He saw the cities of many people and he learnt their ways.",
+  "duration": 11.8,
+  "words": [
+    {
+      "offset": 0,
+      "length": 4,
+      "start": 0.0,
+      "end": 0.58,
+      "estimated": true
+    },
+    {
+      "offset": 5,
+      "length": 3,
+      "start": 0.58,
+      "end": 0.84,
+      "estimated": true
+    },
+    {
+      "offset": 9,
+      "length": 5,
+      "start": 1.36,
+      "end": 1.36,
+      "estimated": true
+    },
+    {
+      "offset": 15,
+      "length": 3,
+      "start": 1.88,
+      "end": 1.94,
+      "estimated": true
+    },
+    {
+      "offset": 19,
+      "length": 5,
+      "start": 1.94,
+      "end": 2.3,
+      "estimated": true
+    },
+    {
+      "offset": 25,
+      "length": 2,
+      "start": 2.3,
+      "end": 2.5,
+      "estimated": true
+    },
+    {
+      "offset": 28,
+      "length": 4,
+      "start": 2.5,
+      "end": 2.62,
+      "estimated": true
+    },
+    {
+      "offset": 33,
+      "length": 11,
+      "start": 2.62,
+      "end": 3.34,
+      "estimated": true
+    },
+    {
+      "offset": 45,
+      "length": 3,
+      "start": 3.34,
+      "end": 3.62,
+      "estimated": true
+    },
+    {
+      "offset": 49,
+      "length": 3,
+      "start": 3.62,
+      "end": 3.88,
+      "estimated": true
+    },
+    {
+      "offset": 53,
+      "length": 3,
+      "start": 3.88,
+      "end": 4.02,
+      "estimated": true
+    },
+    {
+      "offset": 57,
+      "length": 6,
+      "start": 4.02,
+      "end": 4.28,
+      "estimated": true
+    },
+    {
+      "offset": 64,
+      "length": 2,
+      "start": 4.28,
+      "end": 4.52,
+      "estimated": true
+    },
+    {
+      "offset": 67,
+      "length": 6,
+      "start": 4.52,
+      "end": 4.8,
+      "estimated": true
+    },
+    {
+      "offset": 74,
+      "length": 3,
+      "start": 4.8,
+      "end": 5.18,
+      "estimated": true
+    },
+    {
+      "offset": 78,
+      "length": 3,
+      "start": 5.18,
+      "end": 5.38,
+      "estimated": true
+    },
+    {
+      "offset": 82,
+      "length": 4,
+      "start": 5.38,
+      "end": 5.62,
+      "estimated": true
+    },
+    {
+      "offset": 87,
+      "length": 5,
+      "start": 5.62,
+      "end": 6.06,
+      "estimated": true
+    },
+    {
+      "offset": 93,
+      "length": 2,
+      "start": 6.06,
+      "end": 6.22,
+      "estimated": true
+    },
+    {
+      "offset": 96,
+      "length": 3,
+      "start": 6.22,
+      "end": 6.36,
+      "estimated": true
+    },
+    {
+      "offset": 100,
+      "length": 6,
+      "start": 6.36,
+      "end": 6.64,
+      "estimated": true
+    },
+    {
+      "offset": 107,
+      "length": 3,
+      "start": 6.64,
+      "end": 6.86,
+      "estimated": true
+    },
+    {
+      "offset": 111,
+      "length": 4,
+      "start": 6.86,
+      "end": 7.14,
+      "estimated": true
+    },
+    {
+      "offset": 116,
+      "length": 7,
+      "start": 7.14,
+      "end": 7.58,
+      "estimated": true
+    },
+    {
+      "offset": 124,
+      "length": 2,
+      "start": 7.58,
+      "end": 7.84,
+      "estimated": true
+    },
+    {
+      "offset": 127,
+      "length": 5,
+      "start": 7.84,
+      "end": 8.1,
+      "estimated": true
+    },
+    {
+      "offset": 133,
+      "length": 2,
+      "start": 8.66,
+      "end": 8.92,
+      "estimated": true
+    },
+    {
+      "offset": 136,
+      "length": 3,
+      "start": 8.92,
+      "end": 9.16,
+      "estimated": true
+    },
+    {
+      "offset": 140,
+      "length": 3,
+      "start": 9.16,
+      "end": 9.34,
+      "estimated": true
+    },
+    {
+      "offset": 144,
+      "length": 6,
+      "start": 9.34,
+      "end": 9.66,
+      "estimated": true
+    },
+    {
+      "offset": 151,
+      "length": 2,
+      "start": 9.66,
+      "end": 9.9,
+      "estimated": true
+    },
+    {
+      "offset": 154,
+      "length": 4,
+      "start": 9.9,
+      "end": 10.12,
+      "estimated": true
+    },
+    {
+      "offset": 159,
+      "length": 6,
+      "start": 10.12,
+      "end": 10.54,
+      "estimated": true
+    },
+    {
+      "offset": 166,
+      "length": 3,
+      "start": 10.54,
+      "end": 10.8,
+      "estimated": true
+    },
+    {
+      "offset": 170,
+      "length": 2,
+      "start": 10.8,
+      "end": 10.92,
+      "estimated": true
+    },
+    {
+      "offset": 173,
+      "length": 6,
+      "start": 10.92,
+      "end": 11.08,
+      "estimated": true
+    },
+    {
+      "offset": 180,
+      "length": 5,
+      "start": 11.08,
+      "end": 11.28,
+      "estimated": true
+    },
+    {
+      "offset": 186,
+      "length": 5,
+      "start": 11.28,
+      "end": 11.58,
+      "estimated": true
+    }
+  ]
+}

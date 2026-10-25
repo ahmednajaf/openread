@@ -190,8 +190,8 @@ def make_server(voice, port=PORT, allow_preview=False, library=None):
 
         def do_GET(self):
             path = urlsplit(self.path).path
-            static = {'/': ROOT / 'companion/index.html', '/app.js': ROOT / 'companion/app.js',
-                      '/app.css': ROOT / 'companion/app.css', '/icon.png': ROOT / 'extension/icons/128.png',
+            static = {'/': ROOT / 'companion/dist/index.html', '/app.js': ROOT / 'companion/dist/app.js',
+                      '/app.css': ROOT / 'companion/dist/app.css', '/icon.png': ROOT / 'extension/icons/128.png',
                       '/core.js': ROOT / 'extension/core.js', '/player.js': ROOT / 'extension/player.js'}
             if path in static:
                 if not self.authorized(preflight=True):

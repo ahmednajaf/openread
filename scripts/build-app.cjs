@@ -4,7 +4,7 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const root = path.resolve(__dirname, '..');
 function buildApp(preview = false) {
-  const out = path.join(root, preview ? '.local/design-preview/site' : 'companion');
+  const out = path.join(root, preview ? '.local/design-preview/site' : 'companion/dist');
   fs.mkdirSync(out, { recursive: true });
   require('esbuild').buildSync({ entryPoints: [path.join(root, 'companion/src/app.tsx')], outfile: path.join(out, 'app.js'), bundle: true, minify: true, jsx: 'automatic', target: ['safari17.2'], define: { 'process.env.NODE_ENV': '"production"' }, tsconfig: path.join(root, 'tsconfig.json'), legalComments: 'eof' });
   // Keep both backdrop-filter spellings: CSS minification can drop Chromium's.

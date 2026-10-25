@@ -9,7 +9,7 @@ import features as f
 from server import KokoroVoice
 source = 'The community library is open from 9 am to 5 pm. Ada hosts a free reading club every Wednesday at 2 pm. Members bring one book. The group decided to keep the club free. Alex will upload the meeting notes by Friday. There is no membership fee.'
 progress = lambda value: print(value, flush=True)
-assert f.capabilities()['ai'], 'Run Set Up AI.command first.'
+assert f.capabilities()['ai'], 'Run setup/Set Up AI.command first.'
 summary = f.ai_task({'text': source, 'mode': 'summary'}, lambda: None, progress)
 assert 'library' in summary['text'].lower() or 'reading' in summary['text'].lower(), summary
 answer = f.ai_task({'text': source, 'mode': 'chat', 'question': 'When does the reading club meet?'}, lambda: None, progress)

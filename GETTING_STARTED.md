@@ -65,7 +65,7 @@ Safari supplies its own native glass for the toolbar popup. Device appearance is
 
 ## Featured voices
 
-The main setup includes **Kitten TTS Mini 0.8**. Its eight voices are Bella, Jasper, Luna, Bruno, Rosie, Hugo, Kiki and Leo. Kiki, Rosie and Jasper appear first under **Featured · Kitten**; Kiki is the default. For an older OpenRead install, double-click **Set Up More Voices.command**, then restart OpenRead and reload the extension.
+The main setup includes **Kitten TTS Mini 0.8**. Its eight voices are Bella, Jasper, Luna, Bruno, Rosie, Hugo, Kiki and Leo. Kiki, Rosie and Jasper appear first under **Featured · Kitten**; Kiki is the default. For an older OpenRead install, double-click **setup/Set Up More Voices.command**, then restart OpenRead and reload the extension.
 
 The pack downloads about **82 MB**, plus **Whisper Base (~150 MB)** and its packages if not already installed. Kitten's code/weights are Apache-2.0 licensed. It runs on CPU and needs no account or API key.
 
@@ -76,7 +76,7 @@ Kokoro remains available as an alternative with direct model timing outputs and 
 This is a separate one-time download of approximately **2.5 GB** plus the Ollama app. An Apple Silicon Mac with **at least 8 GB RAM** is a reasonable starting point; 16 GB gives more room to run a browser and several models together. Actual speed depends on your machine. Older/Intel Macs can be much slower. These are practical guidelines, not a hardware certification.
 
 1. Install and open the free [Ollama app](https://ollama.com/download).
-2. Double-click **Set Up AI.command** in OpenRead’s folder.
+2. Double-click **setup/Set Up AI.command** in OpenRead’s folder.
 3. Keep Ollama running. Open **Library & tools**.
 4. Load a reading, open **Reading tools** (the sparkle icon), and choose **Summarize**, **Ask**, or **Discuss**.
 
@@ -86,7 +86,7 @@ Audio overview generates a short two-host script, then **Make the audio** turns 
 
 ## Dictation and meeting notes
 
-1. Whisper Base (~150 MB) is included in the current voice setup for word alignment, so dictation uses that same local model. Older installs can double-click **Set Up Dictation.command**.
+1. Whisper Base (~150 MB) is included in the current voice setup for word alignment, so dictation uses that same local model. Older installs can double-click **setup/Set Up Dictation.command**.
 2. In **Library & tools → Reading tools → Dictate**, choose **Start recording** or **Import audio**.
 3. Your browser asks for microphone access only when you start recording. Stop recording to transcribe it on this computer.
 4. Use **Copy transcript** to paste into any app, or **Use transcript as reading** to listen to it.
@@ -108,8 +108,8 @@ The models occupy disk space locally: `.local/models` for voices, `.local/whispe
 | --- | --- |
 | Natural voices aren't connected | Start OpenRead.command and leave its window open. Restart the helper after source updates. |
 | New controls missing after an update | Reload the extension in browser settings, then refresh the article. |
-| AI setup needed | Start Ollama and run Set Up AI.command. Open Setup & privacy in the workspace to check readiness. |
-| Dictation setup needed | Run Set Up Dictation.command. Microphone recording also needs your browser permission. |
+| AI setup needed | Start Ollama and run setup/Set Up AI.command. Open Setup & privacy in the workspace to check readiness. |
+| Dictation setup needed | Run setup/Set Up Dictation.command. Microphone recording also needs your browser permission. |
 | Scanned PDF won't import | Scan & Listen currently needs macOS. Try a smaller section: 20 scanned pages maximum. |
 | Voice sounds wrong for a language | Choose the matching language voice. English is the strongest; additional languages are experimental. Japanese and Mandarin are not exposed in this build. |
 | It reads a menu or misses text | Extraction is heuristic. Select the text you want, or paste it into the workspace. |

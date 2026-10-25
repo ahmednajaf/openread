@@ -8,3 +8,8 @@ test-results/
 *.xcuserstate
 xcuserdata/
 node_modules/
+
+# Local launch drafts and hosting/build state
+launch/
+.vercel/
+website/dist/

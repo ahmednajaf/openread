@@ -6,5 +6,5 @@
     "resolveJsonModule": true, "allowSyntheticDefaultImports": true,
     "paths": { "@/*": ["./*"] }
   },
-  "include": ["companion/src/**/*.ts", "companion/src/**/*.tsx", "components/**/*.tsx", "lib/**/*.ts"]
+  "include": ["companion/src/**/*.ts", "companion/src/**/*.tsx", "website/src/**/*.tsx", "website/src/**/*.ts", "components/**/*.tsx", "lib/**/*.ts"]
 }

@@ -4,6 +4,8 @@
 
 OpenRead is a free, open-source reading companion for **Safari and Chrome on Mac**. Listen to webpages and documents with natural voices while the words are highlighted as you go.
 
+**[Hear it, watch the demo & install →](https://openread-eosin.vercel.app)**
+
 ## What it does
 
 - Reads aloud with local voices, adjustable speed and word highlighting.
@@ -25,7 +27,7 @@ This is an early release with manual installation. Setup downloads local models;
 
 Bug reports, accessibility feedback, documentation and code contributions are welcome. Read [how to contribute](CONTRIBUTING.md), then open an issue or pull request. Ahmed reviews proposed changes.
 
-Donations are completely optional. A support link will be added once the page is ready. Every feature stays free; a star or a share helps too.
+Donations are completely optional: [buy me a coffee on Ko-fi](https://ko-fi.com/pickledjones). Every feature stays free; a star or a share helps too.
 
 ## Find out more
 

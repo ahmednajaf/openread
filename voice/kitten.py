@@ -69,7 +69,7 @@ class KittenVoice:
         import onnxruntime as ort
         import phonemizer
         if not ready():
-            raise ValueError('Run Set Up More Voices.command first, then restart OpenRead.')
+            raise ValueError('Run setup/Set Up More Voices.command first, then restart OpenRead.')
         options = ort.SessionOptions(); options.intra_op_num_threads = 4
         self.session = ort.InferenceSession(str(ROOT / '.local/kitten-mini/kitten_tts_mini_v0_8.onnx'), sess_options=options, providers=['CPUExecutionProvider'])
         self.voices = np.load(ROOT / '.local/kitten-mini/voices.npz', allow_pickle=False)
