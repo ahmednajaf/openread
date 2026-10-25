@@ -1,0 +1,8 @@
+Generation mode: built-in image_gen; transparent background.
+Master asset: docs/assets/openread-logo.png
+Runtime icon sizes: extension/icons/16.png through extension/icons/512.png
+
+Use case: logo-brand
+Asset type: OpenRead browser extension app icon and compact settings logo.
+Primary request: A polished original logo for OpenRead, an accessible natural-voice reading app, with the quiet precision of native macOS app icon design. One simple sculptural open-book symbol whose two curved pages subtly evoke a sound wave. Confident, memorable silhouette readable at tiny sizes. Cool translucent optical glass, pearl-silver edges, a subtle clear blue inner reflection. Restrained dimensionality and beautiful soft specular highlights, no ornamental detail. Centered straight-on composition, generous clean padding. One standalone mark on a genuinely transparent background; no square tile or plate behind it.
+Constraints: no text, no letters, no watermark, no Apple logo, no headphones, no green. Do not create a presentation sheet, multiple variants, or a mockup.

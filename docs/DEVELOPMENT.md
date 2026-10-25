@@ -11,8 +11,8 @@ For development: Node 22+, Python **3.11–3.13**, macOS with Safari or Chrome. 
 ```sh
 npm ci
 npm run build
-python3.11 voice/setup.py
-.venv/bin/python voice/server.py --allow-preview
+python3.11 app/voice/setup.py
+.venv/bin/python app/voice/server.py --allow-preview
 ```
 
 One-time voice setup creates a private `.venv/` and downloads approximately **586 MB** of speech/alignment weights/styles into `.local/models/`, `.local/kitten-mini/` and `.local/whisper-base/`, plus Python packages. Pinned SHA-256 hashes verify the model assets. This includes all 49 voice choices and the local Whisper model used for Kitten word alignment. After setup, inference is local. ONNX Runtime telemetry is disabled.
@@ -25,7 +25,7 @@ npm run preview
 
 Open [the local preview](http://127.0.0.1:4173). The preview runs the shared settings UI, speech engine, extraction, and in-page highlighting. Its Open OpenRead button opens an in-page preview of the shared settings view. In Safari itself, controls open in the actual extension toolbar popup; the webpage hosts only playback and word highlighting.
 
-For ordinary Safari use, omit `--allow-preview`, or double-click **Start OpenRead.command** in Finder. Leave the helper running while listening; Control-C stops it. Restart it after updating `voice/server.py`.
+For ordinary Safari use, omit `--allow-preview`, or double-click **Start OpenRead.command** in Finder. Leave the helper running while listening; Control-C stops it. Restart it after updating `app/voice/server.py`.
 
 ## Add to Chrome
 
@@ -92,9 +92,9 @@ Word highlighting targets the **original webpage**. Safari's protected Reader in
 
 Safari provides the actual native toolbar material. The extension keeps its popup background transparent so that surface remains visible. The in-page development preview uses an independent CSS blur; it is not the native macOS material. Chrome uses its own device-matched popup surface. Light/dark appearance follows the device, with reduced motion and reduced transparency respected.
 
-`ui/glass-entry.js` is a small DOM adapter copied to `extension/glass.js` by the build. The toolbar has no React runtime. The reading workspace uses bundled React and the MIT-licensed Glass Headline Hero; see THIRD_PARTY.md and notices/. No CDN or remote UI assets are fetched.
+`app/extension-ui/glass-entry.js` is a small DOM adapter copied to `extension/glass.js` by the build. The toolbar has no React runtime. The reading workspace uses bundled React and the MIT-licensed Glass Headline Hero; see THIRD_PARTY.md and docs/notices/. No CDN or remote UI assets are fetched.
 
-The generated logo master is `assets/openread-logo.png`; its exact prompt/mode is `assets/logo-prompt.txt`. Runtime icon sizes live in `extension/icons/`.
+The generated logo master is `docs/assets/openread-logo.png`; its exact prompt/mode is `docs/assets/logo-prompt.txt`. Runtime icon sizes live in `extension/icons/`.
 
 ## Word timing and extraction details
 
@@ -130,24 +130,24 @@ npm test
 
 The automated tests cover timing alignment/UTF-16, voice validation, local-service access rules, playback cancellation races, audio-clock word events, prefetch, and position-preserving speed changes.
 
-`tests/browser.cjs`, `tests/reading-browser.cjs`, and `tests/popup-browser.cjs` use an isolated Playwright WebKit browser with the running preview/helper. Set `NODE_PATH` to your Playwright installation if it is outside this project. They test native-popup transparency and preview surfaces, real speech, original-page highlighting, nested lists, skipped/hidden content, inline markup, partial selections, stale DOM maps, dark/narrow layouts, and non-destructive page handling. The full reading test completes all passages with real speech, checks linked-word highlights and metadata exclusion, and verifies that old marks are removed. Set `BROWSER=chromium` for the Chrome variant; loopback permission is granted only to that isolated test profile. Playwright isn't a runtime dependency.
+`dev/tests/browser.cjs`, `dev/tests/reading-browser.cjs`, and `dev/tests/popup-browser.cjs` use an isolated Playwright WebKit browser with the running preview/helper. Set `NODE_PATH` to your Playwright installation if it is outside this project. They test native-popup transparency and preview surfaces, real speech, original-page highlighting, nested lists, skipped/hidden content, inline markup, partial selections, stale DOM maps, dark/narrow layouts, and non-destructive page handling. The full reading test completes all passages with real speech, checks linked-word highlights and metadata exclusion, and verifies that old marks are removed. Set `BROWSER=chromium` for the Chrome variant; loopback permission is granted only to that isolated test profile. Playwright isn't a runtime dependency.
 
 
 ## Real-engine integration checks
 
 ```sh
-.venv/bin/python tests/local_tools_integration.py
-.venv/bin/python tests/local_tools_integration.py --voices
-.venv/bin/python tests/ai_integration.py
-node tests/workspace-browser.cjs
-node tests/chrome-extension.cjs
+.venv/bin/python dev/tests/local_tools_integration.py
+.venv/bin/python dev/tests/local_tools_integration.py --voices
+.venv/bin/python dev/tests/ai_integration.py
+node dev/tests/workspace-browser.cjs
+node dev/tests/chrome-extension.cjs
 ```
 
 The Python checks need their corresponding optional packages/models. Browser tests need an external Playwright install and its browser binaries. `workspace-browser.cjs` starts a separate helper on port 8766 with a temporary library; it does not change your saved readings. The Chrome extension test uses a disposable Chromium profile. These are development checks, not installation requirements. Windows/Linux helper setup is manual and not verified in this release; Vision OCR and Finder launchers require macOS.
 
 ## Reading app UI
 
-`companion/src/` contains the React/TypeScript reading workspace. `components/ui/` holds shared controls and the attributed glass headline. `npm run build` produces the committed files in `companion/dist/`; Finder users do not need Node. Restart the helper after updating, then refresh http://127.0.0.1:8765/. Existing saved readings remain in the same library file.
+`app/reader/src/` contains the React/TypeScript reading workspace. `app/shared/components/ui/` holds shared controls and the attributed glass headline. `npm run build` produces the committed files in `app/reader/dist/`; Finder users do not need Node. Restart the helper after updating, then refresh http://127.0.0.1:8765/. Existing saved readings remain in the same library file.
 
 `npm run design` runs the same app in an isolated development server at port 4180, using a separate library on its helper at 8767. It is a developer preview of the production source, not a separate design implementation.
 
@@ -155,19 +155,16 @@ The Python checks need their corresponding optional packages/models. Browser tes
 
 | Folder | Contents |
 | --- | --- |
-| `extension/` | Installable Safari/Chrome extension and bundled toolbar controls |
-| `companion/src/`, `companion/dist/` | Reading app source and committed installation assets |
-| `components/`, `lib/`, `ui/` | Shared UI and extension surface adapter |
-| `voice/` | Local speech helper, document tools and model setup |
+| `app/` | Reader, local voice helper, public website and shared UI |
+| `extension/` | Ready-to-load Safari/Chrome extension |
 | `setup/` | Optional AI, dictation and extra voice launchers |
-| `website/` | Public landing page, recorded demo and privacy notice |
-| `scripts/`, `tests/` | Build tools, checks and development article fixtures |
-| `docs/`, `notices/`, `assets/` | Contributor guides, licences and brand source |
+| `dev/` | Build scripts, tests, article fixtures and tool configuration |
+| `docs/` | Additional guides, dependency notices and brand assets |
 
-`build/`, `.local/`, `.venv/`, `.vercel/`, `website/dist/` and local launch drafts are ignored. They contain generated packages, local data or deployment state; never commit them.
+`build/`, `.local/`, `.venv/`, `.vercel/`, `app/website/dist/` and local launch drafts are ignored. They contain generated packages, local data or deployment state; never commit them.
 
 ## Public website
 
-Run `npm run site:dev` to build and preview the static site at http://127.0.0.1:4190/. The page uses a prerecorded Kiki sample and demo; it does not expose the Python helper or accept document uploads. See [website notes](../website/README.md) for the asset inventory.
+Run `npm run site:dev` to build and preview the static site at http://127.0.0.1:4190/. The page uses a prerecorded Kiki sample and demo; it does not expose the Python helper or accept document uploads. See [website notes](../app/website/README.md) for the asset inventory.
 
-Vercel builds with `npm ci` and `npm run site:build`, serving only `website/dist/` as configured in `vercel.json`. Set `SITE_URL` to the production HTTPS origin for canonical and social links, when deploying a fork. Deploy with the official Vercel CLI after signing in; authentication and `.vercel/` stay local. The app and model downloads continue to run on each user's Mac.
+Vercel builds with `npm ci` and `npm run site:build`, serving only `app/website/dist/` as configured in `vercel.json`. Set `SITE_URL` to the production HTTPS origin for canonical and social links, when deploying a fork. Deploy with the official Vercel CLI after signing in; authentication and `.vercel/` stay local. The app and model downloads continue to run on each user's Mac.

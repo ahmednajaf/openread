@@ -9,18 +9,18 @@
   },
   "description": "A free, local-first Safari and Chrome reading companion.",
   "scripts": {
-    "build": "node scripts/build-ui.cjs",
+    "build": "node dev/scripts/build-ui.cjs",
     "prepreview": "npm run build",
     "presafari": "npm run build",
-    "test": "node --test tests/*.test.cjs && python3 -m unittest discover -s tests -p '*_test.py'",
-    "preview": "node scripts/preview.cjs",
-    "safari": "node scripts/safari.cjs",
-    "chrome": "npm run build && node scripts/chrome.cjs",
-    "design:build": "node scripts/build-design.cjs",
-    "design": "node scripts/design-preview.cjs",
-    "typecheck": "tsc --noEmit",
-    "site:build": "node scripts/build-website.cjs",
-    "site:dev": "npm run site:build && node scripts/website-preview.cjs"
+    "test": "node --test dev/tests/*.test.cjs && python3 -m unittest discover -s dev/tests -p '*_test.py'",
+    "preview": "node dev/scripts/preview.cjs",
+    "safari": "node dev/scripts/safari.cjs",
+    "chrome": "npm run build && node dev/scripts/chrome.cjs",
+    "design:build": "node dev/scripts/build-design.cjs",
+    "design": "node dev/scripts/design-preview.cjs",
+    "typecheck": "tsc --project dev/config/tsconfig.json --noEmit",
+    "site:build": "node dev/scripts/build-website.cjs",
+    "site:dev": "npm run site:build && node dev/scripts/website-preview.cjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

@@ -1,0 +1,41 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const { transformSync } = require('esbuild');
+const core = require('../../extension/core.js');
+const moduleScope = { exports: {} };
+vm.runInNewContext(transformSync(fs.readFileSync(path.join(__dirname, '../../app/reader/src/layout.ts'), 'utf8'), { loader: 'ts', format: 'cjs' }).code, { module: moduleScope, exports: moduleScope.exports });
+const { readingLayout } = moduleScope.exports;
+
+test('speech chunks map forward through repeated phrases and retain Unicode offsets', () => {
+  const text = 'One repeated phrase. One repeated phrase.\n\n🙂 Read this.';
+  const chunks = [{ text: 'One repeated phrase.', paragraph: 0 }, { text: 'One repeated phrase.', paragraph: 0 }, { text: '🙂 Read this.', paragraph: 1 }];
+  const layout = readingLayout(text, chunks);
+  assert.equal(layout.paragraphs.length, 2);
+  assert.equal(layout.items[1].start, 21);
+  assert.equal(layout.paragraphs[1].slice(layout.items[2].start + 3, 7), 'Read');
+});
+test('the Odyssey keeps four source paragraphs while every speech chunk maps exactly', () => {
+  const text = require('../../app/reader/src/data/odyssey.json').text;
+  const chunks = core.passages(text);
+  const layout = readingLayout(text, chunks);
+  assert.equal(layout.paragraphs.length, 4);
+  assert.ok(layout.items.length > layout.paragraphs.length);
+  for (const item of layout.items) assert.equal(layout.paragraphs[item.paragraph].slice(item.start, item.start + item.text.length), item.text);
+});
+test('an unmappable chunk fails instead of highlighting unrelated text', () => {
+  assert.throws(() => readingLayout('Real source.', [{ text: 'Different text.', paragraph: 0 }]), /could not be mapped/);
+});
+
+test('lists retain line breaks while word boundaries map through normalized whitespace', () => {
+  const text = 'A list:\n• First  point\n• 🙂 Second point';
+  const layout = readingLayout(text, core.passages(text));
+  assert.equal(layout.paragraphs[0], text);
+  for (const item of layout.items) {
+    for (const word of item.text.matchAll(/\S+/gu)) {
+      assert.equal(text.slice(item.offsets[word.index], item.offsets[word.index + word[0].length]), word[0]);
+    }
+  }
+});

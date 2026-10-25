@@ -18,7 +18,7 @@ release needs its own review of store terms and distribution obligations.
 Third-party code, dependencies and downloaded models retain their upstream
 licences. The root GPL notice does not relicense those components. In particular,
 the adapted Kitten input preparation remains subject to its retained Apache-2.0
-notice in `notices/KittenTTS-LICENSE.txt`. See
+notice in `docs/notices/KittenTTS-LICENSE.txt`. See
 [THIRD_PARTY.md](https://github.com/ahmednajaf/openread/blob/master/THIRD_PARTY.md)
 for the dependency inventory and model provenance. Model weights and Python
 environments are downloaded during setup and are not included in the repository.

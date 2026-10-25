@@ -12,4 +12,4 @@ node_modules/
 # Local launch drafts and hosting/build state
 launch/
 .vercel/
-website/dist/
+app/website/dist/

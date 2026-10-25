@@ -10,13 +10,13 @@ You do **not** need Node, Homebrew, Xcode, an API key, or an account for the fol
 
 ## 2. Set up the voices once
 
-Double-click **Set Up OpenRead.command** in the folder. A Terminal window will show progress. It installs OpenRead's private packages and downloads about **586 MB** of voice/alignment models. Kitten’s Kiki is the default voice; Kokoro is included as an alternative. It leaves your other Python projects alone.
+Double-click **Set Up OpenRead.command** in the folder. A Terminal window will show progress. It installs OpenRead's private packages and downloads about **586 MB** of app/voice/alignment models. Kitten’s Kiki is the default voice; Kokoro is included as an alternative. It leaves your other Python projects alone.
 
 If it says Python is missing, install **Python 3.13** using the macOS installer from [python.org](https://www.python.org/downloads/macos/). Choose a 3.13 release, not a newer Python series. Open the installer’s **Install Certificates.command** once, then double-click Set Up OpenRead.command again. OpenRead also accepts Python 3.11 and 3.12.
 
 When it says **Ready**, setup is finished. Internet is needed for setup; the installed voices run locally afterward. Initial setup can take several minutes or longer on a slow connection. If a download fails, run setup again.
 
-If macOS prevents a downloaded command file from opening, follow the file’s system-provided security prompt only after checking that you downloaded this repository intentionally. There is no need to disable Gatekeeper or change global security settings. If Finder says the file is not executable, the manual setup commands are in README.md.
+If macOS prevents a downloaded command file from opening, follow the file’s system-provided security prompt only after checking that you downloaded this repository intentionally. There is no need to disable Gatekeeper or change global security settings. If Finder says the file is not executable, the manual setup commands are in docs/DEVELOPMENT.md.
 
 ## 3. Start OpenRead
 

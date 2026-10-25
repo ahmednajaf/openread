@@ -1,2 +1,2 @@
 #!/bin/zsh
-exec /bin/zsh "${0:A:h:h}/scripts/launcher.sh" dictation
+exec /bin/zsh "${0:A:h:h}/dev/scripts/launcher.sh" dictation

@@ -16,9 +16,9 @@ Discuss substantial features in an issue before investing time in a large change
 
 1. Fork the repository and make a branch for one focused change.
 2. Follow [GETTING_STARTED.md](GETTING_STARTED.md) for local setup. For source
-   development, use Node 18+ and Python 3.11–3.13.
+   development, use Node 22+ and Python 3.11–3.13.
 3. Run `npm ci`, `npm run build` and `npm test`. Include relevant browser/model
-   checks when changing playback or a local integration; the README lists them.
+   checks when changing playback or a local integration; the development guide lists them.
 4. Explain the problem, the resulting behaviour and how you checked it. Include
    screenshots for visual changes and the browser tested for extension changes.
 5. Open a pull request. Ahmed (@ahmednajaf) reviews changes and decides whether to

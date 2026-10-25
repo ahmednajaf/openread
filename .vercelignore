@@ -8,4 +8,4 @@ test-results
 __pycache__
 *.pyc
 .DS_Store
-website/dist
+app/website/dist
