@@ -47,6 +47,8 @@ class EndpointTests(unittest.TestCase):
     def setUpClass(cls):
         class FakeVoice:
             def synthesize(self, text, voice):
+                if text == 'alignment failure fixture':
+                    raise server.kitten.VoiceError('voice_alignment_failed')
                 return {'audio': 'fake-wav', 'voice': voice, 'words': [{'offset': 0, 'length': len(text), 'start': 0, 'end': 1}]}
         cls.http = server.make_server(FakeVoice(), port=0)
         cls.thread = threading.Thread(target=cls.http.serve_forever, daemon=True)
@@ -80,6 +82,14 @@ class EndpointTests(unittest.TestCase):
         status, _, body = self.request('POST', '/synthesize', json.dumps({'text': 'hello', 'voice': 'bf_emma'}), {'X-OpenRead': '1', 'Content-Type': 'application/json'})
         self.assertEqual(status, 200)
         self.assertEqual(json.loads(body)['voice'], 'bf_emma')
+
+    def test_voice_failure_is_distinct_from_invalid_input_or_connection_failure(self):
+        status, _, body = self.request('POST', '/synthesize', json.dumps({'text': 'alignment failure fixture', 'voice': 'kitten:rosie'}), {'X-OpenRead': '1', 'Content-Type': 'application/json'})
+        self.assertEqual(status, 422)
+        data = json.loads(body)
+        self.assertEqual(data['code'], 'voice_alignment_failed')
+        self.assertNotIn('fixture', data['error'])
+
 
     def test_reading_app_serves_built_local_assets_without_opening_api_access(self):
         status, headers, body = self.request('GET', '/')

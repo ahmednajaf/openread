@@ -16,6 +16,20 @@ ALIASES = {'bella': 'expr-voice-2-f', 'jasper': 'expr-voice-2-m', 'luna': 'expr-
 SYMBOLS = '$' + ';:,.!?¡¿—…"«»"" ' + 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz' + "ɑɐɒæɓʙβɔɕçɗɖðʤəɘɚɛɜɝɞɟʄɡɠɢʛɦɧħɥʜɨɪʝɭɬɫɮʟɱɯɰŋɳɲɴøɵɸθœɶʘɹɺɾɻʀʁɽʂʃʈʧʉʊʋⱱʌɣɤʍχʎʏʑʐʒʔʡʕʢǀǁǂǃˈˌːˑʼʴʰʱʲʷˠˤ˞↓↑→↗↘'̩'ᵻ"
 
 
+class VoiceError(ValueError):
+    """Fixed, public-facing errors; never include the user's source text."""
+    MESSAGES = {
+        'voice_setup_required': 'Run setup/Set Up More Voices.command, then restart OpenRead.',
+        'voice_passage_complex': 'This passage is too complex for this voice. Try a Kokoro voice.',
+        'voice_alignment_failed': 'This voice could not align this passage. Try another voice.',
+        'voice_empty_audio': 'This voice did not produce usable audio. Try another voice.',
+    }
+
+    def __init__(self, code):
+        self.code = code
+        super().__init__(self.MESSAGES[code])
+
+
 def ready():
     import importlib.util
     return importlib.util.find_spec('faster_whisper') is not None and all((ROOT / '.local/kitten-mini' / name).exists() for name in ('kitten_tts_mini_v0_8.onnx', 'voices.npz', 'sources.json')) and (ROOT / '.local/whisper-base/model.bin').exists()
@@ -63,13 +77,23 @@ def align_transcript(text, recognized, duration):
     return words
 
 
+def speech_alignment(text, recognized, duration):
+    words = align_transcript(text, recognized, duration)
+    # Whisper often drops isolated headings, initials and one-word replies.
+    # Keep their valid audio; mark duration-based timing explicitly rather than
+    # rejecting the entire reading. Longer clips still require recognized speech.
+    if not words or not recognized and (len(words) > 5 or duration > 8):
+        raise VoiceError('voice_alignment_failed')
+    return words, 'whisper-word-alignment' if recognized else 'estimated-duration'
+
+
 class KittenVoice:
     def __init__(self):
         import numpy as np
         import onnxruntime as ort
         import phonemizer
         if not ready():
-            raise ValueError('Run setup/Set Up More Voices.command first, then restart OpenRead.')
+            raise VoiceError('voice_setup_required')
         options = ort.SessionOptions(); options.intra_op_num_threads = 4
         self.session = ort.InferenceSession(str(ROOT / '.local/kitten-mini/kitten_tts_mini_v0_8.onnx'), sess_options=options, providers=['CPUExecutionProvider'])
         self.voices = np.load(ROOT / '.local/kitten-mini/voices.npz', allow_pickle=False)
@@ -87,22 +111,22 @@ class KittenVoice:
             sounds = ' '.join(re.findall(r'\w+|[^\w\s]', sounds))
             tokens = [0] + [self.vocab[c] for c in sounds if c in self.vocab] + [0]
             if len(tokens) > 510:
-                raise ValueError('This passage is too complex for Kitten Mini. Choose a Kokoro voice.')
+                raise VoiceError('voice_passage_complex')
             ref = min(len(section), self.voices[key].shape[0] - 1)
             result = self.session.run(None, {'input_ids': np.array([tokens], dtype=np.int64), 'style': self.voices[key][ref:ref + 1], 'speed': np.array([1.0], dtype=np.float32)})
             samples = np.asarray(result[0]).reshape(-1)
             audio_parts.append(samples[:-5000] if len(samples) > 5000 else samples)
         audio = np.concatenate(audio_parts)
+        if not audio.size or not np.all(np.isfinite(audio)) or np.max(np.abs(audio)) < 1e-5:
+            raise VoiceError('voice_empty_audio')
         rate = 24000; duration = len(audio) / rate
         # Whisper receives 16 kHz samples and aligns recognized words back to
         # exact source offsets. These boundaries are explicitly approximate.
         resampled = np.interp(np.arange(int(len(audio) * 16000 / rate)) * rate / 16000, np.arange(len(audio)), audio).astype(np.float32)
         recognized = features.whisper_word_timings(resampled, text)
-        words = align_transcript(text, recognized, duration)
-        if not words or not recognized:
-            raise ValueError('Kitten audio could not be aligned. Choose a Kokoro voice for this passage.')
+        words, timing_source = speech_alignment(text, recognized, duration)
         output = io.BytesIO()
         with wave.open(output, 'wb') as wav:
             wav.setnchannels(1); wav.setsampwidth(2); wav.setframerate(rate)
             wav.writeframes((np.clip(audio, -1, 1) * 32767).astype('<i2').tobytes())
-        return {'audio': base64.b64encode(output.getvalue()).decode('ascii'), 'words': words, 'duration': round(duration, 4), 'voice': voice, 'timingSource': 'whisper-word-alignment'}
+        return {'audio': base64.b64encode(output.getvalue()).decode('ascii'), 'words': words, 'duration': round(duration, 4), 'voice': voice, 'timingSource': timing_source}

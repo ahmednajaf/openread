@@ -104,6 +104,8 @@ Normalized speech text retains offsets into original text nodes, including words
 
 Article extraction is heuristic and won't be perfect on every site. The extension cannot read inside Safari’s PDF viewer, browser-internal pages, embedded frames, or closed shadow roots. Import PDFs/images into the companion workspace for text extraction or macOS OCR. English is strongest; the additional exposed languages remain experimental. Keep the tab open; multiple tabs can play independently, so use one at a time.
 
+Kitten uses approximate Whisper word alignment. If Whisper omits a short clip of at most five spoken words and eight seconds, usable audio still plays with duration-based word estimates marked `estimated: true` and `timingSource: estimated-duration`. Longer unrecognized clips report an alignment error. Empty, silent or non-finite audio is rejected. The extension distinguishes these voice errors from an offline helper, timeouts, denied access and a busy service.
+
 ## Privacy and permissions
 
 On `web.whatsapp.com`, the extension defaults to chat mode and extracts loaded message bodies inside `#main`, in DOM order, using `data-pre-plain-text` sender metadata. Outgoing bubbles use “You said”. Sender introductions have no highlight ranges; message text keeps its exact DOM mapping. Quoted copies, controls and drafts are excluded. There is no automatic incoming-message playback or background chat collection. Refresh explicitly replaces the snapshot. A source validator and mutation observer stop stale conversation audio, including synthesis already in flight. WhatsApp's undocumented markup can change; empty/unsupported layouts do not fall back to whole-page extraction.

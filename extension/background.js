@@ -1,6 +1,19 @@
 /* global browser, chrome */
 const api = globalThis.browser || globalThis.chrome;
 const LOCAL = "http://127.0.0.1:8765";
+const VOICE_ERRORS = {
+  voice_setup_required: 'Run setup/Set Up More Voices.command, then restart OpenRead.',
+  voice_passage_complex: 'This passage is too complex for this voice. Try a Kokoro voice.',
+  voice_alignment_failed: 'This voice could not align this passage. Try another voice.',
+  voice_empty_audio: 'This voice did not produce usable audio. Try another voice.'
+};
+function serviceError(status, code) {
+  if (status === 422 && Object.hasOwn(VOICE_ERRORS, code)) return VOICE_ERRORS[code];
+  if (status === 429) return 'The local voice helper is busy. Wait a moment, then try again.';
+  if (status === 403) return 'Your browser could not access the local voice helper. Reload OpenRead and check its website access permissions.';
+  if (status === 400) return 'This voice request could not be read. Refresh the page and try again.';
+  return 'The local voice helper could not generate this passage. Try another voice or restart OpenRead.';
+}
 
 // All local-service requests originate here, not in the website's context.
 // No caller-selected URLs, arbitrary endpoints, or remote speech providers.
@@ -27,7 +40,7 @@ api.runtime.onMessage.addListener((message, sender, respond) => {
   (async () => {
     const speech = message.type === "synthesize";
     if (speech && (typeof message.text !== "string" || message.text.length > 1600)) {
-      throw new Error("This passage is too long.");
+      return { ok: false, error: 'Choose a passage of up to 1,600 characters.' };
     }
     const response = await fetch(`${LOCAL}/${speech ? "synthesize" : "health"}`, {
       method: speech ? "POST" : "GET",
@@ -35,11 +48,18 @@ api.runtime.onMessage.addListener((message, sender, respond) => {
       ...(speech ? { body: JSON.stringify({ text: message.text, voice: message.voice || 'af_heart' }) } : {}),
       signal: AbortSignal.timeout(speech ? 90000 : 2500)
     });
-    if (!response.ok) throw new Error("The local voice service couldn't complete this request.");
-    return response.json();
-  })().then((data) => respond({ ok: true, ...data }), () => respond({
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      return { ok: false, error: serviceError(response.status, data?.code) };
+    }
+    const data = await response.json().catch(() => null);
+    if (!data || typeof data !== 'object') return { ok: false, error: 'The local voice helper returned an unreadable response. Restart OpenRead and try again.' };
+    return { ok: true, ...data };
+  })().then(respond, error => respond({
     ok: false,
-    error: "Natural voices aren't connected. Start OpenRead's local voice helper on your Mac, then try again."
+    error: ['TimeoutError', 'AbortError'].includes(error?.name)
+      ? 'The local voice helper took too long. Try a shorter passage or restart OpenRead.'
+      : "Natural voices aren't connected. Start OpenRead's local voice helper on your Mac, then try again."
   }));
   return true;
 });

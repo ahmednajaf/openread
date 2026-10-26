@@ -1,4 +1,4 @@
-# Feature coverage — OpenRead 0.4.1
+# Feature coverage — OpenRead 0.4.2
 
 Compared with the **Speechify Reader Premium** list checked on **25 October 2026** at [Speechify’s pricing page](https://speechify.com/pricing/). Speechify Studio and its developer API are separate products; their voice cloning, dubbing and licensed celebrity voices are not included in this comparison. OpenRead is independent and does not use Speechify code or voices.
 

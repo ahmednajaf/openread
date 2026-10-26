@@ -12,6 +12,7 @@ from urllib.parse import urlsplit
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import features
+import kitten
 import wave
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -278,6 +279,8 @@ def make_server(voice, port=PORT, allow_preview=False, library=None):
                         self.send_json(200, synthesize(text, payload.get('voice', 'af_heart')))
                     finally:
                         slots.release()
+            except kitten.VoiceError as error:
+                self.send_json(422, {'error': str(error), 'code': error.code})
             except (features.ToolError, ValueError, UnicodeError) as error:
                 self.send_json(400, {'error': str(error) if isinstance(error, features.ToolError) else 'Invalid request or text.'})
             except Exception:

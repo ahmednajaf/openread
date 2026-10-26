@@ -114,6 +114,7 @@ The models occupy disk space locally: `.local/models` for voices, `.local/whispe
 | --- | --- |
 | Natural voices aren't connected | Start OpenRead.command and leave its window open. Restart the helper after source updates. |
 | New controls missing after an update | Reload the extension in browser settings, then refresh the article. |
+| A voice cannot align or generate a passage | Try another voice. Short headings use approximate timing if Whisper misses them; update OpenRead and restart the helper if an older version reports this as a connection error. |
 | AI setup needed | Start Ollama and run setup/Set Up AI.command. Open Setup & privacy in the workspace to check readiness. |
 | Dictation setup needed | Run setup/Set Up Dictation.command. Microphone recording also needs your browser permission. |
 | Scanned PDF won't import | Scan & Listen currently needs macOS. Try a smaller section: 20 scanned pages maximum. |

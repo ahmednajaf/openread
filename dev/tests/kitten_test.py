@@ -10,6 +10,25 @@ import features
 
 
 class AlignmentTests(unittest.TestCase):
+    def test_short_speech_without_whisper_words_keeps_estimated_timings(self):
+        words, source = kitten.speech_alignment('I', [], .75)
+        self.assertEqual(source, 'estimated-duration')
+        self.assertEqual(words, [{'offset': 0, 'length': 1, 'start': 0, 'end': .75, 'estimated': True}])
+        words, _ = kitten.speech_alignment('🌊 Yes, see you there.', [], 2)
+        self.assertEqual(words[0]['offset'], 3)
+        self.assertTrue(all(word['end'] > word['start'] for word in words))
+
+    def test_long_unrecognized_or_unreadable_speech_still_reports_alignment_failure(self):
+        for text, duration in [('one two three four five six', 3), ('Hi', 9), ('…', 1)]:
+            with self.assertRaises(kitten.VoiceError) as failure:
+                kitten.speech_alignment(text, [], duration)
+            self.assertEqual(failure.exception.code, 'voice_alignment_failed')
+
+    def test_recognized_short_speech_keeps_whisper_timing_source(self):
+        words, source = kitten.speech_alignment('Yes.', [SimpleNamespace(word='Yes.', start=.2, end=.7)], 1)
+        self.assertEqual(source, 'whisper-word-alignment')
+        self.assertEqual(words[0]['start'], .2)
+
     def test_unrecognized_run_does_not_freeze_first_word(self):
         words = kitten.align_transcript('One small missed phrase ends.', [
             SimpleNamespace(word='One', start=0, end=.4),
