@@ -174,3 +174,7 @@ The Python checks need their corresponding optional packages/models. Browser tes
 Run `npm run site:dev` to build and preview the static site at http://127.0.0.1:4190/. The page uses a prerecorded Kiki sample and demo; it does not expose the Python helper or accept document uploads. See [website notes](../app/website/README.md) for the asset inventory.
 
 Vercel builds with `npm ci` and `npm run site:build`, serving only `app/website/dist/` as configured in `vercel.json`. Set `SITE_URL` to the production HTTPS origin for canonical and social links, when deploying a fork. Deploy with the official Vercel CLI after signing in; authentication and `.vercel/` stay local. The app and model downloads continue to run on each user's Mac.
+
+## Native mobile
+
+SwiftUI iPhone/iPad and Kotlin/Compose Android previews live in `app/mobile`. See [mobile setup and checks](MOBILE.md) for builds, device setup and current scope. The mobile voice engine runs on the phone and does not use the desktop helper.

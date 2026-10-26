@@ -1,0 +1,3 @@
+KittenML/KittenTTS-web @ c846fe92858f3447f4912226471f5a63983b3f94
+https://github.com/KittenML/KittenTTS-web/tree/c846fe92858f3447f4912226471f5a63983b3f94/vendor/cephonemizer
+Original files, Apache-2.0; retained headers. Android JNI bridge is separate OpenRead GPL-3.0-or-later code.

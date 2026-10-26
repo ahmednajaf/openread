@@ -13,3 +13,14 @@ node_modules/
 launch/
 .vercel/
 app/website/dist/
+
+# Native mobile build and signing state
+.gradle/
+.cxx/
+.kotlin/
+local.properties
+*.jks
+*.keystore
+*.p12
+*.p8
+*.mobileprovision

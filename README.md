@@ -23,6 +23,8 @@ No account. No subscription. Your text is processed on your device.
 
 This is an early release with manual installation. Setup downloads local models; keep the helper running while you listen. English works best.
 
+**Native mobile previews:** [iPhone/iPad and Android setup](docs/MOBILE.md). These run voices directly on your phone; they are developer builds, not store releases.
+
 ## Contribute or support
 
 Bug reports, accessibility feedback, documentation and code contributions are welcome. Read [how to contribute](CONTRIBUTING.md), then open an issue or pull request. Ahmed reviews proposed changes.

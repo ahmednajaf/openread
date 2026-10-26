@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.22.1)
+project(openread_phonemizer LANGUAGES CXX)
+set(PHONEMIZER "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../shared/phonemizer")
+add_library(openread_phonemizer SHARED bridge.cpp "${PHONEMIZER}/phonemizer.cpp")
+target_include_directories(openread_phonemizer PRIVATE "${PHONEMIZER}")
+target_compile_features(openread_phonemizer PRIVATE cxx_std_17)
+target_link_options(openread_phonemizer PRIVATE "-Wl,-z,max-page-size=16384")
