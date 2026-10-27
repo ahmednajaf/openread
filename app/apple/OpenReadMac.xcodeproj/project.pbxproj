@@ -1,0 +1,720 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		02ECA7858BB3881252F4A40A /* VoiceEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78781A30B5871BB35CFF924C /* VoiceEngine.swift */; };
+		0943BED8D6D0F46F34120E5C /* LibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BD84E703040B96F80531B7A /* LibraryStore.swift */; };
+		0FDAB2BF04FC8A84E04B635C /* NOTICES.txt in Resources */ = {isa = PBXBuildFile; fileRef = 2E232291F6D0F04F4F1F8A5E /* NOTICES.txt */; };
+		13EEFD4D49AC713E6EC37A0C /* onnxruntime in Frameworks */ = {isa = PBXBuildFile; productRef = A21A8619B483A0DD50A83396 /* onnxruntime */; };
+		14BB0DE8041B20B8BEB02100 /* popup.html in Resources */ = {isa = PBXBuildFile; fileRef = FEFC8844988A036624938F52 /* popup.html */; };
+		1AFB01A1166AB57688F19D07 /* espeak-ng-data in Resources */ = {isa = PBXBuildFile; fileRef = 49E26A9F25682395B2E423B9 /* espeak-ng-data */; };
+		1BF4A4F27B8EF180AC206C71 /* models.json in Resources */ = {isa = PBXBuildFile; fileRef = CC202F003D973B4FC6CAD6A0 /* models.json */; };
+		1FF8E31B433FCFDF1A78E4C7 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B5F9247DC6FA57F242892F30 /* PrivacyInfo.xcprivacy */; };
+		21AD304F59AC9FC00FCED86E /* espeak-ng-data in Resources */ = {isa = PBXBuildFile; fileRef = 49E26A9F25682395B2E423B9 /* espeak-ng-data */; };
+		225F4F7F08FBD5E7EACBD6A9 /* Reading.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9E9FAAA23B2DC950FEDB4D8 /* Reading.swift */; };
+		2426BE57539A018B05775024 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 1A99C7E9539B07345717BAF2 /* manifest.json */; };
+		2548F4A2EFF53647364E5446 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 70D3C582545AEDBF3587CF20 /* PrivacyInfo.xcprivacy */; };
+		340DEB803E073B2D55AE7AE3 /* icons in Resources */ = {isa = PBXBuildFile; fileRef = B56E65B9178B025BF7924C7A /* icons */; };
+		3A0B2143F52F1DE41602F46E /* background.js in Resources */ = {isa = PBXBuildFile; fileRef = 338B03B298E715396A3FD1AC /* background.js */; };
+		50412D50DC73E82DE41609D0 /* OpenReadInference in Frameworks */ = {isa = PBXBuildFile; productRef = 443C7F2D2D3A01F485AA1212 /* OpenReadInference */; };
+		5A82D4DD0151949057BEBCE1 /* OpenReadMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E220BD30E3786B1581D91B10 /* OpenReadMacApp.swift */; };
+		5A8AB2B0BBD10394487E598C /* content.js in Resources */ = {isa = PBXBuildFile; fileRef = 2B0408478E82EA15F4DD70C4 /* content.js */; };
+		68DC08EBF44C53A84696040C /* extract.js in Resources */ = {isa = PBXBuildFile; fileRef = 4C06774AF888660709F3E2C0 /* extract.js */; };
+		6E8A7E18CF72EA91458CFE51 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 724042937F99E7C875E43A79 /* Assets.xcassets */; };
+		7D1800AA3410D042A2065FBA /* Reading.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9E9FAAA23B2DC950FEDB4D8 /* Reading.swift */; };
+		80AA2FCFE1E299D18EEF17F2 /* models.json in Resources */ = {isa = PBXBuildFile; fileRef = CC202F003D973B4FC6CAD6A0 /* models.json */; };
+		834638C73369F6760FF2F54D /* OpenReadInference in Frameworks */ = {isa = PBXBuildFile; productRef = FC574252B7F14EEEB681B50C /* OpenReadInference */; };
+		837F1ED3D84915B48B27A5D5 /* glass.js in Resources */ = {isa = PBXBuildFile; fileRef = B554372FB7126218D08D9C87 /* glass.js */; };
+		843929D175227C619F89BBBF /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BC41B100BDD094C97FCF205 /* SafariWebExtensionHandler.swift */; };
+		9C7A19DD972710C072DFB09A /* VoiceEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78781A30B5871BB35CFF924C /* VoiceEngine.swift */; };
+		9E5A4710B790E10CA89AF769 /* core.js in Resources */ = {isa = PBXBuildFile; fileRef = 287E184DB2B9A6B0E18071D8 /* core.js */; };
+		AD578F9E3531F8D906C95825 /* OpenReadSpeech in Frameworks */ = {isa = PBXBuildFile; productRef = 912FBFDC08DD9E3F577548FC /* OpenReadSpeech */; };
+		B142C5FE9D9B7B14DB1B5639 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 751DD2CC728C8E6EB505F979 /* ZIPFoundation */; };
+		B7A50152602354925988CE63 /* popup.css in Resources */ = {isa = PBXBuildFile; fileRef = 0F186E6BD541C1FED54AE746 /* popup.css */; };
+		BE12C4A5EE1C485BC26979AE /* popup.js in Resources */ = {isa = PBXBuildFile; fileRef = 197C6669E2E894A62640A880 /* popup.js */; };
+		BECB0A5CDB0DA243F6D99889 /* settings.js in Resources */ = {isa = PBXBuildFile; fileRef = 9A50AE6B9C7CF754037A2C81 /* settings.js */; };
+		C14D664E2FEC1FAC4F9C4F9F /* OpenReadSpeech in Frameworks */ = {isa = PBXBuildFile; productRef = 18A4328277655CCC2B986C70 /* OpenReadSpeech */; };
+		D1CA662719E2B3174B92E202 /* OpenReadMacSafari.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 21EE2EA22EF9F834B6F7062D /* OpenReadMacSafari.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		D25DD3BBE77CDB29BAD61FB8 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 3AECDC078C74B18A216C4281 /* ZIPFoundation */; };
+		D3C5D52AFC030DCFE23C569F /* LibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BD84E703040B96F80531B7A /* LibraryStore.swift */; };
+		D73FBC2B8FEC19F32260BFE1 /* player.js in Resources */ = {isa = PBXBuildFile; fileRef = EC099B3CA5EA270ACBD96DE2 /* player.js */; };
+		DF8D2E6568CF3C0C692E1DE2 /* KittenInference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48E261082E29F2EC0A9AD3AA /* KittenInference.swift */; };
+		E1413D21948A8D0608C53450 /* KittenInference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48E261082E29F2EC0A9AD3AA /* KittenInference.swift */; };
+		E43EA014A8CDAFD65E9709D2 /* reader.css in Resources */ = {isa = PBXBuildFile; fileRef = 920E9E481DE7D74C83853868 /* reader.css */; };
+		ECA1FF4189ED36A2608DDEA1 /* onnxruntime in Frameworks */ = {isa = PBXBuildFile; productRef = DAD5F03FD6187A4ADD3AC221 /* onnxruntime */; };
+		FD619FBFF32933C9E4910132 /* highlighter.js in Resources */ = {isa = PBXBuildFile; fileRef = BFF24140509AB0AB347E0C06 /* highlighter.js */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		02E82055C189E38F2767B272 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F8EDD51D9EFD8DFEC68540CC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 121499269339FDD6094C1505;
+			remoteInfo = OpenReadMacSafari;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		202C455F256555CF561551C6 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				D1CA662719E2B3174B92E202 /* OpenReadMacSafari.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		0A97F42A1E5754E66DB0E450 /* Mac.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Mac.entitlements; sourceTree = "<group>"; };
+		0F186E6BD541C1FED54AE746 /* popup.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = popup.css; sourceTree = "<group>"; };
+		197C6669E2E894A62640A880 /* popup.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = popup.js; sourceTree = "<group>"; };
+		1A99C7E9539B07345717BAF2 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = manifest.json; sourceTree = "<group>"; };
+		21EE2EA22EF9F834B6F7062D /* OpenReadMacSafari.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = OpenReadMacSafari.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		287E184DB2B9A6B0E18071D8 /* core.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = core.js; sourceTree = "<group>"; };
+		2B0408478E82EA15F4DD70C4 /* content.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = content.js; sourceTree = "<group>"; };
+		2E232291F6D0F04F4F1F8A5E /* NOTICES.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = NOTICES.txt; sourceTree = "<group>"; };
+		338B03B298E715396A3FD1AC /* background.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = background.js; sourceTree = "<group>"; };
+		380CEB28FB0D6EBDA65C931C /* speech */ = {isa = PBXFileReference; lastKnownFileType = folder; name = speech; path = ../mobile/shared/speech; sourceTree = SOURCE_ROOT; };
+		3BC41B100BDD094C97FCF205 /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
+		48E261082E29F2EC0A9AD3AA /* KittenInference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KittenInference.swift; sourceTree = "<group>"; };
+		49E26A9F25682395B2E423B9 /* espeak-ng-data */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "espeak-ng-data"; path = "../mobile/shared/speech/espeak-ng-data"; sourceTree = SOURCE_ROOT; };
+		4C06774AF888660709F3E2C0 /* extract.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = extract.js; sourceTree = "<group>"; };
+		5BD84E703040B96F80531B7A /* LibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryStore.swift; sourceTree = "<group>"; };
+		70D3C582545AEDBF3587CF20 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		71C113CE4F2868B9272C4490 /* OpenReadMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OpenReadMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		724042937F99E7C875E43A79 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		77365E0EBF223372201FADE7 /* inference */ = {isa = PBXFileReference; lastKnownFileType = folder; name = inference; path = ../mobile/shared/inference; sourceTree = SOURCE_ROOT; };
+		78781A30B5871BB35CFF924C /* VoiceEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceEngine.swift; sourceTree = "<group>"; };
+		920E9E481DE7D74C83853868 /* reader.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = reader.css; sourceTree = "<group>"; };
+		9A50AE6B9C7CF754037A2C81 /* settings.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = settings.js; sourceTree = "<group>"; };
+		A7E06B830AEC65CBAE804B2D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		B554372FB7126218D08D9C87 /* glass.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = glass.js; sourceTree = "<group>"; };
+		B56E65B9178B025BF7924C7A /* icons */ = {isa = PBXFileReference; lastKnownFileType = folder; name = icons; path = SafariExtension/Resources/icons; sourceTree = SOURCE_ROOT; };
+		B5F9247DC6FA57F242892F30 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		B9E9FAAA23B2DC950FEDB4D8 /* Reading.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reading.swift; sourceTree = "<group>"; };
+		BFF24140509AB0AB347E0C06 /* highlighter.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = highlighter.js; sourceTree = "<group>"; };
+		CC202F003D973B4FC6CAD6A0 /* models.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = models.json; sourceTree = "<group>"; };
+		E220BD30E3786B1581D91B10 /* OpenReadMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenReadMacApp.swift; sourceTree = "<group>"; };
+		EC099B3CA5EA270ACBD96DE2 /* player.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = player.js; sourceTree = "<group>"; };
+		FEFC8844988A036624938F52 /* popup.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = popup.html; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		456A0EC94B8AA9832C3535A1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				50412D50DC73E82DE41609D0 /* OpenReadInference in Frameworks */,
+				C14D664E2FEC1FAC4F9C4F9F /* OpenReadSpeech in Frameworks */,
+				13EEFD4D49AC713E6EC37A0C /* onnxruntime in Frameworks */,
+				B142C5FE9D9B7B14DB1B5639 /* ZIPFoundation in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5D96DA4A5554294320581750 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				834638C73369F6760FF2F54D /* OpenReadInference in Frameworks */,
+				AD578F9E3531F8D906C95825 /* OpenReadSpeech in Frameworks */,
+				ECA1FF4189ED36A2608DDEA1 /* onnxruntime in Frameworks */,
+				D25DD3BBE77CDB29BAD61FB8 /* ZIPFoundation in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		110B72B9868D22A671185597 /* OpenRead */ = {
+			isa = PBXGroup;
+			children = (
+				48E261082E29F2EC0A9AD3AA /* KittenInference.swift */,
+				5BD84E703040B96F80531B7A /* LibraryStore.swift */,
+				78781A30B5871BB35CFF924C /* VoiceEngine.swift */,
+			);
+			name = OpenRead;
+			path = ../mobile/ios/OpenRead;
+			sourceTree = "<group>";
+		};
+		2F48222D3F3EDD17A9386095 = {
+			isa = PBXGroup;
+			children = (
+				49E26A9F25682395B2E423B9 /* espeak-ng-data */,
+				B56E65B9178B025BF7924C7A /* icons */,
+				6222181CFB44221DA8566906 /* MacApp */,
+				110B72B9868D22A671185597 /* OpenRead */,
+				7ACFF93EDE0BB977DB38D8B6 /* Packages */,
+				8ACCBB551F32585B5636064C /* Resources */,
+				BFA92D78807AF6168CA60AD6 /* SafariExtension */,
+				915A93CE63799762278EC90E /* shared */,
+				7FC04DEBA0C27B868FC7E705 /* swift */,
+				F5D22AD75D9B1D05F9CFA459 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		6222181CFB44221DA8566906 /* MacApp */ = {
+			isa = PBXGroup;
+			children = (
+				724042937F99E7C875E43A79 /* Assets.xcassets */,
+				A7E06B830AEC65CBAE804B2D /* Info.plist */,
+				0A97F42A1E5754E66DB0E450 /* Mac.entitlements */,
+				E220BD30E3786B1581D91B10 /* OpenReadMacApp.swift */,
+				B5F9247DC6FA57F242892F30 /* PrivacyInfo.xcprivacy */,
+			);
+			path = MacApp;
+			sourceTree = "<group>";
+		};
+		7ACFF93EDE0BB977DB38D8B6 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				77365E0EBF223372201FADE7 /* inference */,
+				380CEB28FB0D6EBDA65C931C /* speech */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		7FC04DEBA0C27B868FC7E705 /* swift */ = {
+			isa = PBXGroup;
+			children = (
+				B9E9FAAA23B2DC950FEDB4D8 /* Reading.swift */,
+			);
+			name = swift;
+			path = ../mobile/shared/swift;
+			sourceTree = "<group>";
+		};
+		8ACCBB551F32585B5636064C /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				338B03B298E715396A3FD1AC /* background.js */,
+				2B0408478E82EA15F4DD70C4 /* content.js */,
+				287E184DB2B9A6B0E18071D8 /* core.js */,
+				4C06774AF888660709F3E2C0 /* extract.js */,
+				B554372FB7126218D08D9C87 /* glass.js */,
+				BFF24140509AB0AB347E0C06 /* highlighter.js */,
+				1A99C7E9539B07345717BAF2 /* manifest.json */,
+				EC099B3CA5EA270ACBD96DE2 /* player.js */,
+				0F186E6BD541C1FED54AE746 /* popup.css */,
+				FEFC8844988A036624938F52 /* popup.html */,
+				197C6669E2E894A62640A880 /* popup.js */,
+				920E9E481DE7D74C83853868 /* reader.css */,
+				9A50AE6B9C7CF754037A2C81 /* settings.js */,
+			);
+			name = Resources;
+			path = SafariExtension/Resources;
+			sourceTree = "<group>";
+		};
+		915A93CE63799762278EC90E /* shared */ = {
+			isa = PBXGroup;
+			children = (
+				CC202F003D973B4FC6CAD6A0 /* models.json */,
+				2E232291F6D0F04F4F1F8A5E /* NOTICES.txt */,
+			);
+			name = shared;
+			path = ../mobile/shared;
+			sourceTree = "<group>";
+		};
+		BFA92D78807AF6168CA60AD6 /* SafariExtension */ = {
+			isa = PBXGroup;
+			children = (
+				70D3C582545AEDBF3587CF20 /* PrivacyInfo.xcprivacy */,
+				3BC41B100BDD094C97FCF205 /* SafariWebExtensionHandler.swift */,
+			);
+			path = SafariExtension;
+			sourceTree = "<group>";
+		};
+		F5D22AD75D9B1D05F9CFA459 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				71C113CE4F2868B9272C4490 /* OpenReadMac.app */,
+				21EE2EA22EF9F834B6F7062D /* OpenReadMacSafari.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		121499269339FDD6094C1505 /* OpenReadMacSafari */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A9B3F893688EBEAC162CA568 /* Build configuration list for PBXNativeTarget "OpenReadMacSafari" */;
+			buildPhases = (
+				7CEEB9BF0FE7993A219B85DC /* Sources */,
+				F36E255F1CD76518226CF3F4 /* Resources */,
+				456A0EC94B8AA9832C3535A1 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = OpenReadMacSafari;
+			packageProductDependencies = (
+				443C7F2D2D3A01F485AA1212 /* OpenReadInference */,
+				18A4328277655CCC2B986C70 /* OpenReadSpeech */,
+				A21A8619B483A0DD50A83396 /* onnxruntime */,
+				751DD2CC728C8E6EB505F979 /* ZIPFoundation */,
+			);
+			productName = OpenReadMacSafari;
+			productReference = 21EE2EA22EF9F834B6F7062D /* OpenReadMacSafari.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		5D06C29765796FD1F6F9333D /* OpenReadMac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 38FC35B4D6A07A6EFBD58B02 /* Build configuration list for PBXNativeTarget "OpenReadMac" */;
+			buildPhases = (
+				20ECC2B7767C909407EAD251 /* Sources */,
+				33ADFA7854169530802F66B8 /* Resources */,
+				5D96DA4A5554294320581750 /* Frameworks */,
+				202C455F256555CF561551C6 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				405CC59B24FEE2B01C356FFC /* PBXTargetDependency */,
+			);
+			name = OpenReadMac;
+			packageProductDependencies = (
+				FC574252B7F14EEEB681B50C /* OpenReadInference */,
+				912FBFDC08DD9E3F577548FC /* OpenReadSpeech */,
+				DAD5F03FD6187A4ADD3AC221 /* onnxruntime */,
+				3AECDC078C74B18A216C4281 /* ZIPFoundation */,
+			);
+			productName = OpenReadMac;
+			productReference = 71C113CE4F2868B9272C4490 /* OpenReadMac.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F8EDD51D9EFD8DFEC68540CC /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					121499269339FDD6094C1505 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					5D06C29765796FD1F6F9333D = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 3A863B1635697C036FDD566A /* Build configuration list for PBXProject "OpenReadMac" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 2F48222D3F3EDD17A9386095;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				4474115D37A5C676929580F6 /* XCRemoteSwiftPackageReference "onnxruntime-swift-package-manager" */,
+				BC509FF46BBC5D7FD7E789B4 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
+				C3ABE62F6C79C35ACEFA0A33 /* XCLocalSwiftPackageReference "../mobile/shared/inference" */,
+				AD1E9CF1C6F4FFFE58932D2F /* XCLocalSwiftPackageReference "../mobile/shared/speech" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = F5D22AD75D9B1D05F9CFA459 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				5D06C29765796FD1F6F9333D /* OpenReadMac */,
+				121499269339FDD6094C1505 /* OpenReadMacSafari */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		33ADFA7854169530802F66B8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6E8A7E18CF72EA91458CFE51 /* Assets.xcassets in Resources */,
+				0FDAB2BF04FC8A84E04B635C /* NOTICES.txt in Resources */,
+				1FF8E31B433FCFDF1A78E4C7 /* PrivacyInfo.xcprivacy in Resources */,
+				21AD304F59AC9FC00FCED86E /* espeak-ng-data in Resources */,
+				80AA2FCFE1E299D18EEF17F2 /* models.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F36E255F1CD76518226CF3F4 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2548F4A2EFF53647364E5446 /* PrivacyInfo.xcprivacy in Resources */,
+				3A0B2143F52F1DE41602F46E /* background.js in Resources */,
+				5A8AB2B0BBD10394487E598C /* content.js in Resources */,
+				9E5A4710B790E10CA89AF769 /* core.js in Resources */,
+				1AFB01A1166AB57688F19D07 /* espeak-ng-data in Resources */,
+				68DC08EBF44C53A84696040C /* extract.js in Resources */,
+				837F1ED3D84915B48B27A5D5 /* glass.js in Resources */,
+				FD619FBFF32933C9E4910132 /* highlighter.js in Resources */,
+				340DEB803E073B2D55AE7AE3 /* icons in Resources */,
+				2426BE57539A018B05775024 /* manifest.json in Resources */,
+				1BF4A4F27B8EF180AC206C71 /* models.json in Resources */,
+				D73FBC2B8FEC19F32260BFE1 /* player.js in Resources */,
+				B7A50152602354925988CE63 /* popup.css in Resources */,
+				14BB0DE8041B20B8BEB02100 /* popup.html in Resources */,
+				BE12C4A5EE1C485BC26979AE /* popup.js in Resources */,
+				E43EA014A8CDAFD65E9709D2 /* reader.css in Resources */,
+				BECB0A5CDB0DA243F6D99889 /* settings.js in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		20ECC2B7767C909407EAD251 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E1413D21948A8D0608C53450 /* KittenInference.swift in Sources */,
+				D3C5D52AFC030DCFE23C569F /* LibraryStore.swift in Sources */,
+				5A82D4DD0151949057BEBCE1 /* OpenReadMacApp.swift in Sources */,
+				7D1800AA3410D042A2065FBA /* Reading.swift in Sources */,
+				9C7A19DD972710C072DFB09A /* VoiceEngine.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7CEEB9BF0FE7993A219B85DC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DF8D2E6568CF3C0C692E1DE2 /* KittenInference.swift in Sources */,
+				0943BED8D6D0F46F34120E5C /* LibraryStore.swift in Sources */,
+				225F4F7F08FBD5E7EACBD6A9 /* Reading.swift in Sources */,
+				843929D175227C619F89BBBF /* SafariWebExtensionHandler.swift in Sources */,
+				02ECA7858BB3881252F4A40A /* VoiceEngine.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		405CC59B24FEE2B01C356FFC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 121499269339FDD6094C1505 /* OpenReadMacSafari */;
+			targetProxy = 02E82055C189E38F2767B272 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		2134A371B758ADAC7D38F3B0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = MacApp/Mac.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = MacApp/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(OPENREAD_BUNDLE_ID)";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		6F6EF08F4B4E1D85CD3FB0CA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = MacApp/Mac.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = MacApp/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(OPENREAD_BUNDLE_ID)";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		6FEC056523458BDD5C024402 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = SafariExtension/MacNative.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = SafariExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(OPENREAD_BUNDLE_ID).safari";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		82518E17B969595181277AFB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = SafariExtension/MacNative.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = SafariExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(OPENREAD_BUNDLE_ID).safari";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		FBF97DCE5BDD07A997ACF0EC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 5;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.5.1;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				OPENREAD_APP_GROUP = group.app.getopenread.reader;
+				OPENREAD_BUNDLE_ID = app.getopenread.reader;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		FF8AE5FE1B9BC49FEC69E944 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 5;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.5.1;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				OPENREAD_APP_GROUP = group.app.getopenread.reader;
+				OPENREAD_BUNDLE_ID = app.getopenread.reader;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		38FC35B4D6A07A6EFBD58B02 /* Build configuration list for PBXNativeTarget "OpenReadMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2134A371B758ADAC7D38F3B0 /* Debug */,
+				6F6EF08F4B4E1D85CD3FB0CA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		3A863B1635697C036FDD566A /* Build configuration list for PBXProject "OpenReadMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FF8AE5FE1B9BC49FEC69E944 /* Debug */,
+				FBF97DCE5BDD07A997ACF0EC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		A9B3F893688EBEAC162CA568 /* Build configuration list for PBXNativeTarget "OpenReadMacSafari" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				82518E17B969595181277AFB /* Debug */,
+				6FEC056523458BDD5C024402 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		AD1E9CF1C6F4FFFE58932D2F /* XCLocalSwiftPackageReference "../mobile/shared/speech" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../mobile/shared/speech;
+		};
+		C3ABE62F6C79C35ACEFA0A33 /* XCLocalSwiftPackageReference "../mobile/shared/inference" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../mobile/shared/inference;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		4474115D37A5C676929580F6 /* XCRemoteSwiftPackageReference "onnxruntime-swift-package-manager" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/microsoft/onnxruntime-swift-package-manager";
+			requirement = {
+				kind = exactVersion;
+				version = 1.24.2;
+			};
+		};
+		BC509FF46BBC5D7FD7E789B4 /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/weichsel/ZIPFoundation";
+			requirement = {
+				kind = exactVersion;
+				version = 0.9.19;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		18A4328277655CCC2B986C70 /* OpenReadSpeech */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = OpenReadSpeech;
+		};
+		3AECDC078C74B18A216C4281 /* ZIPFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BC509FF46BBC5D7FD7E789B4 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			productName = ZIPFoundation;
+		};
+		443C7F2D2D3A01F485AA1212 /* OpenReadInference */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = OpenReadInference;
+		};
+		751DD2CC728C8E6EB505F979 /* ZIPFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BC509FF46BBC5D7FD7E789B4 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			productName = ZIPFoundation;
+		};
+		912FBFDC08DD9E3F577548FC /* OpenReadSpeech */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = OpenReadSpeech;
+		};
+		A21A8619B483A0DD50A83396 /* onnxruntime */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4474115D37A5C676929580F6 /* XCRemoteSwiftPackageReference "onnxruntime-swift-package-manager" */;
+			productName = onnxruntime;
+		};
+		DAD5F03FD6187A4ADD3AC221 /* onnxruntime */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4474115D37A5C676929580F6 /* XCRemoteSwiftPackageReference "onnxruntime-swift-package-manager" */;
+			productName = onnxruntime;
+		};
+		FC574252B7F14EEEB681B50C /* OpenReadInference */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = OpenReadInference;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = F8EDD51D9EFD8DFEC68540CC /* Project object */;
+}

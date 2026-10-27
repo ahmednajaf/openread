@@ -87,6 +87,16 @@ def speech_alignment(text, recognized, duration):
     return words, 'whisper-word-alignment' if recognized else 'estimated-duration'
 
 
+def trim_silence(samples):
+    # Inspect only the bounded tail. Keep at least 100 ms of actual silence;
+    # never cut into a soft but audible ending or remove a fixed audio length.
+    silence = 0
+    while silence < min(len(samples), 7200) and abs(samples[len(samples) - silence - 1]) <= .0001:
+        silence += 1
+    trim = max(0, silence - 2400)
+    return samples[:len(samples) - trim] if trim else samples
+
+
 class KittenVoice:
     def __init__(self):
         import numpy as np
@@ -109,13 +119,13 @@ class KittenVoice:
         for section in features.sections(text, 320):
             sounds = self.phonemizer.phonemize([section])[0]
             sounds = ' '.join(re.findall(r'\w+|[^\w\s]', sounds))
-            tokens = [0] + [self.vocab[c] for c in sounds if c in self.vocab] + [0]
+            tokens = [0] + [self.vocab[c] for c in sounds if c in self.vocab] + [10, 0]
             if len(tokens) > 510:
                 raise VoiceError('voice_passage_complex')
             ref = min(len(section), self.voices[key].shape[0] - 1)
             result = self.session.run(None, {'input_ids': np.array([tokens], dtype=np.int64), 'style': self.voices[key][ref:ref + 1], 'speed': np.array([1.0], dtype=np.float32)})
             samples = np.asarray(result[0]).reshape(-1)
-            audio_parts.append(samples[:-5000] if len(samples) > 5000 else samples)
+            audio_parts.append(trim_silence(samples))
         audio = np.concatenate(audio_parts)
         if not audio.size or not np.all(np.isfinite(audio)) or np.max(np.abs(audio)) < 1e-5:
             raise VoiceError('voice_empty_audio')

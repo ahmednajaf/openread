@@ -10,6 +10,16 @@ import features
 
 
 class AlignmentTests(unittest.TestCase):
+    def test_silence_trimming_never_clips_audible_word_endings(self):
+        audible = [.2] * 7200
+        self.assertEqual(kitten.trim_silence(audible), audible)
+        padded = audible + [0.] * 9000
+        trimmed = kitten.trim_silence(padded)
+        self.assertEqual(trimmed[:len(audible)], audible)
+        self.assertGreaterEqual(len(trimmed), len(audible) + 2400)
+        self.assertGreaterEqual(len(trimmed), len(padded) - 4800)
+        self.assertEqual(kitten.trim_silence([.2] * 500), [.2] * 500)
+
     def test_short_speech_without_whisper_words_keeps_estimated_timings(self):
         words, source = kitten.speech_alignment('I', [], .75)
         self.assertEqual(source, 'estimated-duration')

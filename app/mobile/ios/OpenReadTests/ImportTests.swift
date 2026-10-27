@@ -4,6 +4,18 @@ import UIKit
 @testable import OpenRead
 
 final class ImportTests: XCTestCase {
+    func testSafariMappedModelProducesSpeechWithoutASecondWeightCopy() async throws {
+        let engine = VoiceEngine()
+        guard await engine.isInstalled() else { throw XCTSkip("Install the voice pack in the test app first.") }
+        try await engine.prepare(download: false) { _ in }
+        let mapped = try KittenInference(root: AppFiles.models, forSafari: true)
+        let text = "Tell me, Muse, the story of that resourceful man."
+        let clip = try mapped.generate(text, voice: "kiki")
+        XCTAssertGreaterThan(clip.duration, 0.1)
+        XCTAssertTrue(clip.wav.dropFirst(44).contains(where: { $0 != 0 }))
+        XCTAssertEqual(clip.words.count, ReadingText.words(in: text).count)
+        XCTAssertTrue(clip.words.allSatisfy { $0.end > $0.start && $0.end <= clip.duration })
+    }
     private func fixture(_ name: String, _ ext: String) throws -> URL {
         try XCTUnwrap(Bundle(for: Self.self).url(forResource: name, withExtension: ext))
     }

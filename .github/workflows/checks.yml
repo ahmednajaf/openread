@@ -21,5 +21,7 @@ jobs:
       - run: npm run build
       - run: npm run typecheck
       - run: npm run site:build
+      - run: node dev/scripts/build-apple-extension.cjs
+      - run: git diff --exit-code -- app/apple/SafariExtension/Resources/
       - run: git diff --exit-code -- extension/ app/reader/dist/
       - run: npm test

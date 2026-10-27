@@ -8,7 +8,7 @@ struct ReadingTextView: UIViewRepresentable {
     func makeUIView(context: Context) -> UITextView {
         let view = UITextView(); view.isEditable = false; view.isSelectable = true
         view.backgroundColor = .clear; view.adjustsFontForContentSizeCategory = true
-        view.textContainerInset = UIEdgeInsets(top: 20, left: 24, bottom: 160, right: 24)
+        view.textContainerInset = UIEdgeInsets(top: 20, left: 24, bottom: 32, right: 24)
         view.accessibilityLabel = "Reading text"
         return view
     }
@@ -21,7 +21,7 @@ struct ReadingTextView: UIViewRepresentable {
         }
         if let previous = context.coordinator.previous, NSMaxRange(previous) <= view.textStorage.length { view.textStorage.removeAttribute(.backgroundColor, range: previous) }
         if let range = highlighted, range.location >= 0, NSMaxRange(range) <= view.textStorage.length {
-            view.textStorage.addAttribute(.backgroundColor, value: UIColor.systemPurple.withAlphaComponent(0.2), range: range)
+            view.textStorage.addAttribute(.backgroundColor, value: UIColor.systemOrange.withAlphaComponent(0.24), range: range)
             if follow, let a = view.position(from: view.beginningOfDocument, offset: range.location), let b = view.position(from: a, offset: range.length), let target = view.textRange(from: a, to: b) {
                 let rect = view.firstRect(for: target)
                 let visible = CGRect(origin: view.contentOffset, size: view.bounds.size).insetBy(dx: 0, dy: 90)

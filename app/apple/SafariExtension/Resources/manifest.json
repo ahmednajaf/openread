@@ -1,0 +1,53 @@
+{
+  "manifest_version": 3,
+  "name": "OpenRead",
+  "version": "0.5.1",
+  "homepage_url": "https://getopenread.vercel.app",
+  "description": "Listen to the web, at your pace. Local voices, focused reading, no subscription.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "nativeMessaging"
+  ],
+  "background": {
+    "scripts": [
+      "background.js"
+    ],
+    "persistent": false
+  },
+  "action": {
+    "default_title": "Open OpenRead",
+    "default_icon": {
+      "16": "icons/16.png",
+      "32": "icons/32.png"
+    },
+    "default_popup": "popup.html"
+  },
+  "icons": {
+    "48": "icons/48.png",
+    "128": "icons/128.png",
+    "512": "icons/512.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "reader.css",
+        "icons/128.png"
+      ],
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ]
+    }
+  ],
+  "commands": {
+    "toggle-playback": {
+      "suggested_key": {
+        "default": "Alt+Shift+P",
+        "mac": "Alt+Shift+P"
+      },
+      "description": "Play or pause OpenRead"
+    }
+  }
+}

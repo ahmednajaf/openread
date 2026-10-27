@@ -41,12 +41,28 @@ The Odyssey excerpt in `dev/tests/fixtures/article/index.html`, `app/reader/src/
 
 The reading app and public website use React / React DOM / Scheduler (MIT), clsx (MIT), tailwind-merge (MIT) and Lucide React (ISC, with upstream icon attribution). The reading app also uses Tailwind CSS (MIT). TypeScript (Apache-2.0), esbuild (MIT) and the Tailwind CLI are build dependencies. Their upstream licences remain applicable. Built reading app JavaScript/CSS are committed for installation without Node; the corresponding sources live in `app/reader/src/` and `app/shared/components/`. The website retains the same notices at `/notices/ReadingApp-LICENSES.txt` and `/notices/GlassHeadlineHero-LICENSE.txt`. Its demo contains original OpenRead interface recordings, local Kitten narration and an original procedural music bed; it includes no commercial voice or third-party music recording.
 
-## Native mobile previews
+## Native apps and Safari
 
-Native source is under `app/mobile/`. Both apps download Kitten Mini weights and English pronunciation data only after the user chooses setup. Exact revisions, URLs, checksums and licences are recorded in `app/mobile/shared/models.json`; weights and OCR models are not committed or embedded in the APK. The eSpeak NG dictionary/rule data is GPL-3.0-or-later, with corresponding upstream source at the pinned revision. OpenRead's native code remains GPL-3.0-or-later.
+Native code lives in `app/mobile/` and `app/apple/`, under GPL-3.0-or-later.
+Kitten Mini neural weights and styles are optional, checksum-verified downloads;
+exact pins are in `app/mobile/shared/models.json`. They are not embedded in the
+apps. English pronunciation data is bundled, using the full eSpeak NG dictionary
+and phonemizer at revision `699e79690f23e2558d990a3a78b0050745b96932`
+(GPL-3.0-or-later). Portable source, Unicode BSD/UCD notices, build configuration
+and provenance are retained in `app/mobile/shared/speech/`. The rebuild script
+`dev/scripts/mobile-speech-data.sh` retrieves the exact corresponding upstream
+source, including dictionary and phoneme sources. eSpeak does not supply the
+listening voice. No Kitten web SDK or analytics is included.
 
-iOS uses KittenTTS-swift at revision `20cd4d8784c1bad348326955709892c8dfe7226b` (upstream declares Apache-2.0), ONNX Runtime 1.24.2 (MIT), SwiftSoup 2.7.6 (MIT), ZIPFoundation 0.9.19 (MIT), and Apple-supplied SwiftUI/UIKit, AVFoundation, PDFKit and Vision frameworks. The shared C++ pronunciation engine is copied from KittenTTS-web revision `c846fe92858f3447f4912226471f5a63983b3f94`; its Apache-2.0 licence and provenance remain beside the source. The web SDK and its analytics code are not included.
+Apple apps use ONNX Runtime 1.24.2 (MIT), SwiftSoup 2.7.6 (MIT, iOS imports),
+ZIPFoundation 0.9.19 (MIT), and Apple platform frameworks. The original C++ adapter in `app/mobile/shared/inference/` uses ONNX Runtime’s public API to memory-map the locally prepared Safari model; its package shares the same pinned upstream runtime. Token preparation and
+duration joining follow KittenTTS 0.8 and its earlier Swift SDK (Apache-2.0);
+KittenTTS-swift is no longer a runtime dependency. Android uses ONNX Runtime
+1.24.3 (MIT), AndroidX/Compose/Media3 and Kotlin (Apache-2.0), Jsoup (MIT),
+PDFBox-Android and Tesseract4Android, with their upstream dependency notices.
+Optional OCR data is pinned in the shared model manifest.
 
-Android uses ONNX Runtime 1.24.3 (MIT), AndroidX/Compose/Media3 and Kotlin/coroutines (Apache-2.0), Jsoup 1.18.3 (MIT), PDFBox-Android 2.0.27.0 (Apache-2.0 and included notices), and Tesseract4Android 4.9.0 (Apache-2.0, with Tesseract, Leptonica, libpng and Independent JPEG Group components retaining their own notices). Optional English OCR data is from the pinned `tesseract-ocr/tessdata_fast` revision in the model manifest (Apache-2.0).
-
-The apps bundle [mobile licence notices](app/mobile/shared/NOTICES.txt) in Settings. Generated projects, dependency lockfiles and the original pronunciation source are included for rebuilding; local SDKs, models, build outputs and signing material are ignored. Apple and Android platform SDKs are development dependencies supplied under their own terms, not redistributed as part of OpenRead's source licence.
+The apps bundle [licences and notices](app/mobile/shared/NOTICES.txt).
+Checked-in Xcode projects, dependency lockfiles and generated Safari resources
+allow builds without Node or XcodeGen. Local SDKs, neural weights, build outputs
+and signing material are ignored. Platform SDKs retain their own terms.
