@@ -6,6 +6,12 @@ struct ReadingBookmark: Codable, Equatable, Identifiable, Sendable {
     var id: Int { offset }
 }
 
+struct ReadingChapter: Codable, Equatable, Identifiable, Sendable {
+    var id: String
+    var title: String
+    var offset: Int
+}
+
 struct Reading: Codable, Equatable, Identifiable, Sendable {
     var id = UUID().uuidString
     var title: String
@@ -15,16 +21,28 @@ struct Reading: Codable, Equatable, Identifiable, Sendable {
     var position: Int = 0 // UTF-16 source offset, shared by both native apps.
     var bookmarks: [ReadingBookmark] = []
     var createdAt: Double = Date().timeIntervalSince1970
+    var chapters: [ReadingChapter]? = nil
+    var cachedWordCount: Int? = nil
+    var cachedTextLength: Int? = nil
+    var chapterList: [ReadingChapter] { chapters ?? [] }
+    var textLength: Int { cachedTextLength ?? text.utf16.count }
 
-    var wordCount: Int { ReadingText.words(in: text).count }
+    var wordCount: Int { cachedWordCount ?? ReadingText.words(in: text).count }
     var validated: Reading {
         get throws {
             guard !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, title.count <= 240,
-                  !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, text.utf16.count <= 250_000,
+                  !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, text.utf16.count <= 20_000_000,
                   !id.isEmpty, id.count <= 80, (source?.count ?? 0) <= 1_000,
                   position >= 0, position <= text.utf16.count, bookmarks.count <= 200,
                   bookmarks.allSatisfy({ $0.offset >= 0 && $0.offset <= text.utf16.count && $0.label.count <= 160 })
             else { throw ReadingError.invalidReading }
+            guard cachedTextLength == nil || cachedTextLength == text.utf16.count, cachedWordCount == nil || (0...text.utf16.count).contains(cachedWordCount!), Set(chapterList.map(\.id)).count == chapterList.count else { throw ReadingError.invalidReading }
+            guard chapterList.count <= 5_000 else { throw ReadingError.invalidReading }
+            var previous = -1
+            for chapter in chapterList {
+                guard !chapter.id.isEmpty, chapter.id.count <= 80, !chapter.title.isEmpty, chapter.title.count <= 240, chapter.offset > previous, chapter.offset < text.utf16.count else { throw ReadingError.invalidReading }; previous = chapter.offset
+            }
+            guard chapterList.isEmpty || chapterList.first?.offset == 0 else { throw ReadingError.invalidReading }
             return self
         }
     }
@@ -50,7 +68,7 @@ enum ReadingError: LocalizedError {
         switch self {
         case .speechTooComplex: "This passage contains an unusually long word. Try a shorter excerpt."
         case .invalidReading: "This reading or backup is invalid. Nothing was imported."
-        case .fileTooLarge: "Choose a document under 20 MB, with at most 250,000 characters."
+        case .fileTooLarge: "This document exceeds the import limit: 100 MB per file or 20 million text characters."
         case .unsupportedFile: "Choose a PDF, EPUB, Word document, text, HTML or image."
         case .noText: "No readable text was found. Try scanning the page instead."
         case .downloadFailed: "The voice download could not finish. Check your connection and retry."
@@ -67,6 +85,33 @@ struct ReadingPassage: Sendable {
 }
 
 enum ReadingText {
+    static func passages(_ reading: Reading, limit: Int = 420) -> [ReadingPassage] {
+        guard !reading.chapterList.isEmpty else { return passages(reading.text, limit: limit) }
+        let source = reading.text as NSString
+        return reading.chapterList.enumerated().flatMap { index, chapter in
+            let end = index + 1 < reading.chapterList.count ? reading.chapterList[index + 1].offset : source.length
+            let section = source.substring(with: NSRange(location: chapter.offset, length: end - chapter.offset))
+            return passages(section, limit: limit).map { ReadingPassage(text: $0.text, range: NSRange(location: chapter.offset + $0.range.location, length: $0.range.length)) }
+        }
+    }
+    static func windows(_ reading: Reading, passages: [ReadingPassage], limit: Int = 64_000) -> [NSRange] {
+        let source = reading.text as NSString
+        let mandatory = Set(reading.chapterList.map(\.offset) + [source.length])
+        let boundaries = Set(passages.map { $0.range.location } + Array(mandatory)).sorted()
+        var result: [NSRange] = []; var lower = 0; var previous = 0
+        func append(_ end: Int) { if end > lower { result.append(NSRange(location: lower, length: end - lower)); lower = end } }
+        for boundary in boundaries {
+            if boundary - lower > limit, previous > lower { append(previous) }
+            while boundary - lower > limit {
+                var end = lower + limit
+                if (0xD800...0xDBFF).contains(source.character(at: end - 1)) { end -= 1 }
+                append(end)
+            }
+            if mandatory.contains(boundary) { append(boundary) }
+            previous = boundary
+        }
+        return result
+    }
     static func words(in text: String) -> [NSRange] {
         let expression = try! NSRegularExpression(pattern: "\\S+")
         return expression.matches(in: text, range: NSRange(location: 0, length: text.utf16.count)).map(\.range)

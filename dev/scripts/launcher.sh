@@ -25,6 +25,18 @@ case "$mode" in
   ai) .venv/bin/python app/voice/setup_optional.py ai ;;
   dictation) .venv/bin/python app/voice/setup_optional.py dictation ;;
   voices) .venv/bin/python app/voice/setup_voices.py ;;
+  qwen)
+    print "Optional Qwen packs run locally. No subscription or API key."
+    print "1: Expressive voices (up to 1.44 GB)"
+    print "2: Voice cloning (up to 884 MB)"
+    print "3: Both (about 2.07 GB total; shared files download once)"
+    read -r "qwen_choice?Choose 1, 2 or 3; anything else cancels: "
+    case "$qwen_choice" in
+      1) .venv/bin/python app/voice/setup_qwen.py expressive ;;
+      2) .venv/bin/python app/voice/setup_qwen.py clone ;;
+      3) .venv/bin/python app/voice/setup_qwen.py both ;;
+    esac ;;
+
   start)
     if .venv/bin/python -c 'import urllib.request,json; r=urllib.request.Request("http://127.0.0.1:8765/health",headers={"X-OpenRead":"1"}); assert json.load(urllib.request.urlopen(r,timeout=2)).get("engine")=="Kokoro"' 2>/dev/null; then
       print "OpenRead is already running. Opening your library. Restart the existing helper after an update."

@@ -8,6 +8,7 @@ Compared with the **Speechify Reader Premium** list checked on **25 October 2026
 | Faster reading | Pitch-preserving playback from 0.5× to 5× | Browser audio behavior and intelligibility vary at high speeds. |
 | Scan & Listen | Local macOS Vision OCR for images and scanned PDF pages | macOS only; not handwriting/layout reconstruction. PDFs: 200 pages, at most 20 scanned pages per import. |
 | PDF/books/documents | PDF, DRM-free EPUB in spine order, DOCX, HTML, TXT, Markdown, CSV | 20 MB per file, 250,000 characters per reading. Text/tables may lose complex formatting. No DRM removal. |
+| EPUB chapter navigation | Mac browser workspace: contents picker, previous/next chapter, current chapter during playback, saved position and chapter metadata in backups | EPUB 3 navigation and EPUB 2 NCX; headings/spine entries are the fallback. Reimport older saved EPUBs to recover chapters. Editing the text removes chapter navigation. |
 | AI summaries | Local Qwen3 4B via Ollama; section summaries for long documents | Optional 2.5 GB model. Local quality/speed differ from larger hosted models. |
 | AI chat | Questions and follow-ups grounded in retrieved document passages; source excerpts visible | Word-overlap retrieval can miss relevant evidence. Answers need checking; no browsing or external tools. |
 | AI podcasts | Local model generates a two-host script; Kokoro makes two-voice WAV audio | Short overview; review the generated interpretation. No celebrity voices. |

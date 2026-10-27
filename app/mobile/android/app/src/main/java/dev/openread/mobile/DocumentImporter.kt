@@ -36,16 +36,16 @@ class DocumentImporter(private val context: Context, private val models: ModelSt
         } }
         val temporary = File.createTempFile("reading-", ".$extension", context.cacheDir)
         try {
-            context.contentResolver.openInputStream(uri)?.use { input -> temporary.writeBytes(limited(input, 20 * 1024 * 1024)) }
+            context.contentResolver.openInputStream(uri)?.use { input -> temporary.outputStream().use { output -> copyLimited(input, output, 100L * 1024 * 1024) } }
                 ?: error("This file could not be opened. Try sharing it again.")
             file(temporary, name.substringBeforeLast('.'))
         } finally { temporary.delete() }
     }
     fun file(file: File, title: String = file.nameWithoutExtension): Reading {
-        require(file.length() <= 20 * 1024 * 1024) { "Choose a file under 20 MB." }
+        require(file.length() <= 100 * 1024 * 1024) { "Choose a file under 100 MB." }
         val text = when (file.extension.lowercase()) {
             "pdf" -> pdf(file)
-            "epub" -> epub(file)
+            "epub" -> return epub(file)
             "docx" -> docx(file)
             "html", "htm" -> html(file.readText()).second
             "jpg", "jpeg", "png", "webp", "heic" -> {
@@ -81,7 +81,7 @@ class DocumentImporter(private val context: Context, private val models: ModelSt
     }
     private fun pdf(file: File): String {
         val pages = PDDocument.load(file).use { document ->
-            require(document.numberOfPages <= 200) { "Choose a PDF with at most 200 pages." }
+            require(document.numberOfPages <= 2000) { "Choose a PDF with at most 2,000 pages." }
             List(document.numberOfPages) { index -> PDFTextStripper().apply { startPage = index + 1; endPage = index + 1; sortByPosition = true }.getText(document).trim() }
         }.toMutableList()
         val scanned = pages.indices.filter { pages[it].isBlank() }
@@ -132,29 +132,67 @@ class DocumentImporter(private val context: Context, private val models: ModelSt
             collect(paragraphs.item(index)); text.toString()
         }
     }
-    private fun epub(file: File): String = ZipFile(file).use { zip ->
+    private fun epub(file: File): Reading = ZipFile(file).use { zip ->
+        val members = zip.entries().toList(); require(members.size <= 10_000 && members.sumOf { it.size.coerceAtLeast(0) } <= 200L * 1024 * 1024) { "This EPUB expands beyond 200 MB." }
         val container = xml(entry(zip, "META-INF/container.xml"))
         val opf = (container.getElementsByTagNameNS("*", "rootfile").item(0) as? org.w3c.dom.Element)?.getAttribute("full-path") ?: error("This EPUB has no reading order.")
-        val base = opf.substringBeforeLast('/', "")
-        val document = xml(entry(zip, safePath("", opf)))
-        val items = document.getElementsByTagNameNS("*", "item")
-        val manifest = (0 until items.length).associate { index -> (items.item(index) as org.w3c.dom.Element).let { it.getAttribute("id") to it.getAttribute("href") } }
-        val spine = document.getElementsByTagNameNS("*", "itemref")
-        require(spine.length in 1..500) { "This EPUB has an unsupported reading order." }
-        val output = StringBuilder()
-        for (index in 0 until spine.length) {
-            val id = (spine.item(index) as org.w3c.dom.Element).getAttribute("idref")
-            val path = safePath(base, java.net.URLDecoder.decode(manifest[id] ?: error("An EPUB chapter is missing."), "UTF-8"))
-            output.append(html(entry(zip, path).toString(Charsets.UTF_8)).second).append("\n\n")
-            require(output.length <= 250_000) { "Import a shorter book or an excerpt under 250,000 characters." }
+        val document = xml(entry(zip, safePath("", opf))); val base = opf.substringBeforeLast('/', "")
+        val nodes = document.getElementsByTagNameNS("*", "item")
+        val manifest = (0 until nodes.length).associate { index -> (nodes.item(index) as org.w3c.dom.Element).let { it.getAttribute("id") to it } }
+        fun target(file: String, href: String): Pair<String, String> {
+            val uri = java.net.URI(href); require(uri.scheme == null && uri.host == null) { "This EPUB contains an external chapter link." }
+            val path = if (uri.rawPath.orEmpty().isEmpty()) file else safePath(file.substringBeforeLast('/', ""), java.net.URLDecoder.decode(uri.rawPath.replace("+", "%2B"), "UTF-8"))
+            return path to java.net.URLDecoder.decode(uri.rawFragment.orEmpty().replace("+", "%2B"), "UTF-8")
         }
-        output.toString().trim()
+        val labels = mutableMapOf<String, MutableList<Pair<String, String>>>()
+        val navigation = manifest.values.filter { "nav" in it.getAttribute("properties").split(' ') }.ifEmpty { manifest.values.filter { it.getAttribute("media-type") == "application/x-dtbncx+xml" } }
+        for (item in navigation) {
+            val navFile = target(opf, item.getAttribute("href")).first
+            val nav = Jsoup.parse(entry(zip, navFile).toString(Charsets.UTF_8))
+            if (item.getAttribute("media-type") == "application/x-dtbncx+xml") {
+                nav.select("navpoint").forEach { point -> val content = point.selectFirst("content"); val title = point.selectFirst("navlabel text")?.text().orEmpty().take(240)
+                    if (content != null && title.isNotEmpty()) { val resolved = runCatching { target(navFile, content.attr("src")) }.getOrNull(); if (resolved != null) { val (member, fragment) = resolved; labels.getOrPut(member) { mutableListOf() }.add(fragment to title) } }
+                }
+            } else nav.select("nav").filter { "toc" in it.attr("epub:type").split(' ') || it.attr("role") == "doc-toc" }.forEach { contents -> contents.select("a[href]").forEach { link -> runCatching { target(navFile, link.attr("href")) }.getOrNull()?.let { (member, fragment) -> labels.getOrPut(member) { mutableListOf() }.add(fragment to link.text().take(240)) } } }
+        }
+        val spine = document.getElementsByTagNameNS("*", "itemref"); require(spine.length in 1..5000) { "This EPUB has an unsupported reading order." }
+        val output = StringBuilder(); val chapters = mutableListOf<ReadingChapter>()
+        for (index in 0 until spine.length) {
+            val reference = spine.item(index) as org.w3c.dom.Element
+            if (reference.getAttribute("linear") == "no") continue
+            val item = manifest[reference.getAttribute("idref")] ?: error("An EPUB chapter is missing.")
+            val member = target(opf, item.getAttribute("href")).first
+            val page = Jsoup.parse(entry(zip, member).toString(Charsets.UTF_8))
+            page.select("script,style,head,nav,aside,footer,form,button,[hidden],[aria-hidden=true]").remove()
+            val links = labels[member].orEmpty(); val markers = mutableMapOf<String, String>()
+            links.filter { it.first.isNotEmpty() }.forEach { (fragment, _) -> page.getElementById(fragment)?.let { element -> val marker = "OPENREAD_" + java.util.UUID.randomUUID(); markers[marker] = fragment; element.before("<p>$marker</p>") } }
+            val heading = page.selectFirst("h1,h2,h3")?.text().orEmpty().ifBlank { "Chapter ${chapters.size + 1}" }.take(240)
+            val body = page.body(); body.select("p,div,h1,h2,h3,h4,h5,h6,li,blockquote,section,tr,br").forEach { it.appendText("\n\n") }
+            val parts = mutableListOf<String>(); val anchors = mutableMapOf<String, Int>(); var localOffset = 0
+            body.wholeText().split(Regex("\\n\\s*\\n")).map { it.trim() }.filter { it.isNotEmpty() }.forEach { part ->
+                val fragment = markers[part]
+                if (fragment != null) anchors[fragment] = localOffset else { parts += part; localOffset += part.length + 2 }
+            }
+            val text = parts.joinToString("\n\n"); if (text.isEmpty()) continue
+            val starts = sortedMapOf(0 to heading)
+            links.forEach { (fragment, title) -> if (title.isNotEmpty()) { if (fragment.isEmpty()) starts[0] = title else anchors[fragment]?.takeIf { it < text.length }?.let { starts[it] = title } } }
+            if (output.isNotEmpty()) output.append("\n\n")
+            starts.forEach { (start, title) -> chapters += ReadingChapter("chapter-${chapters.size + 1}", title, output.length + start) }
+            output.append(text); require(output.length <= 20_000_000) { "This book exceeds 20 million text characters." }
+        }
+        val title = document.getElementsByTagNameNS("*", "title").item(0)?.textContent?.trim().orEmpty().ifBlank { file.nameWithoutExtension }.take(240)
+        val author = document.getElementsByTagNameNS("*", "creator").item(0)?.textContent?.trim()?.take(240)
+        Reading(title = title, text = output.toString(), author = author, chapters = chapters).validated()
     }
     private fun safePath(base: String, relative: String): String {
         require(!relative.contains(':') && !relative.startsWith('/') && !relative.contains('\\')) { "This EPUB contains an invalid chapter path." }
         val parts = mutableListOf<String>()
         "$base/$relative".substringBefore('#').split('/').forEach { when (it) { "", "." -> {}; ".." -> { require(parts.isNotEmpty()); parts.removeAt(parts.lastIndex) }; else -> parts.add(it) } }
         return parts.joinToString("/")
+    }
+    internal fun copyLimited(input: InputStream, output: java.io.OutputStream, maximum: Long) {
+        val buffer = ByteArray(64 * 1024); var total = 0L
+        while (true) { val count = input.read(buffer); if (count < 0) break; total += count; require(total <= maximum) { "Choose a smaller document." }; output.write(buffer, 0, count) }
     }
     internal fun limited(input: InputStream, maximum: Int): ByteArray {
         val output = java.io.ByteArrayOutputStream(); val buffer = ByteArray(64 * 1024)

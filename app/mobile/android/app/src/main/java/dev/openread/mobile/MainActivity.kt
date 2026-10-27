@@ -78,7 +78,7 @@ class MainActivity : ComponentActivity() {
             val filePicker = androidx.activity.compose.rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) runImport { runtime.importer.uri(uri) } }
             val restorePicker = androidx.activity.compose.rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) scope.launch {
                 busy = "Restoring library…"
-                try { withContext(Dispatchers.IO) { val data = contentResolver.openInputStream(uri)?.use { runtime.importer.limited(it, 25 * 1024 * 1024) } ?: error("This backup could not open."); runtime.library.restore(data) } }
+                try { withContext(Dispatchers.IO) { val backup = File.createTempFile("library-backup-", ".zip", cacheDir); try { contentResolver.openInputStream(uri)?.use { input -> backup.outputStream().use { output -> runtime.importer.copyLimited(input, output, 500L * 1024 * 1024) } } ?: error("This backup could not open."); runtime.library.restore(backup) } finally { backup.delete() } } }
                 catch (error: Exception) { runtime.fail(error) } finally { busy = null }
             } }
             val camera = androidx.activity.compose.rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
@@ -110,8 +110,9 @@ class MainActivity : ComponentActivity() {
             }) { padding ->
                 if (reader && state.reading != null) Column(Modifier.padding(padding).fillMaxSize()) {
                     Text(state.reading!!.title, Modifier.padding(horizontal = 24.dp, vertical = 12.dp), style = MaterialTheme.typography.headlineMedium, fontFamily = FontFamily.Serif)
-                    Text("${state.reading!!.wordCount} words · ${state.voice}", Modifier.padding(horizontal = 24.dp), color = colors.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
-                    NativeReadingText(state, Modifier.weight(1f).fillMaxWidth())
+                    Text("${state.reading!!.wordCount} words · ${runtime.engine.qwen.label(state.voice)}", Modifier.padding(horizontal = 24.dp), color = colors.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
+                    BookChapterControls(state, runtime)
+                    NativeReadingText(state, runtime, Modifier.weight(1f).fillMaxWidth())
                 } else LazyColumn(Modifier.padding(padding).fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     item {
                         Column(Modifier.padding(top = 24.dp, bottom = 20.dp)) {
@@ -144,7 +145,7 @@ class MainActivity : ComponentActivity() {
                         item { OutlinedTextField(search, { search = it }, label = { Text("Search library") }, modifier = Modifier.fillMaxWidth(), singleLine = true) }
                         items(library.filter { it.title.contains(search, true) || it.text.contains(search, true) }, key = { it.id }) { reading ->
                             ListItem(headlineContent = { Text(reading.title, maxLines = 2) }, supportingContent = { Text("${reading.wordCount} words · ${reading.bookmarks.size} bookmarks") },
-                                modifier = Modifier.clickable { runtime.open(reading); reader = true }, trailingContent = { IconButton(onClick = { scope.launch(Dispatchers.IO) { runCatching { runtime.library.remove(reading.id) }.onFailure { runtime.fail(it) } } }) { Icon(Icons.Rounded.DeleteOutline, "Remove from library") } })
+                                modifier = Modifier.clickable { runImport { withContext(Dispatchers.IO) { runtime.library.load(reading.id) } } }, trailingContent = { IconButton(onClick = { scope.launch(Dispatchers.IO) { runCatching { runtime.library.remove(reading.id) }.onFailure { runtime.fail(it) } } }) { Icon(Icons.Rounded.DeleteOutline, "Remove from library") } })
                         }
                     }
                     item { Text("On your phone. At your pace.", style = MaterialTheme.typography.labelMedium, color = colors.onSurfaceVariant, modifier = Modifier.padding(vertical = 20.dp)) }
@@ -163,10 +164,11 @@ class MainActivity : ComponentActivity() {
                     if (state.downloading) item { LinearProgressIndicator(progress = { state.downloadProgress }, modifier = Modifier.fillMaxWidth()); TextButton(onClick = { runtime.cancelDownload() }) { Text("Cancel download") } }
                     else if (!state.installed) item { Button(onClick = { runtime.setup() }) { Text("Download natural voices") } }
                     else items(KittenEngine.voices.keys.toList()) { voice -> Row(Modifier.fillMaxWidth().clickable { runtime.voice(voice) }.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) { RadioButton(selected = state.voice == voice, onClick = { runtime.voice(voice) }); Text(voice) } }
+                    item { QwenSettings(state, runtime) }
                     item { HorizontalDivider(); Text("Scan & Listen", style = MaterialTheme.typography.titleMedium); Text("Offline English text recognition for photos and scanned PDFs. About 4 MB.", color = colors.onSurfaceVariant); TextButton(onClick = { runtime.setup(true) }, enabled = !state.downloading && !state.ocrInstalled) { Text(if (state.ocrInstalled) "Installed" else "Download Scan & Listen") } }
                     item { HorizontalDivider(); Text("Your library", style = MaterialTheme.typography.titleMedium); TextButton(onClick = {
-                        scope.launch { try { val file = withContext(Dispatchers.IO) { File(cacheDir, "exports").apply { mkdirs() }.resolve("OpenRead-library.json").apply { writeBytes(runtime.library.backup()) } }; share(file, "application/json") } catch (error: Exception) { runtime.fail(error) } }
-                    }) { Text("Export library backup") }; TextButton(onClick = { restorePicker.launch(arrayOf("application/json")) }) { Text("Restore a mobile backup") } }
+                        scope.launch { try { val file = withContext(Dispatchers.IO) { runtime.library.backup() }; share(file, "application/zip") } catch (error: Exception) { runtime.fail(error) } }
+                    }) { Text("Export library backup") }; TextButton(onClick = { restorePicker.launch(arrayOf("application/json", "application/zip")) }) { Text("Restore a mobile backup") } }
                     item { TextButton(onClick = { settings = false; notices = true }) { Text("Licences & notices") } }
                     item { Text("No account. No subscription. Your readings stay on this device unless you share or export them.", color = colors.onSurfaceVariant); TextButton(onClick = { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/ahmednajaf/openread"))) }) { Text("Source & contributions") }; TextButton(onClick = { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://ko-fi.com/pickledjones"))) }) { Text("Optional support") } }
                 }
@@ -207,19 +209,19 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-    @Composable private fun NativeReadingText(state: ReaderState, modifier: Modifier) {
+    @Composable private fun NativeReadingText(state: ReaderState, runtime: ReaderRuntime, modifier: Modifier) {
         val foreground = MaterialTheme.colorScheme.onSurface.toArgb(); val highlight = MaterialTheme.colorScheme.primaryContainer.toArgb()
         AndroidView(modifier = modifier, factory = { context -> ScrollView(context).apply {
             isFillViewport = true; clipToPadding = false
             addView(TextView(context).apply { tag = "reading-text"; textSize = 21f; typeface = android.graphics.Typeface.create("serif", android.graphics.Typeface.NORMAL); setLineSpacing(10f, 1.12f); setPadding(24.dpPx(context), 24.dpPx(context), 24.dpPx(context), 40.dpPx(context)); setTextIsSelectable(true) })
         } }, update = { scroll ->
-            val text = scroll.getChildAt(0) as TextView; val source = state.reading?.text.orEmpty()
+            val text = scroll.getChildAt(0) as TextView; val reading = state.reading ?: return@AndroidView; val offset = state.highlight?.start ?: runtime.passages.getOrNull(state.index)?.start ?: 0; val window = runtime.textWindow(); val source = reading.text.substring(window.start, window.end)
             if (text.text.toString() != source) { text.setText(source, TextView.BufferType.SPANNABLE); scroll.scrollTo(0, 0) }
             text.setTextColor(foreground)
             if (text.text !is android.text.Spannable) text.setText(source, TextView.BufferType.SPANNABLE)
             val spannable = text.text as android.text.Spannable
             spannable.getSpans(0, spannable.length, BackgroundColorSpan::class.java).forEach { spannable.removeSpan(it) }
-            state.highlight?.takeIf { it.start >= 0 && it.end <= spannable.length }?.let { range ->
+            state.highlight?.let { WordRange(it.start - window.start, it.end - window.start) }?.takeIf { it.start >= 0 && it.end <= spannable.length }?.let { range ->
                 spannable.setSpan(BackgroundColorSpan(highlight), range.start, range.end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 if (state.follow) text.layout?.let { layout -> val y = layout.getLineTop(layout.getLineForOffset(range.start)) + text.paddingTop
                     if (y < scroll.scrollY + 40 || y > scroll.scrollY + scroll.height - 80) scroll.post { scroll.smoothScrollTo(0, (y - scroll.height / 3).coerceAtLeast(0)) }
@@ -235,7 +237,7 @@ class MainActivity : ComponentActivity() {
             Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text("Something worth listening to", style = MaterialTheme.typography.headlineSmall)
                 OutlinedTextField(title, { title = it.take(240) }, label = { Text("Title · optional") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(text, { if (it.length <= 250_000) text = it }, label = { Text("Paste your text") }, modifier = Modifier.fillMaxWidth().heightIn(min = 150.dp, max = 300.dp))
+                OutlinedTextField(text, { if (it.length <= 20_000_000) text = it }, label = { Text("Paste your text") }, modifier = Modifier.fillMaxWidth().heightIn(min = 150.dp, max = 300.dp))
                 Button(onClick = { onOpen(title, text) }, enabled = text.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text("Open reading") }
             }
         }

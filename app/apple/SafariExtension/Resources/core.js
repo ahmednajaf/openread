@@ -48,7 +48,7 @@
   function voiceGroups() {
     const groups = new Map();
     for (const voice of voices) {
-      const group = voice.pack === 'kitten' ? (['kitten:kiki', 'kitten:rosie', 'kitten:jasper'].includes(voice.id) ? 'Featured · Kitten' : 'More Kitten voices') : `Kokoro · ${voice.detail}`;
+      const group = voice.pack === 'qwen' ? 'Qwen · Expressive' : voice.pack === 'qwen-clone' ? 'Your voices' : voice.pack === 'kitten' ? (['kitten:kiki', 'kitten:rosie', 'kitten:jasper'].includes(voice.id) ? 'Featured · Kitten' : 'More Kitten voices') : `Kokoro · ${voice.detail}`;
       if (!groups.has(group)) groups.set(group, []);
       groups.get(group).push(voice);
     }

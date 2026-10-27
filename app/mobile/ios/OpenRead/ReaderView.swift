@@ -4,6 +4,7 @@ import UIKit
 struct ReaderView: View {
     @EnvironmentObject private var player: PlaybackController
     @EnvironmentObject private var library: LibraryStore
+    @State private var chaptersOpen = false
     @State private var settings = false
     @State private var options = false
     @State private var error: String?
@@ -15,7 +16,21 @@ struct ReaderView: View {
                     Text(reading.title).font(.system(size: 34, weight: .regular, design: .serif)).tracking(-0.8).multilineTextAlignment(.center)
                     Text("\(reading.wordCount) words · about \(max(1, Int(Double(reading.wordCount) / (165 * Double(player.rate))))) min").font(.caption).foregroundStyle(.secondary)
                 }.padding(.horizontal, 26).padding(.top, 24).padding(.bottom, 10)
-                ReadingTextView(text: reading.text, highlighted: player.highlighted, follow: player.follow)
+                if !reading.chapterList.isEmpty {
+                    HStack {
+                        Button { if player.activeChapter > 0 { player.seekOffset(reading.chapterList[player.activeChapter - 1].offset) } } label: { Image(systemName: "chevron.left") }.disabled(player.activeChapter == 0).accessibilityLabel("Previous chapter")
+                        Button { chaptersOpen = true } label: { Text(reading.chapterList[player.activeChapter].title).lineLimit(2).frame(maxWidth: .infinity) }
+                        Button { if player.activeChapter + 1 < reading.chapterList.count { player.seekOffset(reading.chapterList[player.activeChapter + 1].offset) } } label: { Image(systemName: "chevron.right") }.disabled(player.activeChapter + 1 >= reading.chapterList.count).accessibilityLabel("Next chapter")
+                    }.font(.subheadline).padding(.horizontal, 24).padding(.vertical, 10)
+                }
+                if reading.textLength > 64_000 {
+                    HStack {
+                        Button("Earlier text") { player.seekTextWindow(-1) }.disabled(player.textWindow.location == 0)
+                        Spacer()
+                        Button("More text") { player.seekTextWindow(1) }.disabled(NSMaxRange(player.textWindow) >= reading.textLength)
+                    }.font(.caption).padding(.horizontal, 26)
+                }
+                ReadingTextView(text: player.visibleText, highlighted: player.visibleHighlight, follow: player.follow)
             }
         }
         .background(ReadingBackdrop()).navigationBarTitleDisplayMode(.inline)
@@ -26,7 +41,7 @@ struct ReaderView: View {
                     Button { settings = true } label: {
                         HStack(spacing: 10) {
                             Image(systemName: "waveform").font(.body).frame(width: 36, height: 36).background(.tint.opacity(0.10), in: Circle())
-                            VStack(alignment: .leading, spacing: 3) { Text(player.voice.capitalized).font(.subheadline.weight(.semibold)); Text("On-device voice").font(.system(size: 10)).foregroundStyle(.secondary) }
+                            VStack(alignment: .leading, spacing: 3) { Text(VoiceEngine.name(player.voice)).font(.subheadline.weight(.semibold)); Text("On-device voice").font(.system(size: 10)).foregroundStyle(.secondary) }
                         }
                     }.buttonStyle(.plain).accessibilityLabel("Choose voice")
                     Spacer(minLength: 0)
@@ -48,6 +63,11 @@ struct ReaderView: View {
             }.padding(20).readerGlass().padding(.horizontal, 18).padding(.bottom, 6)
         }
         .toolbar { ToolbarItem(placement: .topBarTrailing) { Button { options = true } label: { Image(systemName: "ellipsis") }.accessibilityLabel("Reading options") } }
+        .sheet(isPresented: $chaptersOpen) {
+            NavigationStack { List(Array((player.reading?.chapterList ?? []).enumerated()), id: \.element.id) { index, chapter in
+                Button { player.seekOffset(chapter.offset); chaptersOpen = false } label: { HStack { Text(chapter.title); Spacer(); if index == player.activeChapter { Image(systemName: "checkmark") } } }
+            }.navigationTitle("Contents").toolbar { Button("Done") { chaptersOpen = false } } }
+        }
         .sheet(isPresented: $settings) { NativeSettingsView() }
         .sheet(isPresented: $options) { ReadingOptionsView() }
         .alert("OpenRead", isPresented: Binding(get: { player.error != nil }, set: { if !$0 { player.error = nil } })) { Button("OK") { player.error = nil } } message: { Text(player.error ?? "") }
@@ -132,15 +152,16 @@ struct NativeSettingsView: View {
                     if player.downloading {
                         ProgressView(value: player.downloadProgress) { Text("Preparing natural voices…") }
                         Button("Cancel download", role: .cancel) { player.cancelDownload() }
-                    } else if !player.installed {
+                    } else if !player.kittenInstalled {
                         Text("Download the eight Kitten Mini voices once. Speech then runs on this device, without a Mac or account.")
                         Button("Download voices · about 83 MB") { player.downloadVoices() }.buttonStyle(.borderedProminent)
                         Text("Uses your internet connection for the download. You may prefer Wi-Fi.").font(.footnote).foregroundStyle(.secondary)
                     } else { Label("Natural voices are ready", systemImage: "checkmark.circle.fill").foregroundStyle(.green) }
                 } header: { Text("On-device voices") }
-                Section("Your voice") { ForEach(VoiceEngine.voices, id: \.self) { voice in
-                    Button { player.voice = voice } label: { HStack { Text(voice.capitalized).foregroundStyle(.primary); Spacer(); if player.voice == voice { Image(systemName: "checkmark") } } }
+                Section("Kitten voices") { ForEach(VoiceEngine.kittenVoices, id: \.self) { voice in
+                    Button { player.voice = voice } label: { HStack { Text(VoiceEngine.name(voice)).foregroundStyle(.primary); Spacer(); if player.voice == voice { Image(systemName: "checkmark") } } }
                 } }
+                QwenSettingsSection()
                 Section("Your library") {
                     Button("Export library backup", systemImage: "arrow.down.doc") { do { backup = try library.backup() } catch { self.error = error.localizedDescription } }
                     Text("Readings stay in this app. Export a backup before moving phones or removing OpenRead.").font(.footnote).foregroundStyle(.secondary)

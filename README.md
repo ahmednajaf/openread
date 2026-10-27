@@ -9,8 +9,9 @@ OpenRead is a free, open-source reading companion for **Safari and Chrome on Mac
 ## What it does
 
 - Reads aloud with local voices, adjustable speed and word highlighting.
-- Opens PDFs, scans, EPUBs, Word documents and pasted text.
+- Opens full EPUB books with chapter navigation, PDFs, scans, Word documents and pasted text.
 - Keeps a local library with bookmarks and audio exports.
+- Adds optional [Qwen expressive voices and local voice cloning](docs/VOICE_PACKS.md).
 - Offers optional local AI for summaries, questions, audio overviews and dictation.
 
 No account. No subscription. Your text is processed on your device.

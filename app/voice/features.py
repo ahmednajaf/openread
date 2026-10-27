@@ -1,17 +1,20 @@
 """Optional local reading tools. Only an explicit Save writes document text."""
 import base64
+from bisect import bisect_left
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from html.parser import HTMLParser
 import io
 import json
-from pathlib import Path, PurePosixPath
+from pathlib import Path
+import posixpath
 import re
 import sqlite3
 import threading
 import time
 import urllib.error
 import urllib.request
+from urllib.parse import unquote, urlsplit
 import uuid
 import wave
 import zipfile
@@ -22,8 +25,8 @@ except ImportError:
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[2]
-MAX_DOCUMENT = 250_000
-MAX_FILE = 20 * 1024 * 1024
+MAX_DOCUMENT = 20_000_000
+MAX_FILE = 100 * 1024 * 1024
 OLLAMA = 'http://127.0.0.1:11434'
 AI_MODEL = 'qwen3:4b'
 
@@ -34,20 +37,20 @@ class ToolError(ValueError):
 
 def document_text(value):
     if not isinstance(value, str) or not value.strip() or len(value) > MAX_DOCUMENT:
-        raise ToolError('Choose text containing 1–250,000 characters. Split larger books into chapters.')
+        raise ToolError('Choose text containing 1–20,000,000 characters.')
     return value.strip()
 
 
 def decode_file(payload):
     value = payload.get('data')
     if not isinstance(value, str) or len(value) > (MAX_FILE * 4 // 3 + 4):
-        raise ToolError('Choose a file smaller than 20 MB.')
+        raise ToolError('Choose a file smaller than 100 MB.')
     try:
         data = base64.b64decode(value, validate=True)
     except (ValueError, TypeError):
         raise ToolError('The file could not be decoded.') from None
     if not data or len(data) > MAX_FILE:
-        raise ToolError('Choose a file smaller than 20 MB.')
+        raise ToolError('Choose a file smaller than 100 MB.')
     name = payload.get('name', '')
     if not isinstance(name, str) or len(name) > 240:
         raise ToolError('Invalid filename.')
@@ -83,6 +86,203 @@ def html_text(value):
     return re.sub(r'\n[ \t]*\n(?:\s*\n)+', '\n\n', ''.join(parser.parts)).strip()
 
 
+class EPUBNavigation(HTMLParser):
+    """Read EPUB 3 navigation or EPUB 2 NCX without loading XML entities."""
+    def __init__(self, ncx=False):
+        super().__init__(convert_charrefs=True)
+        self.ncx = ncx
+        self.links = []
+        self.nav_depth = 0
+        self.toc_depth = 0
+        self.link = None
+        self.points = []
+        self.label = False
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if self.ncx:
+            if tag == 'navpoint':
+                point = {'href': '', 'label': ''}
+                self.points.append(point)
+                self.links.append(point)
+            elif tag == 'content' and self.points:
+                self.points[-1]['href'] = attrs.get('src', '')
+            elif tag == 'text':
+                self.label = True
+        else:
+            if tag == 'nav':
+                self.nav_depth += 1
+                if 'toc' in attrs.get('epub:type', '').split() or attrs.get('role') == 'doc-toc':
+                    self.toc_depth = self.nav_depth
+            elif tag == 'a' and self.toc_depth:
+                self.link = {'href': attrs.get('href', ''), 'label': ''}
+
+    def handle_data(self, data):
+        if self.ncx and self.label and self.points:
+            self.points[-1]['label'] += data
+        elif self.link is not None:
+            self.link['label'] += data
+
+    def handle_endtag(self, tag):
+        if self.ncx:
+            if tag == 'navpoint' and self.points:
+                self.points.pop()
+            elif tag == 'text':
+                self.label = False
+        elif tag == 'a' and self.link is not None:
+            self.links.append(self.link)
+            self.link = None
+        elif tag == 'nav':
+            if self.toc_depth == self.nav_depth:
+                self.toc_depth = 0
+            self.nav_depth -= 1
+
+
+class EPUBText(HTMLText):
+    def __init__(self, anchors):
+        super().__init__()
+        self.wanted_anchors = anchors
+        self.anchor_parts = {}
+        self.heading = None
+        self.heading_parts = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == 'head':
+            self.skip += 1
+            return
+        super().handle_starttag(tag, attrs)
+        if self.skip:
+            return
+        attrs = dict(attrs)
+        anchor = attrs.get('id') or attrs.get('name')
+        if anchor in self.wanted_anchors and anchor not in self.anchor_parts:
+            self.parts.append('\n\n')
+            self.anchor_parts[anchor] = len(self.parts)
+        if tag in ('h1', 'h2', 'h3') and not self.heading_parts:
+            self.heading = tag
+
+    def handle_endtag(self, tag):
+        if tag == 'head':
+            self.skip = max(0, self.skip - 1)
+            return
+        super().handle_endtag(tag)
+        if tag == self.heading:
+            self.heading = None
+
+    def handle_data(self, data):
+        super().handle_data(data)
+        if self.heading and not self.skip:
+            self.heading_parts.append(data)
+
+    def reading(self):
+        offsets = [0]
+        for part in self.parts:
+            offsets.append(offsets[-1] + len(part))
+        raw = ''.join(self.parts)
+        paragraphs, starts = [], []
+        cursor = 0
+        for end, after in [(m.start(), m.end()) for m in re.finditer(r'\n\s*\n', raw)] + [(len(raw), len(raw))]:
+            part = raw[cursor:end]
+            if part.strip():
+                starts.append(cursor + len(part) - len(part.lstrip()))
+                paragraphs.append(part.strip())
+            cursor = after
+        anchors = {key: bisect_left(starts, offsets[index]) for key, index in self.anchor_parts.items()}
+        return '\n\n'.join(paragraphs), anchors, ' '.join(''.join(self.heading_parts).split())
+
+
+def epub_target(base, href):
+    target = urlsplit(href)
+    if target.scheme or target.netloc or '\\' in target.path:
+        return None
+    member = posixpath.normpath(posixpath.join(posixpath.dirname(base), unquote(target.path))) if target.path else base
+    if member.startswith(('/', '../')) or member in ('.', '..'):
+        return None
+    return member, unquote(target.fragment)
+
+
+def epub_document(data, cancelled):
+    with checked_zip(data) as archive:
+        container = xml(archive.read('META-INF/container.xml'))
+        rootfile = next((e.attrib.get('full-path') for e in container.iter() if e.tag.endswith('rootfile')), None)
+        if not rootfile:
+            raise ToolError('This EPUB has no reading order.')
+        package = xml(archive.read(rootfile))
+        local = lambda element: element.tag.rsplit('}', 1)[-1]
+        manifest = {e.attrib.get('id'): e for e in package.iter() if local(e) == 'item'}
+        spine = next((e for e in package.iter() if local(e) == 'spine'), None)
+        if spine is None:
+            raise ToolError('This EPUB has no reading order.')
+        labels = {}
+        navigation = [e for e in manifest.values() if 'nav' in e.attrib.get('properties', '').split()]
+        if not navigation:
+            ncx = manifest.get(spine.attrib.get('toc'))
+            navigation = [ncx] if ncx is not None else [e for e in manifest.values() if e.attrib.get('media-type') == 'application/x-dtbncx+xml']
+        for item in navigation:
+            target = epub_target(rootfile, item.attrib.get('href', ''))
+            if not target:
+                continue
+            navfile = target[0]
+            parser = EPUBNavigation(ncx=item.attrib.get('media-type') == 'application/x-dtbncx+xml')
+            parser.feed(archive.read(navfile).decode('utf-8-sig'))
+            for link in parser.links:
+                target = epub_target(navfile, link['href'])
+                title = ' '.join(link['label'].split())[:240]
+                if target and title:
+                    labels.setdefault(target[0], []).append((target[1], title))
+        parts, chapters = [], []
+        paragraph, characters = 0, 0
+        for entry in spine:
+            cancelled()
+            if local(entry) != 'itemref' or entry.attrib.get('linear', 'yes') == 'no':
+                continue
+            item = manifest.get(entry.attrib.get('idref'))
+            if item is None:
+                continue
+            target = epub_target(rootfile, item.attrib.get('href', ''))
+            if not target:
+                continue
+            member = target[0]
+            links = labels.get(member, [])
+            parser = EPUBText({fragment for fragment, _ in links if fragment})
+            parser.feed(archive.read(member).decode('utf-8-sig'))
+            text, anchors, heading = parser.reading()
+            if not text:
+                continue
+            count = len(text.split('\n\n'))
+            section = {0: (heading or f'Chapter {len(chapters) + 1}')[:240]}
+            for fragment, title in links:
+                start = anchors.get(fragment) if fragment else 0
+                if start is not None and start < count:
+                    section[start] = title
+            for start, title in sorted(section.items()):
+                chapters.append({'id': f'chapter-{len(chapters) + 1}', 'title': title, 'paragraph': paragraph + start})
+            parts.append(text)
+            paragraph += count
+            characters += len(text) + (2 if len(parts) > 1 else 0)
+            if characters > MAX_DOCUMENT:
+                raise ToolError('This EPUB contains over 20 million characters. Split the book into smaller volumes.')
+        text = document_text('\n\n'.join(parts))
+        validate_chapters(chapters, text)
+        metadata = {local(e): ' '.join((e.text or '').split())[:240] for e in package.iter() if local(e) in ('title', 'creator')}
+        return {'text': text, 'chapters': chapters, **({'title': metadata['title']} if metadata.get('title') else {}), **({'author': metadata['creator']} if metadata.get('creator') else {})}
+
+
+def validate_chapters(chapters, text):
+    if not isinstance(chapters, list) or len(chapters) > 2000:
+        raise ToolError('Invalid chapter information.')
+    paragraphs = sum(bool(part.strip()) for part in re.split(r'\n\s*\n', text))
+    previous, ids = -1, set()
+    for chapter in chapters:
+        if not isinstance(chapter, dict) or not isinstance(chapter.get('id'), str) or not 0 < len(chapter['id']) <= 80 or chapter['id'] in ids or not isinstance(chapter.get('title'), str) or not chapter['title'].strip() or len(chapter['title']) > 240 or type(chapter.get('paragraph')) is not int or not previous < chapter['paragraph'] < paragraphs:
+            raise ToolError('Invalid chapter information.')
+        ids.add(chapter['id'])
+        previous = chapter['paragraph']
+    if chapters and chapters[0]['paragraph'] != 0:
+        raise ToolError('The first chapter must start at the beginning of the reading.')
+    return chapters
+
+
 def xml(data):
     if b'<!DOCTYPE' in data.upper() or b'<!ENTITY' in data.upper():
         raise ToolError('This document contains unsupported XML declarations.')
@@ -91,9 +291,9 @@ def xml(data):
 
 def checked_zip(data):
     archive = zipfile.ZipFile(io.BytesIO(data))
-    if len(archive.infolist()) > 3000 or sum(i.file_size for i in archive.infolist()) > 50 * 1024 * 1024:
+    if len(archive.infolist()) > 10000 or sum(i.file_size for i in archive.infolist()) > 200 * 1024 * 1024:
         archive.close()
-        raise ToolError('This document expands beyond the 50 MB import limit.')
+        raise ToolError('This document expands beyond the 200 MB import limit.')
     if any(i.flag_bits & 1 for i in archive.infolist()):
         archive.close()
         raise ToolError('Password-protected documents are not supported.')
@@ -131,7 +331,7 @@ def pdf_text(data, cancelled):
     reader = PdfReader(io.BytesIO(data))
     if reader.is_encrypted:
         raise ToolError('Open an unlocked copy of this PDF first.')
-    if len(reader.pages) > 200:
+    if len(reader.pages) > 2000:
         raise ToolError('Import up to 200 PDF pages at a time. Split this PDF into sections.')
     parts = []
     scan = None
@@ -171,7 +371,7 @@ def pdf_text(data, cancelled):
         if text:
             parts.append(text)
         if sum(len(p) for p in parts) > MAX_DOCUMENT:
-            raise ToolError('This PDF contains over 250,000 characters. Import fewer pages.')
+            raise ToolError('This PDF contains over 20 million characters. Import fewer pages.')
     return '\n\n'.join(parts)
 
 
@@ -187,22 +387,7 @@ def import_document(payload, cancelled=lambda: None):
             namespace = {'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
             text = '\n\n'.join(''.join(t.text or '' for t in p.findall('.//w:t', namespace)) for p in root.findall('.//w:p', namespace))
     elif suffix == '.epub':
-        with checked_zip(data) as archive:
-            container = xml(archive.read('META-INF/container.xml'))
-            rootfile = next((e.attrib.get('full-path') for e in container.iter() if e.tag.endswith('rootfile')), None)
-            if not rootfile:
-                raise ToolError('This EPUB has no reading order.')
-            package = xml(archive.read(rootfile))
-            manifest = {e.attrib.get('id'): e.attrib.get('href') for e in package.iter() if e.tag.endswith('}item')}
-            order = [e.attrib.get('idref') for e in package.iter() if e.tag.endswith('}itemref')]
-            parts = []
-            for key in order:
-                cancelled()
-                href = manifest.get(key)
-                if href:
-                    member = str(PurePosixPath(rootfile).parent / href.split('#')[0])
-                    parts.append(html_text(archive.read(member).decode('utf-8-sig')))
-            text = '\n\n'.join(parts)
+        return {'title': title, 'source': name, **epub_document(data, cancelled)}
     elif suffix in ('.html', '.htm'):
         text = html_text(data.decode('utf-8-sig'))
     elif suffix in ('.txt', '.md', '.csv'):
@@ -224,7 +409,9 @@ class Library:
         db = sqlite3.connect(self.path)
         self.path.chmod(0o600)
         db.row_factory = sqlite3.Row
-        db.execute('CREATE TABLE IF NOT EXISTS documents (id TEXT PRIMARY KEY, title TEXT, text TEXT, source TEXT, position INTEGER, bookmarks TEXT, updated TEXT)')
+        db.execute("CREATE TABLE IF NOT EXISTS documents (id TEXT PRIMARY KEY, title TEXT, text TEXT, source TEXT, position INTEGER, bookmarks TEXT, updated TEXT, chapters TEXT NOT NULL DEFAULT '[]')")
+        if 'chapters' not in {row['name'] for row in db.execute('PRAGMA table_info(documents)')}:
+            db.execute("ALTER TABLE documents ADD COLUMN chapters TEXT NOT NULL DEFAULT '[]'")
         return db
 
     def list(self):
@@ -238,6 +425,7 @@ class Library:
                 raise ToolError('That saved document is no longer in your library.')
             result = dict(row)
             result['bookmarks'] = json.loads(result['bookmarks'])
+            result['chapters'] = json.loads(result['chapters'])
             return result
 
     def save(self, payload):
@@ -249,15 +437,19 @@ class Library:
             raise ToolError('Invalid document details.')
         position = payload.get('position', 0)
         bookmarks = payload.get('bookmarks', [])
+        chapters = validate_chapters(payload.get('chapters', []), text)
         if type(position) is not int or not 0 <= position <= MAX_DOCUMENT or not isinstance(bookmarks, list) or len(bookmarks) > 200:
             raise ToolError('Invalid reading position or bookmarks.')
         for mark in bookmarks:
             if not isinstance(mark, dict) or type(mark.get('position')) is not int or not 0 <= mark['position'] <= MAX_DOCUMENT or not isinstance(mark.get('label'), str) or len(mark['label']) > 160:
                 raise ToolError('Invalid bookmark.')
         with self.lock, self.connection() as db:
+            existing = db.execute('SELECT text,chapters FROM documents WHERE id=?', (key,)).fetchone()
+            if 'chapters' not in payload and existing and existing['text'] == text:
+                chapters = json.loads(existing['chapters'])
             if db.execute('SELECT count(*) FROM documents').fetchone()[0] >= 200 and not db.execute('SELECT 1 FROM documents WHERE id=?', (key,)).fetchone():
                 raise ToolError('Your library holds 200 documents. Delete or export some before adding more.')
-            db.execute('INSERT OR REPLACE INTO documents VALUES(?,?,?,?,?,?,?)', (key, title.strip() or 'Untitled', text, source, position, json.dumps(bookmarks), datetime.now(timezone.utc).isoformat()))
+            db.execute('INSERT OR REPLACE INTO documents (id,title,text,source,position,bookmarks,updated,chapters) VALUES(?,?,?,?,?,?,?,?)', (key, title.strip() or 'Untitled', text, source, position, json.dumps(bookmarks), datetime.now(timezone.utc).isoformat(), json.dumps(chapters)))
         return self.get(key)
 
     def delete(self, key):
@@ -491,7 +683,7 @@ def transcribe(payload, cancelled=lambda: None, progress=lambda _: None):
             progress(f'Transcribing {int(segment.end)} of {int(info.duration)} seconds…')
             text.append(segment.text.strip())
             if sum(map(len, text)) > MAX_DOCUMENT:
-                raise ToolError('This transcript exceeds 250,000 characters.')
+                raise ToolError('This transcript exceeds 20 million characters.')
     return {'text': document_text(' '.join(text)), 'language': info.language, 'duration': info.duration}
 
 
@@ -531,7 +723,7 @@ def export_audio(payload, synthesize, cancelled, progress):
                     target.setframerate(rate)
                 target.writeframes(source.readframes(source.getnframes()))
                 target.writeframes(b'\0\0' * int(rate * .2))
-            if output.tell() > 150 * 1024 * 1024:
+            if output.tell() > 1200 * 1024 * 1024:
                 raise ToolError('This audio is too large. Export a shorter section.')
     return {'audio': base64.b64encode(output.getvalue()).decode('ascii'), 'filename': 'openread.wav', 'mime': 'audio/wav'}
 

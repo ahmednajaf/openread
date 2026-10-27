@@ -57,7 +57,7 @@ final class ShareViewController: UIViewController {
             provider.loadFileRepresentation(forTypeIdentifier: type) { url, error in
                 do {
                     if let error { throw error }; guard let url else { throw ReadingError.unsupportedFile }
-                    guard (try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0) <= 20 * 1_024 * 1_024 else { throw ReadingError.fileTooLarge }
+                    guard (try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0) <= 100 * 1_024 * 1_024 else { throw ReadingError.fileTooLarge }
                     let destination = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathExtension(suffix)
                     try FileManager.default.copyItem(at: url, to: destination); continuation.resume(returning: destination)
                 } catch { continuation.resume(throwing: error) }

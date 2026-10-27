@@ -1,12 +1,13 @@
 # OpenRead on your phone
 
-Native previews are in this repository: **SwiftUI for iPhone/iPad** and **Kotlin + Jetpack Compose for Android**. They run Kitten Mini directly on the device. You do not need the Mac helper, an account or a subscription.
+Native previews are in this repository: **SwiftUI for iPhone/iPad** and **Kotlin + Jetpack Compose for Android**. They run Kitten Mini directly on the device, with optional Qwen expressive and personal voice packs. You do not need the Mac helper, an account or a subscription.
 
 These are developer previews, not App Store or Play Store releases. The updated voice engine has been tested on a physical iPhone. Store release preparation and wider device testing are ongoing.
 
 ## What you can use
 
 - Eight English Kitten voices, with a one-time download of about 83 MB.
+- Optional Qwen preset voices, style direction and local voice cloning. See [voice pack setup](VOICE_PACKS.md).
 - A reader with word highlighting, follow-along scrolling, passage controls and 0.5–2× speed.
 - A saved library, reading positions, bookmarks and a sleep timer.
 - PDF, EPUB, DOCX, HTML, text and image imports. Scanned PDFs and photos use on-device OCR. Android's English scanner is a separate, optional 4 MB download.
@@ -30,7 +31,7 @@ You need a Mac with **Xcode 26 or later** and an iPhone/iPad running **iOS 17 or
 
 Apple's free personal provisioning expires after seven days; reopen Xcode and run the app again to renew it. See [Apple's account guide](https://developer.apple.com/help/account/basics/about-your-developer-account). App Store/TestFlight distribution is a separate Apple Developer Program process.
 
-For the **full iOS share and Safari extensions**, use the OpenRead scheme with a development team that supports App Groups. Configure unique `OPENREAD_BUNDLE_ID` and `OPENREAD_APP_GROUP` values in the project's build settings, assign the same team to OpenRead, OpenReadShare and OpenReadSafari, and register/enable that group for all three targets. The entitlement files and runtime container use that single group setting. Share-sheet handoff still needs validation on a correctly signed physical device.
+For the **full iOS share and Safari extensions**, use the OpenRead scheme with a development team that supports App Groups. Configure unique `OPENREAD_BUNDLE_ID` and `OPENREAD_APP_GROUP` values in the project's build settings, assign the same team to OpenRead, OpenReadShare and OpenReadSafari, and register/enable that group for all three targets. The entitlement files and runtime container use that single group setting. Share-sheet handoff has been checked on a signed physical iPhone.
 
 The personal and full builds have separate libraries. Export a mobile library backup before switching between them.
 
@@ -75,7 +76,7 @@ The local APK is `app/build/outputs/apk/debug/app-debug.apk` inside the Android 
 
 **Listen offline:** after the model download, speech and scanning run on the phone. Voice files come from pinned upstream URLs with SHA-256 verification. Apple apps also prepare an approximately 80 MB local runtime cache so Safari can map the weights without duplicate copies. Your reading text is not sent to the model host. Download hosts receive the usual request/IP information during setup; imported website hosts receive your request when you open a link.
 
-**Useful limits:** 20 MB per imported file, 250,000 characters per reading, 200 PDF pages, at most 20 scanned PDF pages per import, and 200 saved readings/25 MB per mobile library backup. WAV exports accept excerpts up to 25,000 characters and use the voice's normal speed. EPUB DRM is not removed. Word timings are approximate; generation speed and background behaviour still need testing across physical phones.
+**Full books:** import a complete DRM-free EPUB and use its chapter picker. The apps accept files up to 100 MB and 20 million text characters, with 2,000 PDF pages (20 scanned pages per OCR import). Libraries hold up to 200 readings; ZIP backups are bounded at 500 MB. Native text is stored in chunks and displayed in bounded sections, while playback follows the whole book. Word timing remains approximate. See [voice packs and book limits](VOICE_PACKS.md) for details.
 
 ## Development checks
 

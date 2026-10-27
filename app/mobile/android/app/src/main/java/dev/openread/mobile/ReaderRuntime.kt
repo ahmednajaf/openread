@@ -18,28 +18,32 @@ data class ReaderState(
     val highlight: WordRange? = null, val status: String = "Ready", val error: String? = null,
     val voice: String = "Kiki", val speed: Float = 1f, val installed: Boolean = false,
     val downloading: Boolean = false, val downloadProgress: Float = 0f, val ocrInstalled: Boolean = false,
+    val direction: String = "", val qwenExpressive: Boolean = false, val qwenCloning: Boolean = false, val personalVoices: List<PersonalVoice> = emptyList(),
     val follow: Boolean = true, val highlightWords: Boolean = true, val sleepMinutes: Int = 0
 )
 class ReaderRuntime(val context: Context) {
     val library = LibraryStore(context)
     val models = ModelStore(context)
-    val engine = KittenEngine(models)
+    val engine = VoiceEngine(models, context, { state.value.voice }, { state.value.direction })
     val importer = DocumentImporter(context, models)
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val preferences = context.getSharedPreferences("reading", Context.MODE_PRIVATE)
-    private val mutable = MutableStateFlow(ReaderState(error = library.recoveryError, voice = preferences.getString("voice", "Kiki").takeIf { it in KittenEngine.voices } ?: "Kiki",
+    private val mutable = MutableStateFlow(ReaderState(error = library.recoveryError, voice = preferences.getString("voice", "Kiki").takeIf { it in KittenEngine.voices || QwenEngine.isVoice(it.orEmpty()) } ?: "Kiki",
         speed = preferences.getFloat("speed", 1f).coerceIn(.5f, 2f), installed = models.installed(), ocrInstalled = models.installed(true)))
     val state = mutable.asStateFlow()
     internal val commandToken = java.util.UUID.randomUUID().toString()
     var service: ReadingService? = null
     var passages = emptyList<ReadingPassage>(); private set
     private var download: Job? = null
+    private var textWindows = emptyList<WordRange>()
     var sleepDeadline = 0L; private set
     fun update(change: (ReaderState) -> ReaderState) { mutable.update(change) }
     fun open(reading: Reading) {
-        service?.stopReading(); passages = ReadingText.passages(reading.text)
+        service?.stopReading(); passages = ReadingText.passages(reading)
+        textWindows = ReadingText.windows(reading, passages)
+        val book = reading.copy(cachedWordCount = reading.wordCount, cachedTextLength = reading.text.length)
         val index = passages.indexOfFirst { it.end > reading.position }.coerceAtLeast(0)
-        update { it.copy(reading = reading, index = index, highlight = null, playing = false, preparing = false, status = "Ready to listen", error = null) }
+        update { it.copy(reading = book, index = index, highlight = null, playing = false, preparing = false, status = "Ready to listen", error = null) }
     }
     fun command(action: String) {
         val intent = Intent(context, ReadingService::class.java).setAction(action).putExtra("openread.command", commandToken)
@@ -58,14 +62,16 @@ class ReaderRuntime(val context: Context) {
         update { it.copy(index = index, highlight = null) }; persistPosition()
         if (active) command("play")
     }
+    fun textWindow(): WordRange { val current = state.value; val offset = current.highlight?.start ?: passages.getOrNull(current.index)?.start ?: 0; return textWindows.lastOrNull { it.start <= offset } ?: WordRange(0, 0) }
+    fun seekTextWindow(delta: Int) { val window = textWindow(); val index = textWindows.indexOf(window) + delta; textWindows.getOrNull(index)?.let { seek(it.start) } }
     fun speed(value: Float) {
         val speed = value.coerceIn(.5f, 2f); preferences.edit().putFloat("speed", speed).apply()
         update { it.copy(speed = speed) }; service?.setSpeed(speed)
     }
     fun voice(value: String) {
-        if (value !in KittenEngine.voices) return
+        if (value !in KittenEngine.voices && value !in QwenEngine.speakers.map { "qwen:$it" } && value !in engine.qwen.profiles().map { "qwen:clone:${it.id}" }) return
         val active = state.value.playing || state.value.preparing
-        service?.stopReading(); preferences.edit().putString("voice", value).apply(); update { it.copy(voice = value) }
+        service?.stopReading(); preferences.edit().putString("voice", value).apply(); update { it.copy(voice = value, installed = if (QwenEngine.isVoice(value)) engine.qwen.installedVoice(value) else models.installed()) }
         if (active) command("play")
     }
     fun sleep(minutes: Int) { sleepDeadline = if (minutes > 0) System.currentTimeMillis() + minutes * 60_000L else 0L; update { it.copy(sleepMinutes = minutes) } }
@@ -99,19 +105,33 @@ class ReaderRuntime(val context: Context) {
             finally { update { it.copy(downloading = false) } }
         }
     }
+    init { update { it.copy(direction = preferences.getString("direction", "").orEmpty(), qwenExpressive = engine.qwen.installed("expressive"), qwenCloning = engine.qwen.installed("clone"), personalVoices = engine.qwen.profiles(), installed = if (QwenEngine.isVoice(it.voice)) engine.qwen.installedVoice(it.voice) else models.installed()) } }
+    fun direction(value: String) { val bounded = value.take(500); preferences.edit().putString("direction", bounded).apply(); update { it.copy(direction = bounded) } }
+    fun setupQwen(pack: String) {
+        if (download?.isActive == true) return
+        service?.stopReading(); update { it.copy(downloading = true, downloadProgress = 0f, error = null) }
+        download = scope.launch { try { engine.qwen.download(pack) { progress -> update { it.copy(downloadProgress = progress) } }; update { it.copy(qwenExpressive = engine.qwen.installed("expressive"), qwenCloning = engine.qwen.installed("clone"), installed = if (QwenEngine.isVoice(it.voice)) engine.qwen.installedVoice(it.voice) else models.installed()) } } catch (_: CancellationException) {} catch (error: Exception) { fail(error) } finally { update { it.copy(downloading = false) } } }
+    }
+    fun cloneVoice(name: String, transcript: String, sample: android.net.Uri, permission: Boolean) {
+        if (download?.isActive == true) return
+        service?.stopReading(); update { it.copy(downloading = true, status = "Preparing personal voice", error = null) }
+        download = scope.launch { try { val profile = engine.qwen.clone(name, transcript, sample, permission); update { it.copy(personalVoices = engine.qwen.profiles()) }; voice("qwen:clone:${profile.id}") } catch (_: CancellationException) {} catch (error: Exception) { fail(error) } finally { update { it.copy(downloading = false) } } }
+    }
+    fun removeVoice(id: String) { scope.launch { try { engine.qwen.remove(id); if (state.value.voice == "qwen:clone:$id") voice("Kiki"); update { it.copy(personalVoices = engine.qwen.profiles()) } } catch (error: Exception) { fail(error) } } }
     fun cancelDownload() { download?.cancel() }
     fun fail(error: Throwable) { update { it.copy(error = error.message?.take(280) ?: "Something went wrong. Please try again.") } }
     suspend fun exportAudio(progress: (Int, Int) -> Unit): File {
         val reading = state.value.reading ?: error("Open a reading first.")
-        require(reading.text.length <= 25_000) { "Export an excerpt under 25,000 characters at a time." }
+        // Stream bounded passages to disk instead of retaining whole-book audio.
         engine.prepare(download = false)
-        val voice = state.value.voice; val parts = ReadingText.passages(reading.text)
+        val voice = state.value.voice; val parts = ReadingText.passages(reading)
         val output = File(context.cacheDir, "exports").apply { mkdirs() }.resolve("OpenRead-${System.currentTimeMillis()}.wav")
         try {
             withContext(Dispatchers.IO) { output.outputStream().use { stream ->
                 stream.write(ByteArray(44))
                 parts.forEachIndexed { index, passage ->
                     coroutineContext.ensureActive(); val clip = engine.generate(passage.text, voice)
+                    require(output.length() + clip.wav.size - 44 <= Int.MAX_VALUE.toLong()) { "This export is too large for a WAV file." }
                     stream.write(clip.wav, 44, clip.wav.size - 44); progress(index + 1, parts.size)
                 }
             }

@@ -15,38 +15,46 @@
 		1AFB01A1166AB57688F19D07 /* espeak-ng-data in Resources */ = {isa = PBXBuildFile; fileRef = 49E26A9F25682395B2E423B9 /* espeak-ng-data */; };
 		1BF4A4F27B8EF180AC206C71 /* models.json in Resources */ = {isa = PBXBuildFile; fileRef = CC202F003D973B4FC6CAD6A0 /* models.json */; };
 		1FF8E31B433FCFDF1A78E4C7 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B5F9247DC6FA57F242892F30 /* PrivacyInfo.xcprivacy */; };
+		21817883D1B9A3FA427C6A2A /* QwenEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 667D0A0C499BB44DAD8D8101 /* QwenEngine.swift */; };
 		21AD304F59AC9FC00FCED86E /* espeak-ng-data in Resources */ = {isa = PBXBuildFile; fileRef = 49E26A9F25682395B2E423B9 /* espeak-ng-data */; };
 		225F4F7F08FBD5E7EACBD6A9 /* Reading.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9E9FAAA23B2DC950FEDB4D8 /* Reading.swift */; };
 		2426BE57539A018B05775024 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = 1A99C7E9539B07345717BAF2 /* manifest.json */; };
 		2548F4A2EFF53647364E5446 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 70D3C582545AEDBF3587CF20 /* PrivacyInfo.xcprivacy */; };
 		340DEB803E073B2D55AE7AE3 /* icons in Resources */ = {isa = PBXBuildFile; fileRef = B56E65B9178B025BF7924C7A /* icons */; };
 		3A0B2143F52F1DE41602F46E /* background.js in Resources */ = {isa = PBXBuildFile; fileRef = 338B03B298E715396A3FD1AC /* background.js */; };
+		47A661C3528B1E57499709A9 /* MacBookReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70CA208A52BE78763C8E2B70 /* MacBookReader.swift */; };
+		4997B2B5D938AB20E39ADE34 /* DocumentImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D9003C3F269748CC26E1FA5 /* DocumentImporter.swift */; };
 		50412D50DC73E82DE41609D0 /* OpenReadInference in Frameworks */ = {isa = PBXBuildFile; productRef = 443C7F2D2D3A01F485AA1212 /* OpenReadInference */; };
 		5A82D4DD0151949057BEBCE1 /* OpenReadMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E220BD30E3786B1581D91B10 /* OpenReadMacApp.swift */; };
 		5A8AB2B0BBD10394487E598C /* content.js in Resources */ = {isa = PBXBuildFile; fileRef = 2B0408478E82EA15F4DD70C4 /* content.js */; };
+		6686BB4142CAF65FC97A6E6C /* onnxruntime in Frameworks */ = {isa = PBXBuildFile; productRef = DAD5F03FD6187A4ADD3AC221 /* onnxruntime */; };
 		68DC08EBF44C53A84696040C /* extract.js in Resources */ = {isa = PBXBuildFile; fileRef = 4C06774AF888660709F3E2C0 /* extract.js */; };
 		6E8A7E18CF72EA91458CFE51 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 724042937F99E7C875E43A79 /* Assets.xcassets */; };
 		7D1800AA3410D042A2065FBA /* Reading.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9E9FAAA23B2DC950FEDB4D8 /* Reading.swift */; };
 		80AA2FCFE1E299D18EEF17F2 /* models.json in Resources */ = {isa = PBXBuildFile; fileRef = CC202F003D973B4FC6CAD6A0 /* models.json */; };
-		834638C73369F6760FF2F54D /* OpenReadInference in Frameworks */ = {isa = PBXBuildFile; productRef = FC574252B7F14EEEB681B50C /* OpenReadInference */; };
+		834638C73369F6760FF2F54D /* OpenReadQwen in Frameworks */ = {isa = PBXBuildFile; productRef = 58EAE5C2E8D2D9E84C1930AD /* OpenReadQwen */; };
 		837F1ED3D84915B48B27A5D5 /* glass.js in Resources */ = {isa = PBXBuildFile; fileRef = B554372FB7126218D08D9C87 /* glass.js */; };
 		843929D175227C619F89BBBF /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BC41B100BDD094C97FCF205 /* SafariWebExtensionHandler.swift */; };
 		9C7A19DD972710C072DFB09A /* VoiceEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78781A30B5871BB35CFF924C /* VoiceEngine.swift */; };
+		9D4646F57DC99C50CB2FB15E /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 3AECDC078C74B18A216C4281 /* ZIPFoundation */; };
 		9E5A4710B790E10CA89AF769 /* core.js in Resources */ = {isa = PBXBuildFile; fileRef = 287E184DB2B9A6B0E18071D8 /* core.js */; };
-		AD578F9E3531F8D906C95825 /* OpenReadSpeech in Frameworks */ = {isa = PBXBuildFile; productRef = 912FBFDC08DD9E3F577548FC /* OpenReadSpeech */; };
+		AD578F9E3531F8D906C95825 /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = DB9210647104C6F54FFB6443 /* SwiftSoup */; };
 		B142C5FE9D9B7B14DB1B5639 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 751DD2CC728C8E6EB505F979 /* ZIPFoundation */; };
+		B267A2581F466BD816FCE5E4 /* qwen-models.json in Resources */ = {isa = PBXBuildFile; fileRef = 7D5B561C192AC34282292279 /* qwen-models.json */; };
+		B5D9FA0347225CBEC323785C /* QwenSettingsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD9AF19D2CBC79D9F034BB08 /* QwenSettingsSection.swift */; };
 		B7A50152602354925988CE63 /* popup.css in Resources */ = {isa = PBXBuildFile; fileRef = 0F186E6BD541C1FED54AE746 /* popup.css */; };
 		BE12C4A5EE1C485BC26979AE /* popup.js in Resources */ = {isa = PBXBuildFile; fileRef = 197C6669E2E894A62640A880 /* popup.js */; };
 		BECB0A5CDB0DA243F6D99889 /* settings.js in Resources */ = {isa = PBXBuildFile; fileRef = 9A50AE6B9C7CF754037A2C81 /* settings.js */; };
 		C14D664E2FEC1FAC4F9C4F9F /* OpenReadSpeech in Frameworks */ = {isa = PBXBuildFile; productRef = 18A4328277655CCC2B986C70 /* OpenReadSpeech */; };
+		CD6CA78BA9CCB9B718365D33 /* PlaybackController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B0F9FF5EDEE5B61E1C0555C /* PlaybackController.swift */; };
 		D1CA662719E2B3174B92E202 /* OpenReadMacSafari.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 21EE2EA22EF9F834B6F7062D /* OpenReadMacSafari.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		D25DD3BBE77CDB29BAD61FB8 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 3AECDC078C74B18A216C4281 /* ZIPFoundation */; };
+		D25DD3BBE77CDB29BAD61FB8 /* OpenReadSpeech in Frameworks */ = {isa = PBXBuildFile; productRef = 912FBFDC08DD9E3F577548FC /* OpenReadSpeech */; };
 		D3C5D52AFC030DCFE23C569F /* LibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BD84E703040B96F80531B7A /* LibraryStore.swift */; };
 		D73FBC2B8FEC19F32260BFE1 /* player.js in Resources */ = {isa = PBXBuildFile; fileRef = EC099B3CA5EA270ACBD96DE2 /* player.js */; };
 		DF8D2E6568CF3C0C692E1DE2 /* KittenInference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48E261082E29F2EC0A9AD3AA /* KittenInference.swift */; };
 		E1413D21948A8D0608C53450 /* KittenInference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48E261082E29F2EC0A9AD3AA /* KittenInference.swift */; };
 		E43EA014A8CDAFD65E9709D2 /* reader.css in Resources */ = {isa = PBXBuildFile; fileRef = 920E9E481DE7D74C83853868 /* reader.css */; };
-		ECA1FF4189ED36A2608DDEA1 /* onnxruntime in Frameworks */ = {isa = PBXBuildFile; productRef = DAD5F03FD6187A4ADD3AC221 /* onnxruntime */; };
+		ECA1FF4189ED36A2608DDEA1 /* OpenReadInference in Frameworks */ = {isa = PBXBuildFile; productRef = FC574252B7F14EEEB681B50C /* OpenReadInference */; };
 		FD619FBFF32933C9E4910132 /* highlighter.js in Resources */ = {isa = PBXBuildFile; fileRef = BFF24140509AB0AB347E0C06 /* highlighter.js */; };
 /* End PBXBuildFile section */
 
@@ -76,6 +84,7 @@
 
 /* Begin PBXFileReference section */
 		0A97F42A1E5754E66DB0E450 /* Mac.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Mac.entitlements; sourceTree = "<group>"; };
+		0B0F9FF5EDEE5B61E1C0555C /* PlaybackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackController.swift; sourceTree = "<group>"; };
 		0F186E6BD541C1FED54AE746 /* popup.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = popup.css; sourceTree = "<group>"; };
 		197C6669E2E894A62640A880 /* popup.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = popup.js; sourceTree = "<group>"; };
 		1A99C7E9539B07345717BAF2 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = manifest.json; sourceTree = "<group>"; };
@@ -86,15 +95,19 @@
 		338B03B298E715396A3FD1AC /* background.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = background.js; sourceTree = "<group>"; };
 		380CEB28FB0D6EBDA65C931C /* speech */ = {isa = PBXFileReference; lastKnownFileType = folder; name = speech; path = ../mobile/shared/speech; sourceTree = SOURCE_ROOT; };
 		3BC41B100BDD094C97FCF205 /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
+		3D9003C3F269748CC26E1FA5 /* DocumentImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentImporter.swift; sourceTree = "<group>"; };
 		48E261082E29F2EC0A9AD3AA /* KittenInference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KittenInference.swift; sourceTree = "<group>"; };
 		49E26A9F25682395B2E423B9 /* espeak-ng-data */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "espeak-ng-data"; path = "../mobile/shared/speech/espeak-ng-data"; sourceTree = SOURCE_ROOT; };
 		4C06774AF888660709F3E2C0 /* extract.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = extract.js; sourceTree = "<group>"; };
 		5BD84E703040B96F80531B7A /* LibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryStore.swift; sourceTree = "<group>"; };
+		667D0A0C499BB44DAD8D8101 /* QwenEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QwenEngine.swift; sourceTree = "<group>"; };
+		70CA208A52BE78763C8E2B70 /* MacBookReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacBookReader.swift; sourceTree = "<group>"; };
 		70D3C582545AEDBF3587CF20 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		71C113CE4F2868B9272C4490 /* OpenReadMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OpenReadMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		724042937F99E7C875E43A79 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		77365E0EBF223372201FADE7 /* inference */ = {isa = PBXFileReference; lastKnownFileType = folder; name = inference; path = ../mobile/shared/inference; sourceTree = SOURCE_ROOT; };
 		78781A30B5871BB35CFF924C /* VoiceEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceEngine.swift; sourceTree = "<group>"; };
+		7D5B561C192AC34282292279 /* qwen-models.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "qwen-models.json"; sourceTree = "<group>"; };
 		920E9E481DE7D74C83853868 /* reader.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = reader.css; sourceTree = "<group>"; };
 		9A50AE6B9C7CF754037A2C81 /* settings.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = settings.js; sourceTree = "<group>"; };
 		A7E06B830AEC65CBAE804B2D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -104,8 +117,10 @@
 		B9E9FAAA23B2DC950FEDB4D8 /* Reading.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reading.swift; sourceTree = "<group>"; };
 		BFF24140509AB0AB347E0C06 /* highlighter.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = highlighter.js; sourceTree = "<group>"; };
 		CC202F003D973B4FC6CAD6A0 /* models.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = models.json; sourceTree = "<group>"; };
+		CD9AF19D2CBC79D9F034BB08 /* QwenSettingsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QwenSettingsSection.swift; sourceTree = "<group>"; };
 		E220BD30E3786B1581D91B10 /* OpenReadMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenReadMacApp.swift; sourceTree = "<group>"; };
 		EC099B3CA5EA270ACBD96DE2 /* player.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = player.js; sourceTree = "<group>"; };
+		F7DD4B00B59DEBE3D3D5F595 /* qwen */ = {isa = PBXFileReference; lastKnownFileType = folder; name = qwen; path = ../mobile/shared/qwen; sourceTree = SOURCE_ROOT; };
 		FEFC8844988A036624938F52 /* popup.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = popup.html; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -125,10 +140,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				834638C73369F6760FF2F54D /* OpenReadInference in Frameworks */,
-				AD578F9E3531F8D906C95825 /* OpenReadSpeech in Frameworks */,
-				ECA1FF4189ED36A2608DDEA1 /* onnxruntime in Frameworks */,
-				D25DD3BBE77CDB29BAD61FB8 /* ZIPFoundation in Frameworks */,
+				834638C73369F6760FF2F54D /* OpenReadQwen in Frameworks */,
+				AD578F9E3531F8D906C95825 /* SwiftSoup in Frameworks */,
+				ECA1FF4189ED36A2608DDEA1 /* OpenReadInference in Frameworks */,
+				D25DD3BBE77CDB29BAD61FB8 /* OpenReadSpeech in Frameworks */,
+				6686BB4142CAF65FC97A6E6C /* onnxruntime in Frameworks */,
+				9D4646F57DC99C50CB2FB15E /* ZIPFoundation in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -138,8 +155,12 @@
 		110B72B9868D22A671185597 /* OpenRead */ = {
 			isa = PBXGroup;
 			children = (
+				3D9003C3F269748CC26E1FA5 /* DocumentImporter.swift */,
 				48E261082E29F2EC0A9AD3AA /* KittenInference.swift */,
 				5BD84E703040B96F80531B7A /* LibraryStore.swift */,
+				0B0F9FF5EDEE5B61E1C0555C /* PlaybackController.swift */,
+				667D0A0C499BB44DAD8D8101 /* QwenEngine.swift */,
+				CD9AF19D2CBC79D9F034BB08 /* QwenSettingsSection.swift */,
 				78781A30B5871BB35CFF924C /* VoiceEngine.swift */,
 			);
 			name = OpenRead;
@@ -168,6 +189,7 @@
 				724042937F99E7C875E43A79 /* Assets.xcassets */,
 				A7E06B830AEC65CBAE804B2D /* Info.plist */,
 				0A97F42A1E5754E66DB0E450 /* Mac.entitlements */,
+				70CA208A52BE78763C8E2B70 /* MacBookReader.swift */,
 				E220BD30E3786B1581D91B10 /* OpenReadMacApp.swift */,
 				B5F9247DC6FA57F242892F30 /* PrivacyInfo.xcprivacy */,
 			);
@@ -178,6 +200,7 @@
 			isa = PBXGroup;
 			children = (
 				77365E0EBF223372201FADE7 /* inference */,
+				F7DD4B00B59DEBE3D3D5F595 /* qwen */,
 				380CEB28FB0D6EBDA65C931C /* speech */,
 			);
 			name = Packages;
@@ -218,6 +241,7 @@
 			children = (
 				CC202F003D973B4FC6CAD6A0 /* models.json */,
 				2E232291F6D0F04F4F1F8A5E /* NOTICES.txt */,
+				7D5B561C192AC34282292279 /* qwen-models.json */,
 			);
 			name = shared;
 			path = ../mobile/shared;
@@ -283,6 +307,8 @@
 			);
 			name = OpenReadMac;
 			packageProductDependencies = (
+				58EAE5C2E8D2D9E84C1930AD /* OpenReadQwen */,
+				DB9210647104C6F54FFB6443 /* SwiftSoup */,
 				FC574252B7F14EEEB681B50C /* OpenReadInference */,
 				912FBFDC08DD9E3F577548FC /* OpenReadSpeech */,
 				DAD5F03FD6187A4ADD3AC221 /* onnxruntime */,
@@ -322,8 +348,10 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				4474115D37A5C676929580F6 /* XCRemoteSwiftPackageReference "onnxruntime-swift-package-manager" */,
+				A414449EAF6BE830BFA6469F /* XCRemoteSwiftPackageReference "SwiftSoup" */,
 				BC509FF46BBC5D7FD7E789B4 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
 				C3ABE62F6C79C35ACEFA0A33 /* XCLocalSwiftPackageReference "../mobile/shared/inference" */,
+				3544E805CBB8720765C5E90F /* XCLocalSwiftPackageReference "../mobile/shared/qwen" */,
 				AD1E9CF1C6F4FFFE58932D2F /* XCLocalSwiftPackageReference "../mobile/shared/speech" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -347,6 +375,7 @@
 				1FF8E31B433FCFDF1A78E4C7 /* PrivacyInfo.xcprivacy in Resources */,
 				21AD304F59AC9FC00FCED86E /* espeak-ng-data in Resources */,
 				80AA2FCFE1E299D18EEF17F2 /* models.json in Resources */,
+				B267A2581F466BD816FCE5E4 /* qwen-models.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -381,9 +410,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4997B2B5D938AB20E39ADE34 /* DocumentImporter.swift in Sources */,
 				E1413D21948A8D0608C53450 /* KittenInference.swift in Sources */,
 				D3C5D52AFC030DCFE23C569F /* LibraryStore.swift in Sources */,
+				47A661C3528B1E57499709A9 /* MacBookReader.swift in Sources */,
 				5A82D4DD0151949057BEBCE1 /* OpenReadMacApp.swift in Sources */,
+				CD6CA78BA9CCB9B718365D33 /* PlaybackController.swift in Sources */,
+				21817883D1B9A3FA427C6A2A /* QwenEngine.swift in Sources */,
+				B5D9FA0347225CBEC323785C /* QwenSettingsSection.swift in Sources */,
 				7D1800AA3410D042A2065FBA /* Reading.swift in Sources */,
 				9C7A19DD972710C072DFB09A /* VoiceEngine.swift in Sources */,
 			);
@@ -425,6 +459,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "$(OPENREAD_BUNDLE_ID)";
 				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) OPENREAD_QWEN";
 			};
 			name = Debug;
 		};
@@ -441,6 +476,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "$(OPENREAD_BUNDLE_ID)";
 				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) OPENREAD_QWEN";
 			};
 			name = Release;
 		};
@@ -515,7 +551,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 7;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -530,7 +566,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.5.1;
+				MARKETING_VERSION = 0.6.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				OPENREAD_APP_GROUP = group.app.getopenread.reader;
@@ -579,7 +615,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 7;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -600,7 +636,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.5.1;
+				MARKETING_VERSION = 0.6.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -648,6 +684,10 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
+		3544E805CBB8720765C5E90F /* XCLocalSwiftPackageReference "../mobile/shared/qwen" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../mobile/shared/qwen;
+		};
 		AD1E9CF1C6F4FFFE58932D2F /* XCLocalSwiftPackageReference "../mobile/shared/speech" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../mobile/shared/speech;
@@ -665,6 +705,14 @@
 			requirement = {
 				kind = exactVersion;
 				version = 1.24.2;
+			};
+		};
+		A414449EAF6BE830BFA6469F /* XCRemoteSwiftPackageReference "SwiftSoup" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/scinfu/SwiftSoup";
+			requirement = {
+				kind = exactVersion;
+				version = 2.7.6;
 			};
 		};
 		BC509FF46BBC5D7FD7E789B4 /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
@@ -691,6 +739,10 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = OpenReadInference;
 		};
+		58EAE5C2E8D2D9E84C1930AD /* OpenReadQwen */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = OpenReadQwen;
+		};
 		751DD2CC728C8E6EB505F979 /* ZIPFoundation */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = BC509FF46BBC5D7FD7E789B4 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
@@ -709,6 +761,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4474115D37A5C676929580F6 /* XCRemoteSwiftPackageReference "onnxruntime-swift-package-manager" */;
 			productName = onnxruntime;
+		};
+		DB9210647104C6F54FFB6443 /* SwiftSoup */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A414449EAF6BE830BFA6469F /* XCRemoteSwiftPackageReference "SwiftSoup" */;
+			productName = SwiftSoup;
 		};
 		FC574252B7F14EEEB681B50C /* OpenReadInference */ = {
 			isa = XCSwiftPackageProductDependency;

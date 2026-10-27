@@ -1,16 +1,19 @@
 import SwiftUI
 import SafariServices
 import AppKit
+import UniformTypeIdentifiers
 
 @main struct OpenReadMacApp: App {
     @StateObject private var library = LibraryStore()
+    @StateObject private var player = PlaybackController()
+    @State private var importing = false
     @State private var installed = false
     @State private var downloading = false
     @State private var progress = 0.0
     @State private var selected: Reading.ID?
     @State private var error: String?
     @Environment(\.scenePhase) private var scenePhase
-    private let engine = VoiceEngine()
+    private var engine: VoiceEngine { player.engine }
     var body: some Scene {
         WindowGroup("OpenRead") {
             NavigationSplitView {
@@ -20,11 +23,11 @@ import AppKit
                     } }
                 }.navigationSplitViewColumnWidth(min: 210, ideal: 250)
             } detail: {
-                if let reading = library.readings.first(where: { $0.id == selected }) {
+                if let reading = player.reading, reading.id == selected {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 24) {
                             Text(reading.title).font(.system(size: 36, design: .serif))
-                            Text(reading.text).font(.system(size: 20, design: .serif)).lineSpacing(10).textSelection(.enabled)
+                            MacBookReader().environmentObject(player).frame(minHeight: 400)
                             if let source = reading.source, let url = URL(string: source), ["https", "http"].contains(url.scheme ?? "") { Link("Read on the original page", destination: url) }
                         }.padding(40).frame(maxWidth: 760)
                     }
@@ -46,21 +49,35 @@ import AppKit
                     }.padding(45).frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
+            .toolbar { Button("Import book", systemImage: "doc.badge.plus") { importing = true } }
+            .fileImporter(isPresented: $importing, allowedContentTypes: [.pdf, .plainText, .html, UTType(filenameExtension: "epub")!, UTType(filenameExtension: "docx")!]) { result in
+                if case .success(let url) = result { Task { do { let book = try await DocumentImporter().file(url); try library.save(book); player.open(book); selected = book.id } catch { self.error = error.localizedDescription } } }
+            }
+            .onChange(of: selected) { _, id in if let id { do { player.open(try library.load(id)) } catch { self.error = error.localizedDescription } } }
+            .onAppear { player.onPosition = { id, offset in do { try library.position(id, offset) } catch { self.error = error.localizedDescription } } }
             .tint(Color(red: 0.47, green: 0.37, blue: 0.65))
             .background(Color(nsColor: .windowBackgroundColor))
             .frame(minWidth: 850, minHeight: 650)
             .task {
                 installed = await engine.isInstalled(); receiveInbox()
-                if installed {
-                    do { try await engine.prepare(download: false) { _ in } }
-                    catch { self.error = "Your voices could not be prepared. Reopen OpenRead and try again." }
-                }
+
             }
             .onChange(of: scenePhase) { _, phase in if phase == .active { receiveInbox() } }
             .onOpenURL { url in if url.scheme == "openread" { receiveInbox(); NSApp.activate(ignoringOtherApps: true) } }
             .alert("OpenRead", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) { Button("OK") { error = nil } } message: { Text(error ?? "") }
         }
-        Settings { ScrollView { Text((Bundle.main.url(forResource: "NOTICES", withExtension: "txt").flatMap { try? String(contentsOf: $0, encoding: .utf8) }) ?? "See licences in the source repository.").font(.caption).textSelection(.enabled).padding() }.frame(width: 650, height: 500) }
+        Settings { TabView {
+            Form {
+                Section("Kitten voices") {
+                    if !installed { Button("Download Kitten voices · 83 MB") { setup() } }
+                    Picker("Voice", selection: $player.voice) { ForEach(VoiceEngine.kittenVoices, id: \.self) { Text(VoiceEngine.name($0)).tag($0) } }
+                }
+                QwenSettingsSection()
+            }.formStyle(.grouped).environmentObject(player).tabItem { Label("Voices", systemImage: "waveform") }
+            ScrollView { Text((Bundle.main.url(forResource: "NOTICES", withExtension: "txt").flatMap { try? String(contentsOf: $0, encoding: .utf8) }) ?? "See licences in the source repository.").font(.caption).textSelection(.enabled).padding() }.tabItem { Label("Licences", systemImage: "doc.text") }
+        }.frame(width: 650, height: 600)
+        .alert("OpenRead", isPresented: Binding(get: { player.error != nil }, set: { if !$0 { player.error = nil } })) { Button("OK") { player.error = nil } } message: { Text(player.error ?? "") } }
+
     }
     private func setup() {
         downloading = true

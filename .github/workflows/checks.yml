@@ -25,3 +25,5 @@ jobs:
       - run: git diff --exit-code -- app/apple/SafariExtension/Resources/
       - run: git diff --exit-code -- extension/ app/reader/dist/
       - run: npm test
+      - name: Build portable Qwen CPU engine
+        run: cmake -S app/mobile/shared/qwen -B /tmp/openread-qwen -DCMAKE_BUILD_TYPE=Release && cmake --build /tmp/openread-qwen --parallel 2

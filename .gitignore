@@ -24,3 +24,7 @@ local.properties
 *.p12
 *.p8
 *.mobileprovision
+
+# Local Swift package compilation and editor state
+.build/
+.swiftpm/
