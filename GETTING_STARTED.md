@@ -60,6 +60,7 @@ Safari supplies its own native glass for the toolbar popup. Device appearance is
 - Open **Reading options → Library & tools** for files, scans, bookmarks, local summaries, questions, audio overviews, and dictation.
 - Use **Save this reading** to keep an article in your local library. Nothing automatically saves every webpage you visit.
 - Import a PDF, Word `.docx`, EPUB, text, HTML, or a photo. Scan & Listen uses Apple's local Vision OCR on Mac, including image-only PDF pages. EPUBs must be DRM-free. Imports have size limits; split very large books into chapters.
+- EPUB imports include a chapter picker and previous/next chapter controls. OpenRead uses the book’s contents list (EPUB 3 navigation or EPUB 2 NCX) in reading order, with headings as a fallback. Chapter jumps keep playback going if you are listening, or stay paused otherwise. Save the book to keep its chapters and reading position; library backups include them too. Reimport previously saved EPUBs to add chapter navigation. Editing the imported text removes its chapter navigation.
 - Export a reading as a WAV audio file. Exports use the selected voice at natural speed; playback speed is adjustable in your audio player. Generating a long file takes time.
 - Choose a file from your installed Google Drive, Dropbox, OneDrive, or iCloud **synced folder** in the file picker. OpenRead does not log into those providers or directly connect their APIs.
 

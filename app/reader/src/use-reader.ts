@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from './api';
-import { readingLayout } from './layout';
-export type Reading = { id?: string; title: string; text: string; source?: string; position?: number; author?: string; book?: string; chapter?: string; sample?: boolean; bookmarks?: { position: number; label: string }[] };
+import { readingLayout, chapterLayout, validChapters, type Chapter } from './layout';
+export type Reading = { id?: string; title: string; text: string; source?: string; position?: number; author?: string; book?: string; chapter?: string; chapters?: Chapter[]; sample?: boolean; bookmarks?: { position: number; label: string }[] };
 export function useReader(reading: Reading, voice: string, rate: number, follow: boolean, highlight: boolean) {
   const player = useRef<LocalPlayer | null>(null);
   const layout = useMemo(() => readingLayout(reading.text, OpenReadCore.passages(reading.text)), [reading.text]);
+  const chapters = useMemo(() => chapterLayout(validChapters(reading.chapters || [], reading.text) ? reading.chapters || [] : [], layout.items), [reading.chapters, layout]);
   const article = useRef<HTMLElement | null>(null);
   const options = useRef({ follow, highlight }); options.current = { follow, highlight };
   const [phase, setPhase] = useState<Phase>({ index: 0, total: 0, status: 'idle' });
@@ -29,7 +30,9 @@ export function useReader(reading: Reading, voice: string, rate: number, follow:
         if (!node || node.nodeType !== Node.TEXT_NODE || end > (node.textContent?.length || 0)) return;
         const next = document.createRange(); next.setStart(node, start); next.setEnd(node, end); range.current = next; paint();
         const rect = next.getBoundingClientRect();
-        if (options.current.follow && (rect.top < 120 || rect.bottom > innerHeight - 150)) window.scrollBy({ top: rect.top - innerHeight * .4, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+        const navigation = article.current?.previousElementSibling;
+        const top = navigation?.classList.contains('chapter-navigation') ? navigation.getBoundingClientRect().bottom + 20 : 120;
+        if (options.current.follow && (rect.top < top || rect.bottom > innerHeight - 150)) window.scrollBy({ top: rect.top - Math.max(top, innerHeight * .4), behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
       },
     });
     const reposition = () => paint(); window.addEventListener('scroll', reposition, { passive: true }); window.addEventListener('resize', reposition);
@@ -45,7 +48,21 @@ export function useReader(reading: Reading, voice: string, rate: number, follow:
       setProgress(p?.status === 'ended' ? 1 : p?.items.length ? (p.index + fraction) / p.items.length : 0);
     }, 250); return () => clearInterval(interval);
   }, []);
-  return { article, player, phase, rects, error, setError, progress, isCurrent: phaseReading?.text === reading.text && phaseReading?.id === reading.id, paragraphs: layout.paragraphs,
+  const isCurrent = phaseReading?.text === reading.text && phaseReading?.id === reading.id;
+  const position = isCurrent ? phase.index : reading.position || 0;
+  const activeChapter = chapters.reduce((current, chapter, index) => chapter.index <= position ? index : current, 0);
+  return { article, player, phase, rects, error, setError, progress, isCurrent, paragraphs: layout.paragraphs, chapters, activeChapter,
+    goToChapter(index: number) {
+      const chapter = chapters[index];
+      if (!chapter) return;
+      setError(''); player.current?.seek(chapter.index);
+      const paragraph = article.current?.children[chapter.paragraph] as HTMLElement | undefined;
+      if (paragraph) {
+        const navigation = article.current?.previousElementSibling;
+        paragraph.style.scrollMarginTop = `${(navigation?.getBoundingClientRect().height || 0) + 120}px`;
+        paragraph.scrollIntoView({ block: 'start', behavior: 'instant' });
+      }
+    },
     toggle() { setError(''); if (['playing', 'loading'].includes(player.current?.status || '')) player.current?.pause(); else void player.current?.play(); },
   };
 }

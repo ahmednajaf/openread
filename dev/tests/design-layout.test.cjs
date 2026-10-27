@@ -7,7 +7,7 @@ const { transformSync } = require('esbuild');
 const core = require('../../extension/core.js');
 const moduleScope = { exports: {} };
 vm.runInNewContext(transformSync(fs.readFileSync(path.join(__dirname, '../../app/reader/src/layout.ts'), 'utf8'), { loader: 'ts', format: 'cjs' }).code, { module: moduleScope, exports: moduleScope.exports });
-const { readingLayout } = moduleScope.exports;
+const { readingLayout, chapterLayout, validChapters } = moduleScope.exports;
 
 test('speech chunks map forward through repeated phrases and retain Unicode offsets', () => {
   const text = 'One repeated phrase. One repeated phrase.\n\n🙂 Read this.';
@@ -37,5 +37,26 @@ test('lists retain line breaks while word boundaries map through normalized whit
     for (const word of item.text.matchAll(/\S+/gu)) {
       assert.equal(text.slice(item.offsets[word.index], item.offsets[word.index + word[0].length]), word[0]);
     }
+  }
+});
+
+test('chapters seek to their first speech chunk after long and Unicode paragraphs', () => {
+  const text = '🙂 A long sentence. '.repeat(70).trim() + '\n\nSecond heading\n\nFinal chapter.';
+  const chapters = [{ id: 'one', title: 'First', paragraph: 0 }, { id: 'two', title: 'Second', paragraph: 1 }, { id: 'three', title: 'Final', paragraph: 2 }];
+  const layout = readingLayout(text, core.passages(text));
+  assert.ok(layout.items.filter(item => item.paragraph === 0).length > 1);
+  assert.ok(validChapters(chapters, text));
+  const mapped = chapterLayout(chapters, layout.items);
+  assert.equal(mapped[0].index, 0);
+  assert.equal(mapped[1].index, layout.items.findIndex(item => item.paragraph === 1));
+  assert.equal(layout.items[mapped[2].index].text, 'Final chapter.');
+});
+
+test('chapter metadata rejects missing starts, duplicate IDs and invalid paragraph locations', () => {
+  const text = 'First.\n\nSecond.';
+  assert.ok(validChapters([], text)); // Older readings and backups still work.
+  const first = { id: 'one', title: 'First', paragraph: 0 };
+  for (const bad of [null, {}, [{ ...first, paragraph: 1 }], [{ ...first, paragraph: true }], [first, { ...first, paragraph: 1 }], [first, { id: 'two', title: 'Second', paragraph: 2 }], [{ ...first, title: ' ' }]]) {
+    assert.equal(validChapters(bad, text), false);
   }
 });

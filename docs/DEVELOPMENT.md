@@ -155,6 +155,8 @@ The Python checks need their corresponding optional packages/models. Browser tes
 
 `app/reader/src/` contains the React/TypeScript reading workspace. `app/shared/components/ui/` holds shared controls and the attributed glass headline. `npm run build` produces the committed files in `app/reader/dist/`; Finder users do not need Node. Restart the helper after updating, then refresh http://127.0.0.1:8765/. Existing saved readings remain in the same library file.
 
+EPUB import preserves chapter starts as paragraph indices, using EPUB 3 navigation or EPUB 2 NCX labels in spine order. Paragraph indices avoid Python/JavaScript Unicode offset differences; `chapterLayout` maps them to the first speech chunk in each paragraph. The library migrates older databases with an empty chapter list, and backups retain chapter metadata. Previously flattened imports need reimporting. `dev/tests/epub_fixture.py` builds a small EPUB with three chapters, including a percent-encoded fragment and two chapters in one file. Run `node dev/tests/chapters-browser.cjs` (or `BROWSER=chromium` for Chrome) for real-voice chapter selection, playback, save/resume, backup/restore and layout checks against a disposable library on port 8766. Run it separately from `workspace-browser.cjs`, which uses the same port.
+
 `npm run design` runs the same app in an isolated development server at port 4180, using a separate library on its helper at 8767. It is a developer preview of the production source, not a separate design implementation.
 
 ## Repository map

@@ -1,3 +1,24 @@
+export type Chapter = { id: string; title: string; paragraph: number };
+
+export function validChapters(value: unknown, text: string): value is Chapter[] {
+  if (!Array.isArray(value) || value.length > 2000) return false;
+  const count = text.trim().split(/\n\s*\n/u).filter(p => p.trim()).length;
+  let previous = -1;
+  const ids = new Set<string>();
+  for (const chapter of value) {
+    if (!chapter || typeof chapter.id !== 'string' || !chapter.id || chapter.id.length > 80 || ids.has(chapter.id) || typeof chapter.title !== 'string' || !chapter.title.trim() || chapter.title.length > 240 || !Number.isInteger(chapter.paragraph) || chapter.paragraph <= previous || chapter.paragraph >= count) return false;
+    previous = chapter.paragraph;
+    ids.add(chapter.id);
+  }
+  return !value.length || value[0].paragraph === 0;
+}
+
+export function chapterLayout(chapters: Chapter[], items: { paragraph?: number }[]) {
+  const starts = new Map<number, number>();
+  items.forEach((item, index) => { if (!starts.has(item.paragraph || 0)) starts.set(item.paragraph || 0, index); });
+  return chapters.map(chapter => ({ ...chapter, index: starts.get(chapter.paragraph) ?? 0 }));
+}
+
 // Retain source paragraphs while mapping smaller speech chunks into their text.
 export function readingLayout(text: string, chunks: { text: string; paragraph?: number }[]) {
   const paragraphs = text.split(/\n\s*\n/u).map(p => p.trim()).filter(Boolean);
