@@ -55,7 +55,7 @@ internal class ContextPronunciation(private val folder: File) : AutoCloseable {
     }
     @Synchronized fun replacements(text: String): String {
         val candidates = mutableListOf<Candidate>()
-        Regex("(?U)\\S+").findAll(text).forEachIndexed { owner, match ->
+        Regex("[^\\s\\u0085\\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000]+").findAll(text).forEachIndexed { owner, match ->
             val trimmed = match.value.trim { it in punctuation }; val word = trimmed.lowercase(Locale.ROOT)
             if (word in words && candidates.size < 64) {
                 val a = match.range.first + match.value.indexOf(trimmed); val b = a + trimmed.length
