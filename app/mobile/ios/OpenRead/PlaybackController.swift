@@ -9,6 +9,7 @@ import MediaPlayer
     @Published var status = "Ready"
     @Published var isPlaying = false
     @Published var isPreparing = false
+    @Published var preparingAhead = false
     @Published var highlighted: NSRange?
     @Published var error: String?
     @Published var installed = false
@@ -37,6 +38,7 @@ import MediaPlayer
     private var streamAudio: ContinuousSpeechPlayer?
     private var streaming = false
     private var words: [SpokenWord] = []
+    private var streamPassages: [(index: Int, start: Double)] = []
     private var passages: [ReadingPassage] = []
     private var textWindows: [NSRange] = []
     private var generation = UUID()
@@ -123,14 +125,14 @@ import MediaPlayer
     func pause() {
         if streaming, let streamAudio { streamAudio.pause() }
         else { generation = UUID(); task?.cancel(); prefetch?.cancel(); prefetch = nil; audio?.pause() }
-        isPreparing = false; isPlaying = false; highlighted = nil
+        preparingAhead = false; isPreparing = false; isPlaying = false; highlighted = nil
         status = "Paused"; persistPosition(); nowPlaying()
     }
     func stop() {
         generation = UUID(); task?.cancel(); prefetch?.cancel(); prefetch = nil
         streamAudio?.stop(); streamAudio = nil; streaming = false
-        audio?.stop(); audio = nil; words = []; highlighted = nil
-        isPlaying = false; isPreparing = false; status = "Ready"; persistPosition(); nowPlaying()
+        audio?.stop(); audio = nil; words = []; streamPassages = []; highlighted = nil
+        preparingAhead = false; isPlaying = false; isPreparing = false; status = "Ready"; persistPosition(); nowPlaying()
     }
     func next() { seek(min(passages.count - 1, index + 1)) }
     func previous() { seek(max(0, index - 1)) }
@@ -141,6 +143,38 @@ import MediaPlayer
         if resume { play() }
     }
     func setSleep(_ minutes: Int) { sleepMinutes = minutes; sleepDeadline = minutes > 0 ? Date().addingTimeInterval(Double(minutes) * 60) : nil }
+    /// Generate a finite listening window before playback for devices/rates that
+    /// cannot sustain realtime Qwen. Normal playback reads the same local cache.
+    func prepareAudioAhead() {
+        #if OPENREAD_QWEN
+        guard voice.hasPrefix("qwen:"), !passages.isEmpty, !downloading else { return }
+        stop(); preparingAhead = true; isPreparing = true; error = nil
+        let token = UUID(); generation = token
+        let selectedVoice = voice, instruction = direction, speed = Double(rate), first = index
+        status = "Preparing audio ahead…"
+        task = Task {
+            do {
+                try await engine.prepare(voice: selectedVoice, download: false) { _ in }
+                var seconds = 0.0
+                for part in passages[first...] {
+                    try Task.checkCancellation()
+                    let clip = try await engine.qwen.generate(part.text, voice: selectedVoice, instruction: instruction)
+                    guard token == generation, !Task.isCancelled else { return }
+                    guard await engine.qwen.isPrepared(part.text, voice: selectedVoice, instruction: instruction) else {
+                        throw ImportFailure(message: "There isn't enough free storage to keep prepared audio. Free some space and try again.")
+                    }
+                    seconds += clip.duration
+                    status = "Preparing audio · \(Int(seconds / speed)) seconds ready"
+                    if seconds >= 600 * speed { break }
+                }
+                guard token == generation else { return }
+                preparingAhead = false; isPreparing = false; status = "Audio ready · tap Play"
+            } catch {
+                if token == generation, !Task.isCancelled { preparingAhead = false; isPreparing = false; status = "Paused"; self.error = error.localizedDescription }
+            }
+        }
+        #endif
+    }
     func exportAudio(progress: @escaping @Sendable (Int, Int) -> Void) async throws -> URL {
         guard let reading else { throw ReadingError.noText }
         // Audio is written a passage at a time; the WAV format remains bounded below.
@@ -186,7 +220,7 @@ import MediaPlayer
                 #if OPENREAD_QWEN
                 if chosenVoice.hasPrefix("qwen:") {
                     try configureAudio()
-                    streaming = true; words = []
+                    streaming = true; words = []; streamPassages = []
                     let output = ContinuousSpeechPlayer()
                     output.rate = rate
                     output.onStateChange = { [weak self] playing in
@@ -194,7 +228,8 @@ import MediaPlayer
                         self.isPlaying = playing
                         let paused = self.streamAudio?.isPaused == true
                         self.isPreparing = !playing && !paused
-                        self.status = paused ? "Paused" : playing ? "Listening · Qwen timing is approximate" : "Buffering Qwen audio on this device…"
+                        self.status = paused ? "Paused" : playing ? "Listening · Qwen timing is approximate" :
+                            (self.streamAudio?.underruns ?? 0) > 0 ? "Buffering at \(self.rate.formatted())× · use Prepare audio ahead in reading options" : "Buffering Qwen audio on this device…"
                         if !playing { self.highlighted = nil }
                         self.nowPlaying()
                     }
@@ -204,22 +239,38 @@ import MediaPlayer
                     }
                     output.onFinished = { [weak self] in
                         guard let self, token == self.generation else { return }
+                        self.index = self.passages.count - 1
                         self.finishPassage()
                     }
                     streamAudio = output
-                    for try await chunk in engine.qwen.stream(passage.text, voice: chosenVoice, instruction: direction) {
+                    let first = index
+                    let instruction = direction
+                    // Keep generating the next passage as soon as the current one
+                    // finishes synthesis, while both use the SAME audio timeline.
+                    // Bound memory to a modest lead plus one in-flight passage.
+                    for next in first..<passages.count {
+                        while output.bufferedSeconds > 20 * Double(rate) || output.isPaused {
+                            try await Task.sleep(nanoseconds: 100_000_000)
+                            try Task.checkCancellation()
+                        }
                         guard token == generation, !Task.isCancelled else { return }
-                        let offset = output.duration
-                        words.append(contentsOf: chunk.words.map { SpokenWord(range: $0.range, start: $0.start + offset, end: $0.end + offset) })
-                        try output.append(chunk)
+                        let part = passages[next]
+                        let base = output.duration
+                        streamPassages.append((next, base))
+                        for try await event in engine.qwen.stream(part.text, voice: chosenVoice, instruction: instruction) {
+                            guard token == generation, !Task.isCancelled else { return }
+                            switch event {
+                            case .audio(let chunk): try output.append(chunk)
+                            case .timing(let timing):
+                                words.append(contentsOf: timing.map {
+                                    SpokenWord(range: NSRange(location: part.range.location + $0.range.location, length: $0.range.length),
+                                               start: base + $0.start, end: base + $0.end)
+                                })
+                            }
+                        }
                     }
                     guard token == generation, !Task.isCancelled else { return }
                     try output.finish()
-                    if canNext {
-                        let next = passages[index + 1].text
-                        let instruction = direction
-                        prefetch = Task { _ = try? await engine.generate(next, voice: chosenVoice, instruction: instruction) }
-                    }
                     return
                 }
                 #endif
@@ -245,12 +296,24 @@ import MediaPlayer
     }
     private func updateClock() {
         if let deadline = sleepDeadline, deadline <= Date(), isPlaying || isPreparing { pause(); sleepDeadline = nil; sleepMinutes = 0; status = "Sleep timer finished" }
-        guard isPlaying, highlight, passages.indices.contains(index) else { return }
+        guard isPlaying, passages.indices.contains(index) else { return }
         let time = streamAudio?.currentTime ?? audio?.currentTime ?? 0
+        if streaming {
+            if let marker = streamPassages.last(where: { $0.start <= time }), marker.index != index {
+                index = marker.index; persistPosition(); nowPlaying()
+            }
+            // A book can be arbitrarily long; keep only the active/buffered window.
+            words.removeAll { $0.end < time - 1 }
+            if let current = streamPassages.lastIndex(where: { $0.start <= time }), current > 0 {
+                streamPassages.removeFirst(current)
+            }
+        }
+        guard highlight else { highlighted = nil; return }
         if let word = words.last(where: { $0.start <= time && time < $0.end }) {
-            highlighted = NSRange(location: passages[index].range.location + word.range.location, length: word.range.length)
+            highlighted = NSRange(location: (streaming ? 0 : passages[index].range.location) + word.range.location, length: word.range.length)
         } else { highlighted = nil }
     }
+
     private func persistPosition() { if let reading { onPosition?(reading.id, position) } }
     private func nowPlaying() {
         guard let reading else { return }
@@ -270,7 +333,7 @@ import MediaPlayer
 }
 
 
-/// A single PCM timeline for an entire passage. Buffer boundaries never recreate
+/// A single PCM timeline across all queued passages. Buffer boundaries never recreate
 /// the output device or time-stretch unit. All scheduling/state changes stay on MainActor.
 @MainActor final class ContinuousSpeechPlayer {
     let engine = AVAudioEngine()
@@ -293,10 +356,17 @@ import MediaPlayer
     private(set) var duration = 0.0
     private(set) var underruns = 0
     var isPlaying: Bool { started && !isPaused }
+    var bufferedSeconds: Double { max(0, duration - currentTime) }
     var onStateChange: ((Bool) -> Void)?
     var onFinished: (() -> Void)?
     var onFailure: ((Error) -> Void)?
-    var rate: Float = 1 { didSet { timePitch.rate = rate; timePitch.bypass = rate == 1 } }
+    var rate: Float = 1 {
+        didSet {
+            timePitch.rate = rate; timePitch.bypass = rate == 1
+            bufferTarget = (underruns > 0 ? 3 : 1.5) * Double(rate)
+            do { try startIfReady() } catch { onFailure?(error) }
+        }
+    }
     var currentTime: Double {
         guard started, let render = player.lastRenderTime, let time = player.playerTime(forNodeTime: render) else { return completedDuration }
         return min(duration, timelineBase + Double(time.sampleTime) / time.sampleRate)

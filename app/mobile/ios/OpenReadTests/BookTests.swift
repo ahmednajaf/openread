@@ -86,9 +86,12 @@ final class BookTests: XCTestCase {
     }
     func testQwenStreamsAudibleChunksBeforeThePassageCompletes() async throws {
         guard QwenFiles.installed("expressive") else { throw XCTSkip("Install Qwen to exercise real incremental inference.") }
+        QwenPreparedAudio().remove(voice: "qwen:sohee")
         let engine = QwenEngine(); let text = "A natural voice makes room for a sentence. Then the next thought can follow."
-        let start = Date(); var first: TimeInterval?; var pcm = Data(); var chunks = 0
-        for try await chunk in engine.stream(text, voice: "qwen:sohee", instruction: "") {
+        let start = Date(); var first: TimeInterval?; var pcm = Data(); var chunks = 0; var timings: [SpokenWord] = []
+        for try await event in engine.stream(text, voice: "qwen:sohee", instruction: "") {
+            if case let .timing(words) = event { timings.append(contentsOf: words); continue }
+            guard case let .audio(chunk) = event else { continue }
             if first == nil { first = Date().timeIntervalSince(start) }
             XCTAssertGreaterThan(chunk.wav.count, 44); XCTAssertGreaterThan(chunk.duration, 0)
             XCTAssertLessThanOrEqual(chunk.duration, 0.4, "Incremental decoding must not wait for one-second batches")
@@ -98,6 +101,10 @@ final class BookTests: XCTestCase {
         XCTAssertGreaterThan(chunks, 1); XCTAssertLessThan(try XCTUnwrap(first), elapsed)
         let complete = try await engine.generate(text, voice: "qwen:sohee", instruction: "")
         XCTAssertEqual(pcm, complete.wav.dropFirst(44), "Streaming must not repeat or lose any generated samples")
+        XCTAssertEqual(timings.map(\.range), ReadingText.words(in: text), "Streaming highlights cover each whole source word exactly once")
+        XCTAssertEqual(timings.map(\.range), complete.words.map(\.range), "Cached and streamed source positions agree")
+        XCTAssertEqual(timings.last!.end, complete.duration, accuracy: 0.001)
+        for pair in zip(timings, timings.dropFirst()) { XCTAssertLessThanOrEqual(pair.0.end, pair.1.start + 0.0001) }
     }
     func testQwenClonesALocalSyntheticReferenceWithoutAHostedService() async throws {
         guard QwenFiles.installed("clone"), FileManager.default.fileExists(atPath: QwenFiles.root.appendingPathComponent("test-reference.wav").path) else { throw XCTSkip("Preload the optional Qwen cloning pack and synthetic reference to run this test.") }

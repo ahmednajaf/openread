@@ -28,25 +28,126 @@ enum QwenFiles {
     }
 }
 
+enum QwenStreamEvent: Sendable {
+    case audio(SpokenClip)
+    // Passage-relative source ranges and audio times. These remain estimates,
+    // not forced alignment: Qwen's native callback identifies coarse phrases.
+    case timing([SpokenWord])
+}
+
+/// Native phrase spans repeat across many tiny PCM chunks. Estimate each phrase
+/// once, when its duration is known, rather than replaying all its words per chunk.
+struct QwenPhraseTiming {
+    private let ranges: [NSRange]
+    private var cursor = 0
+    private var phraseEnd = 0
+    private var phraseStart = 0.0
+    private(set) var duration = 0.0
+    private(set) var words: [SpokenWord] = []
+    init(text: String) { ranges = ReadingText.words(in: text) }
+    mutating func append(span: NSRange?, seconds: Double) -> [SpokenWord] {
+        var added: [SpokenWord] = []
+        if let span, NSMaxRange(span) > phraseEnd {
+            if phraseEnd > 0 { added = close(through: phraseEnd, at: duration) }
+            phraseEnd = NSMaxRange(span)
+        }
+        duration += seconds
+        return added
+    }
+    mutating func finish() -> [SpokenWord] { close(through: Int.max, at: duration) }
+    private mutating func close(through end: Int, at time: Double) -> [SpokenWord] {
+        let start = cursor
+        while cursor < ranges.count, NSMaxRange(ranges[cursor]) <= end { cursor += 1 }
+        guard start < cursor else { return [] }
+        let selected = ranges[start..<cursor]
+        let weight = Double(selected.reduce(0) { $0 + max(1, $1.length) })
+        var elapsed = phraseStart
+        let added = selected.map { range -> SpokenWord in
+            let until = elapsed + max(0, time - phraseStart) * Double(max(1, range.length)) / weight
+            defer { elapsed = until }
+            return SpokenWord(range: range, start: elapsed, end: until)
+        }
+        phraseStart = time; words.append(contentsOf: added)
+        return added
+    }
+}
+
 private final class QwenChunkSink {
     let text: String
-    let send: @Sendable (SpokenClip) -> Void
-    init(text: String, send: @escaping @Sendable (SpokenClip) -> Void) { self.text = text; self.send = send }
+    var timing: QwenPhraseTiming
+    let send: (@Sendable (QwenStreamEvent) -> Void)?
+    init(text: String, send: (@Sendable (QwenStreamEvent) -> Void)?) {
+        self.text = text; self.timing = QwenPhraseTiming(text: text); self.send = send
+    }
     func receive(_ chunk: qwen3_tts_audio_chunk_t) {
         guard chunk.sample_rate == 24_000, chunk.n_samples > 0, chunk.n_samples <= 24_000 * 5, let samples = chunk.samples else { return }
         let values = Array(UnsafeBufferPointer(start: samples, count: Int(chunk.n_samples)))
         guard values.allSatisfy(\.isFinite) else { return }
         let duration = Double(values.count) / 24_000
-        let bytes = Array(text.utf8); let a = max(0, Int(chunk.start_text_byte)); let b = min(bytes.count, Int(chunk.end_text_byte))
-        var words: [SpokenWord] = []
-        if a < b, let before = String(bytes: bytes[..<a], encoding: .utf8), let section = String(bytes: bytes[a..<b], encoding: .utf8) {
-            words = ReadingText.estimatedWords(section, duration: duration).map { SpokenWord(range: NSRange(location: before.utf16.count + $0.range.location, length: $0.range.length), start: $0.start, end: $0.end) }
+        let bytes = Array(text.utf8); let a = Int(chunk.start_text_byte); let b = Int(chunk.end_text_byte)
+        var span: NSRange?
+        if a >= 0, a < b, b <= bytes.count,
+           let before = String(bytes: bytes[..<a], encoding: .utf8), let section = String(bytes: bytes[a..<b], encoding: .utf8) {
+            span = NSRange(location: before.utf16.count, length: section.utf16.count)
         }
-        send(SpokenClip(wav: SpeechTokens.wav(values), words: words, duration: duration))
+        let words = timing.append(span: span, seconds: duration)
+        if !words.isEmpty { send?(.timing(words)) }
+        send?(.audio(SpokenClip(wav: SpeechTokens.wav(values), words: [], duration: duration)))
+    }
+    func finish() { let words = timing.finish(); if !words.isEmpty { send?(.timing(words)) } }
+}
+
+/// Regenerable, device-local audio. This is not backed up or uploaded. The OS can
+/// reclaim it; corrupt/missing entries are simply synthesized again.
+struct QwenPreparedAudio {
+    let root: URL
+    let limit: Int
+    init(root: URL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("OpenReadQwenAudio"), limit: Int = 512 * 1024 * 1024) {
+        self.root = root; self.limit = limit
+    }
+    static func key(text: String, voice: String, instruction: String) -> String {
+        func hash(_ text: String) -> String { SHA256.hash(data: Data(text.utf8)).map { String(format: "%02x", $0) }.joined() }
+        return hash(voice) + "-" + hash("qwen-phrase-v2\n" + text + "\n" + instruction)
+    }
+    func load(_ key: String, text: String) -> SpokenClip? {
+        let file = root.appendingPathComponent(key + ".plist")
+        guard let size = try? file.resourceValues(forKeys: [.fileSizeKey]).fileSize, size <= 6_000_000,
+              let data = try? Data(contentsOf: file), let clip = try? PropertyListDecoder().decode(SpokenClip.self, from: data),
+              clip.duration.isFinite, clip.duration > 0, clip.duration <= 90,
+              clip.wav.count > 44, clip.wav.prefix(4) == Data("RIFF".utf8),
+              clip.wav.subdata(in: 8..<16) == Data("WAVEfmt ".utf8), abs(Double(clip.wav.count - 44) / 48_000 - clip.duration) < 0.001,
+              clip.words.map(\.range) == ReadingText.words(in: text),
+              abs((clip.words.last?.end ?? 0) - clip.duration) < 0.001,
+              clip.words.allSatisfy({ $0.start.isFinite && $0.end.isFinite && $0.start >= 0 && $0.end >= $0.start && $0.end <= clip.duration + 0.001 }),
+              zip(clip.words, clip.words.dropFirst()).allSatisfy({ $0.end <= $1.start + 0.001 }) else { return nil }
+        try? FileManager.default.setAttributes([.modificationDate: Date()], ofItemAtPath: file.path)
+        return clip
+    }
+    @discardableResult func store(_ clip: SpokenClip, key: String) -> Bool {
+        do {
+            try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+            let encoder = PropertyListEncoder(); encoder.outputFormat = .binary
+            let data = try encoder.encode(clip)
+            guard data.count <= limit else { return false }
+            try data.write(to: root.appendingPathComponent(key + ".plist"), options: .atomic)
+            let files = try FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: [.fileSizeKey, .contentModificationDateKey])
+                .filter { $0.pathExtension == "plist" }.compactMap { url -> (URL, Int, Date)? in
+                    guard let values = try? url.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey]) else { return nil }
+                    return (url, values.fileSize ?? 0, values.contentModificationDate ?? .distantPast)
+                }.sorted { $0.2 < $1.2 }
+            var bytes = files.reduce(0) { $0 + $1.1 }
+            for (url, size, _) in files where bytes > limit { try FileManager.default.removeItem(at: url); bytes -= size }
+            return true
+        } catch { return false }
+    }
+    func remove(voice: String) {
+        let prefix = String(Self.key(text: "", voice: voice, instruction: "").prefix(64)) + "-"
+        for file in (try? FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil)) ?? [] where file.lastPathComponent.hasPrefix(prefix) { try? FileManager.default.removeItem(at: file) }
     }
 }
 
 actor QwenEngine {
+    private let prepared = QwenPreparedAudio()
     private var downloading = false
     private var context: OpaquePointer?
     private var clips: [String: SpokenClip] = [:]
@@ -86,7 +187,7 @@ actor QwenEngine {
         guard qwen3_tts_load_models_with_name(next, QwenFiles.root.path, model) != 0 else { qwen3_tts_free(next); throw ImportFailure(message: "Qwen could not load. Reinstall its voice pack in Settings.") }
         context = next; loaded = model; return next
     }
-    nonisolated func stream(_ text: String, voice: String, instruction: String) -> AsyncThrowingStream<SpokenClip, Error> {
+    nonisolated func stream(_ text: String, voice: String, instruction: String) -> AsyncThrowingStream<QwenStreamEvent, Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do { _ = try await self.generate(text, voice: voice, instruction: instruction, onChunk: { continuation.yield($0) }); continuation.finish() }
@@ -95,18 +196,20 @@ actor QwenEngine {
             continuation.onTermination = { _ in task.cancel() }
         }
     }
-    func generate(_ text: String, voice: String, instruction: String, onChunk: (@Sendable (SpokenClip) -> Void)? = nil) throws -> SpokenClip {
+    func generate(_ text: String, voice: String, instruction: String, onChunk: (@Sendable (QwenStreamEvent) -> Void)? = nil) throws -> SpokenClip {
         try Task.checkCancellation()
         guard text.utf16.count <= 1600, instruction.count <= 500 else { throw ReadingError.speechTooComplex }
         let clone = voice.hasPrefix("qwen:clone:")
         let key = String(voice.dropFirst(clone ? 11 : 5))
         guard clone ? UUID(uuidString: key) != nil : QwenFiles.speakers.contains(key) else { throw ReadingError.invalidReading }
         let cacheKey = voice + "\n" + instruction + "\n" + text
-        if let clip = clips[cacheKey] { onChunk?(clip); return clip }
+        let diskKey = QwenPreparedAudio.key(text: text, voice: voice, instruction: instruction)
+        if let clip = clips[cacheKey] { prepared.store(clip, key: diskKey); onChunk?(.timing(clip.words)); onChunk?(.audio(clip)); return clip }
+        if let clip = prepared.load(diskKey, text: text) { onChunk?(.timing(clip.words)); onChunk?(.audio(clip)); return clip }
         let context = try load(clone)
         let synthesisStarted = ProcessInfo.processInfo.systemUptime
-        let sink = onChunk.map { QwenChunkSink(text: text, send: $0) }
-        let user = sink.map { Unmanaged.passUnretained($0).toOpaque() }
+        let sink = QwenChunkSink(text: text, send: onChunk)
+        let user = Unmanaged.passUnretained(sink).toOpaque()
         let result = (clone ? "" : instruction).withCString { direction in key.withCString { speaker in
             let parameters = qwen3_tts_params_t(max_audio_tokens: 720, temperature: 0.7, top_p: 0.9, top_k: 40, n_threads: 4, print_progress: 0, print_timing: 0, repetition_penalty: 1.1, language_id: 2050, instruction: direction, speaker: clone ? nil : speaker, vocoder_left_context_sec: 1)
             let streaming = qwen3_tts_streaming_params_t(generation: parameters, chunk_sec: 0.32, left_context_sec: 1, collect_audio: 1)
@@ -131,11 +234,16 @@ actor QwenEngine {
         let duration = Double(samples.count) / 24_000
         let elapsed = ProcessInfo.processInfo.systemUptime - synthesisStarted
         Logger(subsystem: "app.getopenread.reader", category: "QwenPerformance").info("Generated \(duration, privacy: .public) seconds of audio in \(elapsed, privacy: .public) seconds; audio per second \(duration / max(0.001, elapsed), privacy: .public)")
-        let words = ReadingText.estimatedWords(text, duration: duration).map { SpokenWord(range: $0.range, start: $0.start, end: $0.end) }
+        sink.finish()
+        let words = sink.timing.words
         let clip = SpokenClip(wav: SpeechTokens.wav(samples), words: words, duration: duration)
+        prepared.store(clip, key: diskKey)
         clips[cacheKey] = clip; clipOrder.append(cacheKey)
         while clipOrder.count > 3 { clips.removeValue(forKey: clipOrder.removeFirst()) }
         return clip
+    }
+    func isPrepared(_ text: String, voice: String, instruction: String) -> Bool {
+        prepared.load(QwenPreparedAudio.key(text: text, voice: voice, instruction: instruction), text: text) != nil
     }
     func clone(name: String, transcript: String, sample: URL, permission: Bool) throws -> PersonalVoice {
         guard permission, !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, name.count <= 80, transcript.count <= 2000 else { throw ImportFailure(message: "Add a voice name and permission confirmation. A transcript is optional.") }
@@ -171,7 +279,7 @@ actor QwenEngine {
     }
     func removeProfile(_ id: String) throws {
         guard UUID(uuidString: id) != nil else { throw ReadingError.invalidReading }
-        clips.removeAll(); clipOrder.removeAll()
+        clips.removeAll(); clipOrder.removeAll(); prepared.remove(voice: "qwen:clone:" + id)
         for suffix in ["json", "icl", "speaker.json"] { let url = QwenFiles.root.appendingPathComponent("Profiles/\(id).\(suffix)"); if FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) } }
     }
     private func digest(_ url: URL) throws -> String {

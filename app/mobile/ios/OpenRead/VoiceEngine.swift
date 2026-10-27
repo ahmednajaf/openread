@@ -15,8 +15,8 @@ final class VoiceDownloadProgress: NSObject, URLSessionDownloadDelegate, @unchec
     }
 }
 
-struct SpokenWord: Sendable { let range: NSRange; let start: Double; let end: Double }
-struct SpokenClip: Sendable { let wav: Data; let words: [SpokenWord]; let duration: Double }
+struct SpokenWord: Codable, Sendable { let range: NSRange; let start: Double; let end: Double }
+struct SpokenClip: Codable, Sendable { let wav: Data; let words: [SpokenWord]; let duration: Double }
 
 actor VoiceEngine {
     static let kittenVoices = ["kiki", "rosie", "jasper", "luna", "bruno", "hugo", "leo", "bella"]
