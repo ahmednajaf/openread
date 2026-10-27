@@ -4,7 +4,12 @@ const native = message => api.runtime.sendNativeMessage('app.getopenread.reader'
 api.runtime.onMessage.addListener((message, sender, respond) => {
   if (!sender.tab) return;
   if (message?.type === 'playbackState') {
-    void api.action.setBadgeText({ tabId: sender.tab.id, text: message.error ? '!' : { playing: '▶', paused: 'Ⅱ', loading: '…' }[message.status] || '' });
+    // Keep the toolbar quiet during normal playback. Safari's generated
+    // background page can misdecode non-ASCII badge literals as mojibake.
+    void api.action.setBadgeText({ tabId: sender.tab.id, text: message.error ? '!' : '' });
+    void api.action.setTitle({ tabId: sender.tab.id, title: message.error || {
+      playing: 'OpenRead - Playing', paused: 'OpenRead - Paused', loading: 'OpenRead - Preparing audio...'
+    }[message.status] || 'OpenRead - Voice and playback settings' });
     respond({ ok: true }); return;
   }
   if (!['health', 'synthesize', 'saveDocument', 'openWorkspace'].includes(message?.type)) return;
@@ -18,7 +23,7 @@ api.runtime.onMessage.addListener((message, sender, respond) => {
     const result = await native(request);
     if (message.type === 'saveDocument' && result?.ok) await api.tabs.create({ url: 'openread://library' });
     return result;
-  })().then(respond, () => respond({ ok: false, error: 'OpenRead’s Safari voice process could not respond. Try again, or save this page to the OpenRead app to listen.' }));
+  })().then(respond, () => respond({ ok: false, error: "OpenRead's Safari voice process could not respond. Try again, or save this page to the OpenRead app to listen." }));
   return true;
 });
 api.commands?.onCommand.addListener(async command => {
