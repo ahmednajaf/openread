@@ -43,8 +43,8 @@ final class ContinuousSpeechPlayerTests: XCTestCase {
         try output.engine.enableManualRenderingMode(.offline, format: format, maximumFrameCount: 512)
         let samples = Array(repeating: Float(0.25), count: 24_000)
         let clip = SpokenClip(wav: SpeechTokens.wav(samples), words: [], duration: 1)
-        try output.append(clip); try output.append(clip)
-        XCTAssertFalse(output.isPlaying, "Do not start with a single short chunk")
+        try output.append(clip); XCTAssertFalse(output.isPlaying, "Build a small lead before starting")
+        try output.append(clip); XCTAssertTrue(output.isPlaying)
         try output.append(clip); try output.finish()
         XCTAssertTrue(output.isPlaying)
         XCTAssertEqual(output.duration, 3, accuracy: 0.00001)
@@ -76,13 +76,15 @@ final class ContinuousSpeechPlayerTests: XCTestCase {
     }
     @MainActor func testSlowGenerationBuildsLeadAndPauseKeepsQueuedAudio() throws {
         var now = 0.0
-        let output = ContinuousSpeechPlayer(estimatedDuration: 12, clock: { now })
+        let output = ContinuousSpeechPlayer(clock: { now })
         defer { output.stop() }
         let format = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: 24_000, channels: 1))
         try output.engine.enableManualRenderingMode(.offline, format: format, maximumFrameCount: 512)
         let clip = SpokenClip(wav: SpeechTokens.wav(Array(repeating: Float(0.1), count: 24_000)), words: [], duration: 1)
-        try output.append(clip); now = 2; try output.append(clip); now = 4; try output.append(clip)
-        XCTAssertFalse(output.isPlaying, "A slow producer needs more than the minimum buffer")
+        try output.append(clip); XCTAssertFalse(output.isPlaying)
+        now = 20; try output.append(clip)
+        XCTAssertTrue(output.isPlaying, "A slow producer must not make startup wait for the whole passage")
+        try output.append(clip)
         output.pause(); try output.finish()
         XCTAssertFalse(output.isPlaying, "Finishing synthesis must not override the user's pause")
         XCTAssertEqual(output.duration, 3)
@@ -103,12 +105,22 @@ final class ContinuousSpeechPlayerTests: XCTestCase {
         XCTAssertEqual(output.underruns, 1)
         XCTAssertFalse(output.isPlaying)
         XCTAssertEqual(output.currentTime, 3, accuracy: 0.01)
-        try output.append(clip); try output.append(clip); try output.append(clip)
-        XCTAssertFalse(output.isPlaying, "After an underrun, do not repeatedly restart each new chunk")
+        try output.append(clip); try output.append(clip)
+        XCTAssertFalse(output.isPlaying, "Rebuild a lead instead of restarting every chunk")
+        try output.append(clip); XCTAssertTrue(output.isPlaying)
         try output.finish()
         await fulfillment(of: [completed], timeout: 8)
         XCTAssertEqual(output.currentTime, 6, accuracy: 0.01)
         XCTAssertEqual(output.underruns, 1)
+    }
+    @MainActor func testStartupDeadlinePlaysAvailableAudioWithoutWaitingForAnotherChunk() async throws {
+        let output = ContinuousSpeechPlayer(); defer { output.stop() }
+        let started = expectation(description: "Start with available audio at the buffering deadline")
+        output.onStateChange = { playing in if playing { started.fulfill() } }
+        let clip = SpokenClip(wav: SpeechTokens.wav(Array(repeating: Float(0.01), count: 4_800)), words: [], duration: 0.2)
+        try output.append(clip); XCTAssertFalse(output.isPlaying)
+        await fulfillment(of: [started], timeout: 6)
+        XCTAssertEqual(output.duration, 0.2, accuracy: 0.001)
     }
     @MainActor func testRejectsMalformedAudioBeforeScheduling() throws {
         let output = ContinuousSpeechPlayer(); defer { output.stop() }

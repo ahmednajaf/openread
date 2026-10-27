@@ -187,7 +187,7 @@ import MediaPlayer
                 if chosenVoice.hasPrefix("qwen:") {
                     try configureAudio()
                     streaming = true; words = []
-                    let output = ContinuousSpeechPlayer(estimatedDuration: Double(ReadingText.words(in: passage.text).count) / 2.4)
+                    let output = ContinuousSpeechPlayer()
                     output.rate = rate
                     output.onStateChange = { [weak self] playing in
                         guard let self, token == self.generation else { return }
@@ -197,6 +197,10 @@ import MediaPlayer
                         self.status = paused ? "Paused" : playing ? "Listening · Qwen timing is approximate" : "Buffering Qwen audio on this device…"
                         if !playing { self.highlighted = nil }
                         self.nowPlaying()
+                    }
+                    output.onFailure = { [weak self] error in
+                        guard let self, token == self.generation else { return }
+                        self.stop(); self.error = error.localizedDescription
                     }
                     output.onFinished = { [weak self] in
                         guard let self, token == self.generation else { return }
@@ -279,11 +283,10 @@ import MediaPlayer
     private var started = false
     private var finished = false
     private var stopped = false
-    private var waitForCompletion = false
     private var firstArrival: TimeInterval?
     private var firstDuration = 0.0
     private var bufferTarget = 3.0
-    private let estimatedDuration: Double
+    private var startDeadline: Task<Void, Never>?
     private let clock: () -> TimeInterval
     private(set) var isPaused = false
     private var generationID = UUID()
@@ -292,13 +295,14 @@ import MediaPlayer
     var isPlaying: Bool { started && !isPaused }
     var onStateChange: ((Bool) -> Void)?
     var onFinished: (() -> Void)?
+    var onFailure: ((Error) -> Void)?
     var rate: Float = 1 { didSet { timePitch.rate = rate; timePitch.bypass = rate == 1 } }
     var currentTime: Double {
         guard started, let render = player.lastRenderTime, let time = player.playerTime(forNodeTime: render) else { return completedDuration }
         return min(duration, timelineBase + Double(time.sampleTime) / time.sampleRate)
     }
-    init(estimatedDuration: Double = 0, clock: @escaping () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }) {
-        self.estimatedDuration = estimatedDuration; self.clock = clock
+    init(clock: @escaping () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }) {
+        self.clock = clock
         engine.attach(player); engine.attach(timePitch)
         engine.connect(player, to: timePitch, format: format)
         engine.connect(timePitch, to: engine.mainMixerNode, format: format)
@@ -309,20 +313,28 @@ import MediaPlayer
         let buffer = try Self.decode(clip.wav, format: format)
         let seconds = Double(buffer.frameLength) / format.sampleRate
         let now = clock()
-        if firstArrival == nil { firstArrival = now; firstDuration = seconds }
+        if firstArrival == nil {
+            firstArrival = now; firstDuration = seconds
+            startDeadline = Task { [weak self] in
+                do { try await Task.sleep(nanoseconds: 4_000_000_000) } catch { return }
+                guard let self, !self.stopped else { return }
+                do { try self.startIfReady(deadlineReached: true) }
+                catch { self.onFailure?(error) }
+            }
+        }
         duration += seconds; pending += 1
         let token = generationID
         player.scheduleBuffer(buffer, completionCallbackType: .dataPlayedBack) { [weak self] _ in
             Task { @MainActor in self?.completed(seconds, token: token) }
         }
-        // Estimate how much lead the producer needs at this listening speed.
-        // This is per bounded passage, not the whole chapter/book. Excluding the
-        // first chunk avoids treating model startup as sustained synthesis cost.
+        // Adapt within a small bounded lead. Estimating the remaining passage
+        // previously made a slow phone wait a minute before playing any audio.
         let elapsed = now - (firstArrival ?? now)
-        if !started, elapsed > 0.05, duration > firstDuration {
-            let productionRate = (duration - firstDuration) / elapsed
-            let remaining = max(0, estimatedDuration - duration)
-            bufferTarget = max(3 * Double(rate), remaining * max(0, Double(rate) / productionRate - 1) + Double(rate))
+        let minimum = (underruns > 0 ? 3.0 : 1.5) * Double(rate)
+        bufferTarget = minimum
+        if !started, elapsed > 0.05, duration - completedDuration > firstDuration {
+            let productionRate = (duration - completedDuration - firstDuration) / elapsed
+            bufferTarget = min(3 * Double(rate), max(minimum, Double(rate) / max(0.01, productionRate)))
         }
         try startIfReady()
     }
@@ -332,8 +344,11 @@ import MediaPlayer
         if pending == 0 { if !isPaused { onFinished?() } }
         else { try startIfReady() }
     }
-    private func startIfReady() throws {
-        guard !started, !isPaused, pending > 0, finished || (!waitForCompletion && duration - completedDuration >= max(bufferTarget, 3 * Double(rate))) else { return }
+    private func startIfReady(deadlineReached: Bool = false) throws {
+        guard !stopped, !started, !isPaused, pending > 0 else { return }
+        let waited = clock() - (firstArrival ?? clock())
+        guard finished || duration - completedDuration >= bufferTarget || deadlineReached || waited >= 4 else { return }
+        startDeadline?.cancel(); startDeadline = nil
         if !engine.isRunning { try engine.start() }
         timelineBase = completedDuration
         player.play(); started = true; onStateChange?(true)
@@ -345,9 +360,9 @@ import MediaPlayer
         player.stop(); started = false
         if finished { if !isPaused { onFinished?() } }
         else {
-            // Once this device underruns, buffer the rest of the passage. Repeated
-            // one-second starts are worse than a single honest buffering interval.
-            underruns += 1; waitForCompletion = true; onStateChange?(false)
+            underruns += 1; firstArrival = nil
+            startDeadline?.cancel(); startDeadline = nil
+            onStateChange?(false)
         }
     }
     func pause() {
@@ -364,8 +379,9 @@ import MediaPlayer
         else { try startIfReady(); if !started { onStateChange?(false) } }
     }
     func stop() {
-        stopped = true; generationID = UUID(); player.stop(); engine.stop()
-        pending = 0; started = false; onStateChange = nil; onFinished = nil
+        stopped = true; generationID = UUID(); startDeadline?.cancel(); startDeadline = nil
+        player.stop(); engine.stop()
+        pending = 0; started = false; onStateChange = nil; onFinished = nil; onFailure = nil
     }
     static func decode(_ wav: Data, format: AVAudioFormat) throws -> AVAudioPCMBuffer {
         let bytes = [UInt8](wav)

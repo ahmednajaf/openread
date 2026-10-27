@@ -81,6 +81,7 @@ actor QwenEngine {
         #if os(iOS) && !targetEnvironment(simulator)
         guard os_proc_available_memory() >= 1_900_000_000 else { throw ImportFailure(message: "There is not enough memory available for Qwen right now. Close other apps or choose a Kitten voice.") }
         #endif
+        openread_qwen_configure_apple_backend()
         guard let next = qwen3_tts_init() else { throw ReadingError.missingModels }
         guard qwen3_tts_load_models_with_name(next, QwenFiles.root.path, model) != 0 else { qwen3_tts_free(next); throw ImportFailure(message: "Qwen could not load. Reinstall its voice pack in Settings.") }
         context = next; loaded = model; return next
@@ -108,7 +109,7 @@ actor QwenEngine {
         let user = sink.map { Unmanaged.passUnretained($0).toOpaque() }
         let result = (clone ? "" : instruction).withCString { direction in key.withCString { speaker in
             let parameters = qwen3_tts_params_t(max_audio_tokens: 720, temperature: 0.7, top_p: 0.9, top_k: 40, n_threads: 4, print_progress: 0, print_timing: 0, repetition_penalty: 1.1, language_id: 2050, instruction: direction, speaker: clone ? nil : speaker, vocoder_left_context_sec: 1)
-            let streaming = qwen3_tts_streaming_params_t(generation: parameters, chunk_sec: 1, left_context_sec: 1, collect_audio: 1)
+            let streaming = qwen3_tts_streaming_params_t(generation: parameters, chunk_sec: 0.32, left_context_sec: 1, collect_audio: 1)
             let callback: qwen3_tts_audio_chunk_callback = { chunk, user in
                 if Task<Never, Never>.isCancelled { return 0 }
                 if let chunk, let user { Unmanaged<QwenChunkSink>.fromOpaque(user).takeUnretainedValue().receive(chunk.pointee) }

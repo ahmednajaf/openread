@@ -17,8 +17,10 @@ connect to a Mac helper. Keep the app open for the initial download and first us
   together use about 2.07 GB because the codec is shared.
 
 Qwen needs considerably more memory and processing time than Kitten. The app
-checks available memory before loading it, but speed depends on the device and
-long books can drain the battery. Choose Kitten when a phone cannot load Qwen.
+checks available memory before loading it. Native Apple apps use Metal acceleration
+with precompiled shaders and a CPU fallback; the existing voice packs still work.
+Speed depends on the device and
+long books can drain the battery. Choose Kitten when a phone cannot load Qwen or generate it quickly enough.
 These are optional experimental voices, not a guarantee of real-time performance
 on every supported phone. Safari's separate, memory-limited extension continues
 to use Kitten; save a webpage to the full app to use Qwen.
