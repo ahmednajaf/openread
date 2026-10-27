@@ -18,7 +18,10 @@ const voices = JSON.parse(fs.readFileSync(path.join(root, 'extension/voices.json
 const core = path.join(destination, 'core.js');
 fs.writeFileSync(core, fs.readFileSync(core, 'utf8').replace(/const voices = \[[^\n]*\];/u, 'const voices = ' + JSON.stringify(voices) + ';'));
 const settings = path.join(destination, 'settings.js');
-fs.writeFileSync(settings, fs.readFileSync(settings, 'utf8').replace('Library &amp; tools', 'OpenRead library').replace('Preparing on your Mac…', 'Preparing on this device…'));
+fs.writeFileSync(settings, fs.readFileSync(settings, 'utf8').replace('Library &amp; tools', 'OpenRead library').replace('Preparing on your Mac…', 'Preparing on this device…')
+  .replace('Natural voices · On-device', 'Kitten voices · On-device')
+  .replace('Save this reading<span', 'Open page in OpenRead<span')
+  .replace('<div class="option"><label for="source">', '<p class="reader-help">Qwen and personal voices are available in the OpenRead app. Use “Open page in OpenRead” above to listen there.</p><div class="option"><label for="source">'));
 const content = path.join(destination, 'content.js');
 fs.writeFileSync(content, fs.readFileSync(content, 'utf8').replace('Start the local helper, then open http://127.0.0.1:8765.', 'Open the OpenRead app to view your library.').replace('Start the local helper to save this reading.', 'OpenRead could not save this page. Open the app and try again.').replace(/Run Set Up OpenRead\.command[^']*|Run Set Up OpenRead\.command and restart the helper[^']*|The featured Kitten voices need the updated helper\.[^']*/gu, 'Open the OpenRead app and download natural voices first.'));
 console.log('Safari native resources ready: app/apple/SafariExtension/Resources');
