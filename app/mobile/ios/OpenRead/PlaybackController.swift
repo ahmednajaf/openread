@@ -24,7 +24,7 @@ import MediaPlayer
             // @Published re-enters this observer when assigned. Only correct an
             // out-of-range value; assigning every time overflows the stack.
             if bounded != rate { rate = bounded; return }
-            UserDefaults.standard.set(rate, forKey: "rate"); audio?.rate = rate; nowPlaying()
+            UserDefaults.standard.set(rate, forKey: "rate"); audio?.rate = rate; streamAudio?.rate = rate; nowPlaying()
         }
     }
     @Published var follow = true
@@ -34,9 +34,8 @@ import MediaPlayer
     let voiceDownloads = VoicePackDownloads()
     @Published var direction = UserDefaults.standard.string(forKey: "voice-direction") ?? "" { didSet { UserDefaults.standard.set(direction, forKey: "voice-direction") } }
     private var audio: AVAudioPlayer?
-    private var streamQueue: [SpokenClip] = []
+    private var streamAudio: ContinuousSpeechPlayer?
     private var streaming = false
-    private var streamFinished = false
     private var words: [SpokenWord] = []
     private var passages: [ReadingPassage] = []
     private var textWindows: [NSRange] = []
@@ -112,17 +111,27 @@ import MediaPlayer
     func play() {
         guard !isPlaying, !isPreparing, !passages.isEmpty, !downloading else { return }
         if let deadline = sleepDeadline, deadline <= Date() { sleepDeadline = nil; sleepMinutes = 0; return }
+        if streaming, let streamAudio {
+            do { try configureAudio(); try streamAudio.resume() }
+            catch { self.error = error.localizedDescription }
+            return
+        }
         if let audio, audio.currentTime < audio.duration - 0.01 {
             do { try configureAudio(); audio.rate = rate; audio.play(); isPlaying = true; status = "Listening"; nowPlaying() } catch { self.error = error.localizedDescription }
         } else { generateAndPlay() }
     }
     func pause() {
-        generation = UUID(); task?.cancel(); prefetch?.cancel(); prefetch = nil
-        if streaming { audio?.stop(); audio = nil; streaming = false; streamQueue.removeAll() }
-        audio?.pause(); isPreparing = false; isPlaying = false; highlighted = nil
+        if streaming, let streamAudio { streamAudio.pause() }
+        else { generation = UUID(); task?.cancel(); prefetch?.cancel(); prefetch = nil; audio?.pause() }
+        isPreparing = false; isPlaying = false; highlighted = nil
         status = "Paused"; persistPosition(); nowPlaying()
     }
-    func stop() { pause(); audio = nil; words = []; highlighted = nil; status = "Ready" }
+    func stop() {
+        generation = UUID(); task?.cancel(); prefetch?.cancel(); prefetch = nil
+        streamAudio?.stop(); streamAudio = nil; streaming = false
+        audio?.stop(); audio = nil; words = []; highlighted = nil
+        isPlaying = false; isPreparing = false; status = "Ready"; persistPosition(); nowPlaying()
+    }
     func next() { seek(min(passages.count - 1, index + 1)) }
     func previous() { seek(max(0, index - 1)) }
     func seekOffset(_ offset: Int) { seek(passages.lastIndex(where: { $0.range.location <= offset }) ?? 0) }
@@ -176,15 +185,37 @@ import MediaPlayer
                 guard token == generation, !Task.isCancelled else { return }
                 #if OPENREAD_QWEN
                 if chosenVoice.hasPrefix("qwen:") {
-                    streaming = true; streamFinished = false; streamQueue.removeAll()
+                    try configureAudio()
+                    streaming = true; words = []
+                    let output = ContinuousSpeechPlayer(estimatedDuration: Double(ReadingText.words(in: passage.text).count) / 2.4)
+                    output.rate = rate
+                    output.onStateChange = { [weak self] playing in
+                        guard let self, token == self.generation else { return }
+                        self.isPlaying = playing
+                        let paused = self.streamAudio?.isPaused == true
+                        self.isPreparing = !playing && !paused
+                        self.status = paused ? "Paused" : playing ? "Listening · Qwen timing is approximate" : "Buffering Qwen audio on this device…"
+                        if !playing { self.highlighted = nil }
+                        self.nowPlaying()
+                    }
+                    output.onFinished = { [weak self] in
+                        guard let self, token == self.generation else { return }
+                        self.finishPassage()
+                    }
+                    streamAudio = output
                     for try await chunk in engine.qwen.stream(passage.text, voice: chosenVoice, instruction: direction) {
                         guard token == generation, !Task.isCancelled else { return }
-                        streamQueue.append(chunk)
-                        if audio == nil { try playStreamChunk() }
+                        let offset = output.duration
+                        words.append(contentsOf: chunk.words.map { SpokenWord(range: $0.range, start: $0.start + offset, end: $0.end + offset) })
+                        try output.append(chunk)
                     }
                     guard token == generation, !Task.isCancelled else { return }
-                    streamFinished = true
-                    if audio == nil { finishPassage() }
+                    try output.finish()
+                    if canNext {
+                        let next = passages[index + 1].text
+                        let instruction = direction
+                        prefetch = Task { _ = try? await engine.generate(next, voice: chosenVoice, instruction: instruction) }
+                    }
                     return
                 }
                 #endif
@@ -200,26 +231,18 @@ import MediaPlayer
                     let next = passages[index + 1].text
                     prefetch = Task { _ = try? await engine.generate(next, voice: chosenVoice, instruction: direction) }
                 }
-            } catch { if token == generation, !Task.isCancelled { isPreparing = false; isPlaying = false; streaming = false; streamQueue.removeAll(); audio?.stop(); audio = nil; status = "Paused"; self.error = error.localizedDescription } }
+            } catch { if token == generation, !Task.isCancelled { isPreparing = false; isPlaying = false; streaming = false; streamAudio?.stop(); streamAudio = nil; audio?.stop(); audio = nil; status = "Paused"; self.error = error.localizedDescription } }
         }
     }
-    private func playStreamChunk() throws {
-        guard !streamQueue.isEmpty else { return }
-        let clip = streamQueue.removeFirst(); try configureAudio()
-        let next = try AVAudioPlayer(data: clip.wav); next.delegate = self; next.enableRate = true; next.rate = rate
-        audio = next; words = clip.words
-        guard next.play() else { throw ReadingError.noText }
-        isPreparing = false; isPlaying = true; status = "Listening · Qwen timing is approximate"; persistPosition(); nowPlaying()
-    }
     private func finishPassage() {
-        streaming = false; streamQueue.removeAll(); audio = nil; highlighted = nil; isPlaying = false
+        streaming = false; streamAudio?.stop(); streamAudio = nil; audio = nil; highlighted = nil; isPlaying = false
         if canNext { index += 1; generateAndPlay() }
         else { isPreparing = false; status = "Finished"; index = 0; persistPosition(); nowPlaying() }
     }
     private func updateClock() {
         if let deadline = sleepDeadline, deadline <= Date(), isPlaying || isPreparing { pause(); sleepDeadline = nil; sleepMinutes = 0; status = "Sleep timer finished" }
-        guard isPlaying, highlight, let audio, passages.indices.contains(index) else { return }
-        let time = audio.currentTime
+        guard isPlaying, highlight, passages.indices.contains(index) else { return }
+        let time = streamAudio?.currentTime ?? audio?.currentTime ?? 0
         if let word = words.last(where: { $0.start <= time && time < $0.end }) {
             highlighted = NSRange(location: passages[index].range.location + word.range.location, length: word.range.length)
         } else { highlighted = nil }
@@ -228,20 +251,135 @@ import MediaPlayer
     private func nowPlaying() {
         guard let reading else { return }
         MPNowPlayingInfoCenter.default().nowPlayingInfo = [MPMediaItemPropertyTitle: reading.title,
-            MPMediaItemPropertyArtist: "OpenRead · \(voice.capitalized)", MPMediaItemPropertyPlaybackDuration: audio?.duration ?? 0,
-            MPNowPlayingInfoPropertyElapsedPlaybackTime: audio?.currentTime ?? 0,
+            MPMediaItemPropertyArtist: "OpenRead · \(voice.capitalized)", MPMediaItemPropertyPlaybackDuration: streamAudio?.duration ?? audio?.duration ?? 0,
+            MPNowPlayingInfoPropertyElapsedPlaybackTime: streamAudio?.currentTime ?? audio?.currentTime ?? 0,
             MPNowPlayingInfoPropertyPlaybackRate: isPlaying ? rate : 0]
     }
     nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         Task { @MainActor in
             guard self.audio === player else { return }
             self.audio = nil; self.highlighted = nil; self.isPlaying = false
-            if self.streaming, flag {
-                if !self.streamQueue.isEmpty { do { try self.playStreamChunk() } catch { self.stop(); self.error = error.localizedDescription } }
-                else if self.streamFinished { self.finishPassage() }
-                else { self.isPreparing = true; self.status = "Preparing the next Qwen audio…"; self.nowPlaying() }
-            } else if flag { self.finishPassage() }
+            if flag { self.finishPassage() }
             else { self.stop(); self.status = "Paused"; self.persistPosition(); self.nowPlaying() }
         }
+    }
+}
+
+
+/// A single PCM timeline for an entire passage. Buffer boundaries never recreate
+/// the output device or time-stretch unit. All scheduling/state changes stay on MainActor.
+@MainActor final class ContinuousSpeechPlayer {
+    let engine = AVAudioEngine()
+    private let player = AVAudioPlayerNode()
+    private let timePitch = AVAudioUnitTimePitch()
+    private let format = AVAudioFormat(standardFormatWithSampleRate: 24_000, channels: 1)!
+    private var pending = 0
+    private var completedDuration = 0.0
+    private var timelineBase = 0.0
+    private var started = false
+    private var finished = false
+    private var stopped = false
+    private var waitForCompletion = false
+    private var firstArrival: TimeInterval?
+    private var firstDuration = 0.0
+    private var bufferTarget = 3.0
+    private let estimatedDuration: Double
+    private let clock: () -> TimeInterval
+    private(set) var isPaused = false
+    private var generationID = UUID()
+    private(set) var duration = 0.0
+    private(set) var underruns = 0
+    var isPlaying: Bool { started && !isPaused }
+    var onStateChange: ((Bool) -> Void)?
+    var onFinished: (() -> Void)?
+    var rate: Float = 1 { didSet { timePitch.rate = rate; timePitch.bypass = rate == 1 } }
+    var currentTime: Double {
+        guard started, let render = player.lastRenderTime, let time = player.playerTime(forNodeTime: render) else { return completedDuration }
+        return min(duration, timelineBase + Double(time.sampleTime) / time.sampleRate)
+    }
+    init(estimatedDuration: Double = 0, clock: @escaping () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }) {
+        self.estimatedDuration = estimatedDuration; self.clock = clock
+        engine.attach(player); engine.attach(timePitch)
+        engine.connect(player, to: timePitch, format: format)
+        engine.connect(timePitch, to: engine.mainMixerNode, format: format)
+        timePitch.bypass = true
+    }
+    func append(_ clip: SpokenClip) throws {
+        guard !stopped, !finished else { return }
+        let buffer = try Self.decode(clip.wav, format: format)
+        let seconds = Double(buffer.frameLength) / format.sampleRate
+        let now = clock()
+        if firstArrival == nil { firstArrival = now; firstDuration = seconds }
+        duration += seconds; pending += 1
+        let token = generationID
+        player.scheduleBuffer(buffer, completionCallbackType: .dataPlayedBack) { [weak self] _ in
+            Task { @MainActor in self?.completed(seconds, token: token) }
+        }
+        // Estimate how much lead the producer needs at this listening speed.
+        // This is per bounded passage, not the whole chapter/book. Excluding the
+        // first chunk avoids treating model startup as sustained synthesis cost.
+        let elapsed = now - (firstArrival ?? now)
+        if !started, elapsed > 0.05, duration > firstDuration {
+            let productionRate = (duration - firstDuration) / elapsed
+            let remaining = max(0, estimatedDuration - duration)
+            bufferTarget = max(3 * Double(rate), remaining * max(0, Double(rate) / productionRate - 1) + Double(rate))
+        }
+        try startIfReady()
+    }
+    func finish() throws {
+        guard !stopped else { return }
+        finished = true
+        if pending == 0 { if !isPaused { onFinished?() } }
+        else { try startIfReady() }
+    }
+    private func startIfReady() throws {
+        guard !started, !isPaused, pending > 0, finished || (!waitForCompletion && duration - completedDuration >= max(bufferTarget, 3 * Double(rate))) else { return }
+        if !engine.isRunning { try engine.start() }
+        timelineBase = completedDuration
+        player.play(); started = true; onStateChange?(true)
+    }
+    private func completed(_ seconds: Double, token: UUID) {
+        guard !stopped, token == generationID else { return }
+        completedDuration += seconds; pending -= 1
+        guard pending == 0 else { return }
+        player.stop(); started = false
+        if finished { if !isPaused { onFinished?() } }
+        else {
+            // Once this device underruns, buffer the rest of the passage. Repeated
+            // one-second starts are worse than a single honest buffering interval.
+            underruns += 1; waitForCompletion = true; onStateChange?(false)
+        }
+    }
+    func pause() {
+        guard !stopped else { return }
+        isPaused = true
+        if started { player.pause() }
+        onStateChange?(false)
+    }
+    func resume() throws {
+        guard !stopped else { return }
+        isPaused = false
+        if finished, pending == 0 { onFinished?(); return }
+        if started { if !engine.isRunning { try engine.start() }; player.play(); onStateChange?(true) }
+        else { try startIfReady(); if !started { onStateChange?(false) } }
+    }
+    func stop() {
+        stopped = true; generationID = UUID(); player.stop(); engine.stop()
+        pending = 0; started = false; onStateChange = nil; onFinished = nil
+    }
+    static func decode(_ wav: Data, format: AVAudioFormat) throws -> AVAudioPCMBuffer {
+        let bytes = [UInt8](wav)
+        func u16(_ i: Int) -> Int { Int(bytes[i]) | Int(bytes[i + 1]) << 8 }
+        func u32(_ i: Int) -> Int { u16(i) | u16(i + 2) << 16 }
+        guard bytes.count > 44, String(bytes: bytes[0..<4], encoding: .ascii) == "RIFF",
+              String(bytes: bytes[8..<16], encoding: .ascii) == "WAVEfmt ", u32(16) == 16,
+              u16(20) == 1, u16(22) == 1, u32(24) == 24_000, u16(34) == 16,
+              String(bytes: bytes[36..<40], encoding: .ascii) == "data",
+              u32(40) == bytes.count - 44, (bytes.count - 44).isMultiple(of: 2),
+              let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount((bytes.count - 44) / 2)),
+              let samples = buffer.floatChannelData?[0] else { throw ReadingError.noText }
+        buffer.frameLength = buffer.frameCapacity
+        for i in 0..<Int(buffer.frameLength) { samples[i] = Float(Int16(bitPattern: UInt16(u16(44 + i * 2)))) / 32768 }
+        return buffer
     }
 }

@@ -44,9 +44,9 @@ enum AppleReadingTools {
         }
         let session = LanguageModelSession(instructions: instruction)
         if task == .question {
-            let response = try await session.respond(to: "Extract an answer ONLY from the source below. First determine whether it explicitly supports an answer and copy the single most relevant exact quote. Outside knowledge, including facts about a book or its characters, is forbidden. If the source lacks the answer, set isSupported to false and return no quotes.\n\nQuestion: \(question)\nSource: \(text)", generating: SourceAnswer.self, options: GenerationOptions(sampling: .greedy, maximumResponseTokens: 500))
+            let response = try await session.respond(to: "Extract an answer ONLY from the source below. First determine whether it explicitly supports an answer and copy the single most relevant exact quote. Outside knowledge, including facts about a book or its characters, is forbidden. If the source lacks the answer, set isSupported to false and return an empty quote.\n\nQuestion: \(question)\nSource: \(text)", generating: SourceAnswer.self, options: GenerationOptions(sampling: .greedy, maximumResponseTokens: 500))
             try Task.checkCancellation()
-            return grounded(response.content.answer, supported: response.content.isSupported, quotes: response.content.quotes, source: text)
+            return grounded(response.content.answer, supported: response.content.isSupported, quotes: response.content.quote.isEmpty ? [] : [response.content.quote], source: text)
         }
         let response = try await session.respond(to: "\(request)\n\nSource passage:\n\(text)", options: GenerationOptions(sampling: .greedy, maximumResponseTokens: 500))
         try Task.checkCancellation()
@@ -64,7 +64,7 @@ enum AppleReadingTools {
 @available(iOS 26.0, macOS 26.0, *)
 @Generable private struct SourceAnswer {
     @Guide(description: "True only when the supplied source explicitly supports an answer. Do not use outside knowledge.") var isSupported: Bool
-    @Guide(description: "At most one exact quote copied from the source that directly supports the answer. Empty when unsupported.", .count(0...1)) var quotes: [String]
+    @Guide(description: "One exact quote copied from the source that directly supports the answer, or an empty string when unsupported.") var quote: String
     @Guide(description: "A short answer grounded only in the supporting quotes, or a statement that the passage does not say.") var answer: String
 }
 private struct AppleReadingFailure: LocalizedError { let message: String; var errorDescription: String? { message } }

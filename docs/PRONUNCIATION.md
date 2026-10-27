@@ -33,3 +33,9 @@ Copy the exported ORT file as `context.ort`, plus `lexicon.json`, `evaluation.js
 Run `python -m unittest discover -s dev/tests -p context_pronunciation_test.py` with ONNX Runtime installed. The same fixtures run in the iOS and Android native test suites. Native tests also check punctuation, source alignment and bounded input to the Apple reading tools.
 
 The model is CC BY-SA 4.0 with upstream Apache-2.0 notices retained. The runtime adapter remains GPL-3.0-or-later. See the pack's `NOTICE.txt` for source attribution.
+
+## Native Qwen playback
+
+The Apple apps schedule Qwen PCM chunks on one continuous audio timeline. Playback starts with a minimum three-second lead (scaled to the listening speed), then increases that lead when measured synthesis throughput needs it. The next bounded passage is prepared while current audio plays. Pause retains the queued audio and position. Qwen word timing remains approximate.
+
+If synthesis falls behind, playback shows a buffering state and finishes preparing the current short passage before resuming, rather than starting and stopping every new chunk. This does not promise realtime generation on every device: the optional 1.7B model can be slower than playback, especially at higher speeds. Device diagnostics log only generated audio duration and elapsed synthesis time, without source text or voice samples.

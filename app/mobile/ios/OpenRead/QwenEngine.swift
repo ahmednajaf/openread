@@ -103,6 +103,7 @@ actor QwenEngine {
         let cacheKey = voice + "\n" + instruction + "\n" + text
         if let clip = clips[cacheKey] { onChunk?(clip); return clip }
         let context = try load(clone)
+        let synthesisStarted = ProcessInfo.processInfo.systemUptime
         let sink = onChunk.map { QwenChunkSink(text: text, send: $0) }
         let user = sink.map { Unmanaged.passUnretained($0).toOpaque() }
         let result = (clone ? "" : instruction).withCString { direction in key.withCString { speaker in
@@ -127,6 +128,8 @@ actor QwenEngine {
         let samples = Array(UnsafeBufferPointer(start: pointer, count: Int(result.audio_len)))
         guard samples.allSatisfy(\.isFinite) else { throw ReadingError.noText }
         let duration = Double(samples.count) / 24_000
+        let elapsed = ProcessInfo.processInfo.systemUptime - synthesisStarted
+        Logger(subsystem: "app.getopenread.reader", category: "QwenPerformance").info("Generated \(duration, privacy: .public) seconds of audio in \(elapsed, privacy: .public) seconds; audio per second \(duration / max(0.001, elapsed), privacy: .public)")
         let words = ReadingText.estimatedWords(text, duration: duration).map { SpokenWord(range: $0.range, start: $0.start, end: $0.end) }
         let clip = SpokenClip(wav: SpeechTokens.wav(samples), words: words, duration: duration)
         clips[cacheKey] = clip; clipOrder.append(cacheKey)
