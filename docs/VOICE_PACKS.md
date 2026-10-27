@@ -78,3 +78,18 @@ and remain limited by WAV/file size; a complete audiobook can take a long time.
 
 Exact source revisions, checksums and licences are in the shared model manifest,
 [third-party inventory](../THIRD_PARTY.md), and bundled native notices.
+
+## Smooth listening at higher speeds
+
+Apple apps keep Qwen audio on one queue across passages. Increasing speed consumes
+that audio faster; a phone generating 1.5 seconds of speech per second cannot
+sustain 2× listening indefinitely from an empty queue.
+
+In reading options, choose **Prepare 10 minutes ahead** (also available in the Mac
+reader). Keep the app open while it prepares, then tap Play. This uses the selected
+voice, direction and listening speed, stopping at the end of the reading if sooner.
+It does not silently slow playback or switch voices. Preparation can be cancelled.
+Generated audio and approximate word timing are cached locally, up to 512 MB;
+older audio may be regenerated, and the OS may clear the cache. Changing text,
+voice or direction uses a different cache entry. Removing a personal voice also
+removes its prepared audio. No extra model or cloud service is involved.

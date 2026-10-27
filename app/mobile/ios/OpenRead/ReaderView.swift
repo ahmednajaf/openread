@@ -114,6 +114,12 @@ struct ReadingOptionsView: View {
                             }
                         }.disabled(!player.installed)
                     }
+                    if player.voice.hasPrefix("qwen:") {
+                        Button(player.preparingAhead ? "Cancel audio preparation" : "Prepare 10 minutes ahead", systemImage: "arrow.down.circle") {
+                            if player.preparingAhead { player.pause() } else { player.prepareAudioAhead(); dismiss() }
+                        }.disabled(!player.installed)
+                        Text("For smooth Qwen listening at higher speeds. Audio stays on this device; preparation pauses reading. Keep OpenRead open until it is ready.").font(.footnote).foregroundStyle(.secondary)
+                    }
                     Button("Stop reading", systemImage: "stop") { player.stop(); dismiss() }
                 }
                 Section {
