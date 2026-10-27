@@ -172,7 +172,8 @@ import MediaPlayer
         let passage = passages[index]; let chosenVoice = voice
         task = Task {
             do {
-                try await engine.prepare(voice: voice, download: false) { _ in }
+                try await engine.prepare(voice: chosenVoice, download: false) { _ in }
+                guard token == generation, !Task.isCancelled else { return }
                 #if OPENREAD_QWEN
                 if chosenVoice.hasPrefix("qwen:") {
                     streaming = true; streamFinished = false; streamQueue.removeAll()

@@ -110,6 +110,7 @@ class ReadingService : MediaSessionService() {
         generation = scope.launch {
             try {
                 runtime.engine.prepare(download = false)
+                ensureActive(); if (token != request) return@launch
                 if (QwenEngine.isVoice(state.voice)) {
                     streaming = true; streamFinished = false
                     runtime.engine.qwen.stream(passage.text, state.voice, state.direction).collect { chunk ->
