@@ -4,6 +4,7 @@ import UIKit
 struct ReaderView: View {
     @EnvironmentObject private var player: PlaybackController
     @EnvironmentObject private var library: LibraryStore
+    @State private var aiPassage: AppleReadingPassage?
     @State private var chaptersOpen = false
     @State private var settings = false
     @State private var options = false
@@ -62,7 +63,8 @@ struct ReaderView: View {
                 }
             }.padding(20).readerGlass().padding(.horizontal, 18).padding(.bottom, 6)
         }
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { Button { options = true } label: { Image(systemName: "ellipsis") }.accessibilityLabel("Reading options") } }
+        .sheet(item: $aiPassage) { AppleReadingToolsSheet(passage: $0.text) }
+        .toolbar { ToolbarItem(placement: .topBarTrailing) { Button { aiPassage = AppleReadingPassage(text: player.currentPassage) } label: { Image(systemName: "sparkles") }.accessibilityLabel("On-device AI for this passage") }; ToolbarItem(placement: .topBarTrailing) { Button { options = true } label: { Image(systemName: "ellipsis") }.accessibilityLabel("Reading options") } }
         .sheet(isPresented: $chaptersOpen) {
             NavigationStack { List(Array((player.reading?.chapterList ?? []).enumerated()), id: \.element.id) { index, chapter in
                 Button { player.seekOffset(chapter.offset); chaptersOpen = false } label: { HStack { Text(chapter.title); Spacer(); if index == player.activeChapter { Image(systemName: "checkmark") } } }
@@ -161,6 +163,7 @@ struct NativeSettingsView: View {
                 Section("Kitten voices") { ForEach(VoiceEngine.kittenVoices, id: \.self) { voice in
                     Button { player.voice = voice } label: { HStack { Text(VoiceEngine.name(voice)).foregroundStyle(.primary); Spacer(); if player.voice == voice { Image(systemName: "checkmark") } } }
                 } }
+                Section("On-device AI") { Text(AppleReadingTools.availability).font(.footnote).foregroundStyle(.secondary) }
                 QwenSettingsSection()
                 Section("Your library") {
                     Button("Export library backup", systemImage: "arrow.down.doc") { do { backup = try library.backup() } catch { self.error = error.localizedDescription } }

@@ -28,6 +28,24 @@ enum QwenFiles {
     }
 }
 
+private final class QwenChunkSink {
+    let text: String
+    let send: @Sendable (SpokenClip) -> Void
+    init(text: String, send: @escaping @Sendable (SpokenClip) -> Void) { self.text = text; self.send = send }
+    func receive(_ chunk: qwen3_tts_audio_chunk_t) {
+        guard chunk.sample_rate == 24_000, chunk.n_samples > 0, chunk.n_samples <= 24_000 * 5, let samples = chunk.samples else { return }
+        let values = Array(UnsafeBufferPointer(start: samples, count: Int(chunk.n_samples)))
+        guard values.allSatisfy(\.isFinite) else { return }
+        let duration = Double(values.count) / 24_000
+        let bytes = Array(text.utf8); let a = max(0, Int(chunk.start_text_byte)); let b = min(bytes.count, Int(chunk.end_text_byte))
+        var words: [SpokenWord] = []
+        if a < b, let before = String(bytes: bytes[..<a], encoding: .utf8), let section = String(bytes: bytes[a..<b], encoding: .utf8) {
+            words = ReadingText.estimatedWords(section, duration: duration).map { SpokenWord(range: NSRange(location: before.utf16.count + $0.range.location, length: $0.range.length), start: $0.start, end: $0.end) }
+        }
+        send(SpokenClip(wav: SpeechTokens.wav(values), words: words, duration: duration))
+    }
+}
+
 actor QwenEngine {
     private var downloading = false
     private var context: OpaquePointer?
@@ -67,32 +85,51 @@ actor QwenEngine {
         guard qwen3_tts_load_models_with_name(next, QwenFiles.root.path, model) != 0 else { qwen3_tts_free(next); throw ImportFailure(message: "Qwen could not load. Reinstall its voice pack in Settings.") }
         context = next; loaded = model; return next
     }
-    func generate(_ text: String, voice: String, instruction: String) throws -> SpokenClip {
+    nonisolated func stream(_ text: String, voice: String, instruction: String) -> AsyncThrowingStream<SpokenClip, Error> {
+        AsyncThrowingStream { continuation in
+            let task = Task {
+                do { _ = try await self.generate(text, voice: voice, instruction: instruction, onChunk: { continuation.yield($0) }); continuation.finish() }
+                catch { continuation.finish(throwing: error) }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+    func generate(_ text: String, voice: String, instruction: String, onChunk: (@Sendable (SpokenClip) -> Void)? = nil) throws -> SpokenClip {
         try Task.checkCancellation()
         guard text.utf16.count <= 1600, instruction.count <= 500 else { throw ReadingError.speechTooComplex }
         let clone = voice.hasPrefix("qwen:clone:")
         let key = String(voice.dropFirst(clone ? 11 : 5))
         guard clone ? UUID(uuidString: key) != nil : QwenFiles.speakers.contains(key) else { throw ReadingError.invalidReading }
         let cacheKey = voice + "\n" + instruction + "\n" + text
-        if let clip = clips[cacheKey] { return clip }
+        if let clip = clips[cacheKey] { onChunk?(clip); return clip }
         let context = try load(clone)
+        let synthesisStarted = ProcessInfo.processInfo.systemUptime
+        let sink = onChunk.map { QwenChunkSink(text: text, send: $0) }
+        let user = sink.map { Unmanaged.passUnretained($0).toOpaque() }
         let result = (clone ? "" : instruction).withCString { direction in key.withCString { speaker in
             let parameters = qwen3_tts_params_t(max_audio_tokens: 720, temperature: 0.7, top_p: 0.9, top_k: 40, n_threads: 4, print_progress: 0, print_timing: 0, repetition_penalty: 1.1, language_id: 2050, instruction: direction, speaker: clone ? nil : speaker, vocoder_left_context_sec: 1)
-            let streaming = qwen3_tts_streaming_params_t(generation: parameters, chunk_sec: 1.5, left_context_sec: 1, collect_audio: 1)
-            let callback: qwen3_tts_audio_chunk_callback = { _, _ in Task<Never, Never>.isCancelled ? 0 : 1 }
+            let streaming = qwen3_tts_streaming_params_t(generation: parameters, chunk_sec: 1, left_context_sec: 1, collect_audio: 1)
+            let callback: qwen3_tts_audio_chunk_callback = { chunk, user in
+                if Task<Never, Never>.isCancelled { return 0 }
+                if let chunk, let user { Unmanaged<QwenChunkSink>.fromOpaque(user).takeUnretainedValue().receive(chunk.pointee) }
+                return 1
+            }
             if clone {
                 let quick = QwenFiles.profiles.first { $0.id == key }?.transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? false
                 let file = QwenFiles.root.appendingPathComponent("Profiles/\(key)" + (quick ? ".speaker.json" : ".icl")).path
-                return quick ? qwen3_tts_synthesize_with_speaker_embedding_streaming(context, text, file, streaming, callback, nil) : qwen3_tts_synthesize_with_icl_prompt_streaming(context, text, file, streaming, callback, nil)
+                return quick ? qwen3_tts_synthesize_with_speaker_embedding_streaming(context, text, file, streaming, callback, user) : qwen3_tts_synthesize_with_icl_prompt_streaming(context, text, file, streaming, callback, user)
             }
-            return qwen3_tts_synthesize_streaming(context, text, streaming, callback, nil)
+            return qwen3_tts_synthesize_streaming(context, text, streaming, callback, user)
         } }
+        withExtendedLifetime(sink) {}
         defer { qwen3_tts_free_result(result) }
         try Task.checkCancellation()
         guard result.success != 0, result.sample_rate == 24_000, result.audio_len > 240, result.audio_len <= 24_000 * 90, let pointer = result.audio else { throw ImportFailure(message: "Qwen could not finish this passage. Try again or choose another voice.") }
         let samples = Array(UnsafeBufferPointer(start: pointer, count: Int(result.audio_len)))
         guard samples.allSatisfy(\.isFinite) else { throw ReadingError.noText }
         let duration = Double(samples.count) / 24_000
+        let elapsed = ProcessInfo.processInfo.systemUptime - synthesisStarted
+        Logger(subsystem: "app.getopenread.reader", category: "QwenPerformance").info("Generated \(duration, privacy: .public) seconds of audio in \(elapsed, privacy: .public) seconds; audio per second \(duration / max(0.001, elapsed), privacy: .public)")
         let words = ReadingText.estimatedWords(text, duration: duration).map { SpokenWord(range: $0.range, start: $0.start, end: $0.end) }
         let clip = SpokenClip(wav: SpeechTokens.wav(samples), words: words, duration: duration)
         clips[cacheKey] = clip; clipOrder.append(cacheKey)

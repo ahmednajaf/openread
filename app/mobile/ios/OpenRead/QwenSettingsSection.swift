@@ -3,6 +3,12 @@ import UniformTypeIdentifiers
 
 struct QwenSettingsSection: View {
     @EnvironmentObject private var player: PlaybackController
+    var body: some View { QwenSettingsContent(downloads: player.voiceDownloads) }
+}
+
+private struct QwenSettingsContent: View {
+    @EnvironmentObject private var player: PlaybackController
+    @ObservedObject var downloads: VoicePackDownloads
     @State private var busy: String?
     @State private var progress = 0.0
     @State private var operation: Task<Void, Never>?
@@ -21,10 +27,16 @@ struct QwenSettingsSection: View {
             if let busy {
                 ProgressView(busy, value: progress)
                 Button("Cancel", role: .cancel) { operation?.cancel() }
-            } else {
-                if !expressive { Button("Download expressive voices · up to 1.44 GB") { download("expressive") } }
-                if !cloning { Button("Download voice cloning · up to 884 MB") { download("clone") } }
             }
+            if let pack = downloads.active {
+                ProgressView("Downloading " + (pack == "clone" ? "voice cloning…" : "expressive voices…"), value: downloads.progress)
+                Button("Cancel current download", role: .cancel) { downloads.cancelCurrent() }
+                Text("You can close Settings while this downloads.").font(.caption).foregroundStyle(.secondary)
+            }
+            ForEach(downloads.queued, id: \.self) { pack in Text("Queued: " + (pack == "clone" ? "Voice cloning" : "Expressive voices")).font(.caption).foregroundStyle(.secondary) }
+            if let error = downloads.error { Text(error).font(.footnote).foregroundStyle(.red) }
+            if !expressive { Button("Download expressive voices · up to 1.44 GB") { download("expressive") }.disabled(downloads.active == "expressive" || downloads.queued.contains("expressive")) }
+            if !cloning { Button("Download voice cloning · up to 884 MB") { download("clone") }.disabled(downloads.active == "clone" || downloads.queued.contains("clone")) }
             if expressive {
                 ForEach(QwenFiles.speakers, id: \.self) { speaker in
                     Button { player.voice = "qwen:" + speaker } label: { HStack { Text(speaker.replacingOccurrences(of: "_", with: " ").capitalized); Spacer(); if player.voice == "qwen:" + speaker { Image(systemName: "checkmark") } } }
@@ -49,21 +61,23 @@ struct QwenSettingsSection: View {
                     .onChange(of: transcript) { _, value in transcript = String(value.prefix(2000)) }
                 Toggle("This is my voice, or I have permission to clone it", isOn: $permission)
                 Text("A clear sample without music works best. Leave the transcript blank for faster reading. Add the exact words for closer reference delivery, which takes longer to prepare. The sample and voice profile stay on this device; the original sample is discarded after preparation.").font(.caption).foregroundStyle(.secondary)
-                Button("Create personal voice") { createVoice() }.disabled(busy != nil || sample == nil || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !permission)
+                Button("Create personal voice") { createVoice() }.disabled(busy != nil || downloads.isBusy || sample == nil || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !permission)
             }
         }
         }.fileImporter(isPresented: $importing, allowedContentTypes: [.audio]) { result in
             switch result { case .success(let url): sample = url; case .failure(let error): player.error = error.localizedDescription }
         }
+        .onAppear { refreshPacks() }
+        .onChange(of: downloads.revision) { _, _ in refreshPacks() }
         .onDisappear { operation?.cancel() }
     }
+    private func refreshPacks() {
+        expressive = QwenFiles.installed("expressive"); cloning = QwenFiles.installed("clone")
+        Task { player.installed = await player.engine.isInstalled(voice: player.voice) }
+    }
     private func download(_ pack: String) {
-        player.stop(); busy = "Downloading Qwen…"; progress = 0
-        operation = Task {
-            do { try await player.engine.qwen.download(pack) { value in Task { @MainActor in progress = value } }; expressive = QwenFiles.installed("expressive"); cloning = QwenFiles.installed("clone"); player.installed = await player.engine.isInstalled(voice: player.voice) }
-            catch { if !Task.isCancelled { player.error = error.localizedDescription } }
-            busy = nil; operation = nil
-        }
+        let engine = player.engine.qwen
+        downloads.enqueue(pack) { pack, progress in try await engine.download(pack, progress: progress) }
     }
     private func createVoice() {
         guard let sample else { return }; player.stop(); busy = "Preparing your voice…"; progress = 0

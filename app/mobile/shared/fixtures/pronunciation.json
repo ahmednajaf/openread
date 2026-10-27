@@ -1,0 +1,189 @@
+{
+  "tokenization": [
+    {
+      "text": "Yesterday, I read the book from cover to cover.",
+      "ids": [
+        7483,
+        1010,
+        1045,
+        3191,
+        1996,
+        2338,
+        2013,
+        3104,
+        2000,
+        3104,
+        1012
+      ]
+    },
+    {
+      "text": "I read the book every morning.",
+      "ids": [
+        1045,
+        3191,
+        1996,
+        2338,
+        2296,
+        2851,
+        1012
+      ]
+    },
+    {
+      "text": "Please close the door; the shop is close by.",
+      "ids": [
+        3531,
+        2485,
+        1996,
+        2341,
+        1025,
+        1996,
+        4497,
+        2003,
+        2485,
+        2011,
+        1012
+      ]
+    },
+    {
+      "text": "The wind began to wind around the tower.",
+      "ids": [
+        1996,
+        3612,
+        2211,
+        2000,
+        3612,
+        2105,
+        1996,
+        3578,
+        1012
+      ]
+    },
+    {
+      "text": "They will record the record tomorrow.",
+      "ids": [
+        2027,
+        2097,
+        2501,
+        1996,
+        2501,
+        4826,
+        1012
+      ]
+    },
+    {
+      "text": "The lead pipes were heavy.",
+      "ids": [
+        1996,
+        2599,
+        12432,
+        2020,
+        3082,
+        1012
+      ]
+    },
+    {
+      "text": "A tear rolled down her cheek.",
+      "ids": [
+        1037,
+        7697,
+        4565,
+        2091,
+        2014,
+        5048,
+        1012
+      ]
+    },
+    {
+      "text": "There was a tear in the letter.",
+      "ids": [
+        2045,
+        2001,
+        1037,
+        7697,
+        1999,
+        1996,
+        3661,
+        1012
+      ]
+    },
+    {
+      "text": "Émile’s café — 你好! 🪴",
+      "ids": [
+        17127,
+        1521,
+        1055,
+        7668,
+        1517,
+        100,
+        100,
+        999,
+        100
+      ]
+    },
+    {
+      "text": "one two\tthree\nFOUR",
+      "ids": [
+        2028,
+        2048,
+        2093,
+        2176
+      ]
+    },
+    {
+      "text": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "ids": [
+        100
+      ]
+    },
+    {
+      "text": "A\u0000B​C",
+      "ids": [
+        5925
+      ]
+    },
+    {
+      "text": "naïve façade, résumé.",
+      "ids": [
+        15743,
+        8508,
+        1010,
+        13746,
+        1012
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "text": "Yesterday, I read the book from cover to cover.",
+      "replacements": "2\tˈɹɛd"
+    },
+    {
+      "text": "I read the book every morning.",
+      "replacements": ""
+    },
+    {
+      "text": "Please close the door; the shop is close by.",
+      "replacements": "1\tˈkloʊz"
+    },
+    {
+      "text": "The wind began to wind around the tower.",
+      "replacements": "1\tˈwɪnd\n4\tˈwaɪnd"
+    },
+    {
+      "text": "They will record the record tomorrow.",
+      "replacements": "2\tɹəˈkɔːɹd\n4\tˈɹɛkɚd"
+    },
+    {
+      "text": "The lead pipes were heavy.",
+      "replacements": ""
+    },
+    {
+      "text": "A tear rolled down her cheek.",
+      "replacements": ""
+    },
+    {
+      "text": "There was a tear in the letter.",
+      "replacements": ""
+    }
+  ]
+}

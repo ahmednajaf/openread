@@ -80,3 +80,22 @@ extern "C" int openread_inference_run(void *session, const int64_t *tokens, size
         return 1;
     } catch (...) { return 0; }
 }
+
+extern "C" int openread_context_inference_run(void *session, const int64_t *tokens, const int64_t *mask,
+    size_t batch, size_t width, float **scores, size_t *score_count, float **grammar, size_t *grammar_count) {
+    if(!session || !tokens || !mask || !batch || batch>8 || !width || width>128 || !scores || !score_count || !grammar || !grammar_count)return 0;
+    *scores=nullptr;*grammar=nullptr;*score_count=0;*grammar_count=0;
+    try {
+        auto memory=Ort::MemoryInfo::CreateCpu(OrtDeviceAllocator,OrtMemTypeDefault);
+        std::array<int64_t,2> shape{static_cast<int64_t>(batch),static_cast<int64_t>(width)};
+        std::array<Ort::Value,2> inputs{Ort::Value::CreateTensor<int64_t>(memory,const_cast<int64_t*>(tokens),batch*width,shape.data(),2),Ort::Value::CreateTensor<int64_t>(memory,const_cast<int64_t*>(mask),batch*width,shape.data(),2)};
+        const char* names[]={"input_ids","attention_mask"};const char* outputs[]={"logits","grammar"};
+        auto result=static_cast<Inference*>(session)->session.Run(Ort::RunOptions{nullptr},names,inputs.data(),2,outputs,2);
+        size_t a=result[0].GetTensorTypeAndShapeInfo().GetElementCount(),b=result[1].GetTensorTypeAndShapeInfo().GetElementCount();
+        if(a>4096 || b>1024 || a%batch || b%batch)return 0;
+        auto* first=static_cast<float*>(std::malloc(a*sizeof(float)));auto* second=static_cast<float*>(std::malloc(b*sizeof(float)));
+        if(!first || !second){std::free(first);std::free(second);return 0;}
+        std::memcpy(first,result[0].GetTensorData<float>(),a*sizeof(float));std::memcpy(second,result[1].GetTensorData<float>(),b*sizeof(float));
+        *scores=first;*grammar=second;*score_count=a;*grammar_count=b;return 1;
+    }catch(...){return 0;}
+}

@@ -1,0 +1,29 @@
+{
+  "base_revision": "387825ce42dbb39b87911cdf8e383ee3b25184f8",
+  "dataset_revision": "8f008f021e88f8b71118a27ae655f1f3121162bc",
+  "grammar_dataset_revision": "c5baffde1e106bcd828c520109eb905bfc3ac06f",
+  "seed": 41,
+  "train_count": 13038,
+  "grammar_train_count": 12000,
+  "dev": {
+    "count": 1449,
+    "accepted": 1282,
+    "coverage": 0.8847481021394065,
+    "accepted_accuracy": 0.9921996879875195,
+    "overall_accuracy": 0.9820565907522429
+  },
+  "test": {
+    "count": 1615,
+    "accepted": 1446,
+    "coverage": 0.8953560371517028,
+    "accepted_accuracy": 0.9944674965421854,
+    "overall_accuracy": 0.9845201238390093
+  },
+  "thresholds": {
+    "sense": 0.99,
+    "grammar": 0.9
+  },
+  "calibration": "Choose highest coverage with >=99.0% accepted development accuracy; test set is never used to select thresholds. Abstentions retain the original frontend.",
+  "runtime": "onnxruntime 1.24.2 CPU, dynamic int8",
+  "licence": "CC-BY-SA-4.0; upstream Apache-2.0 notices retained"
+}

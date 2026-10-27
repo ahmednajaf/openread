@@ -58,7 +58,7 @@ class ModelStore(private val context: Context) {
             context.assets.open(path).use { input -> temporary.outputStream().use { input.copyTo(it) } }
             require(temporary.renameTo(destination)) { "The pronunciation dictionary could not be installed." }
         }
-        copy("espeak-ng-data")
+        copy("espeak-ng-data"); copy("pronunciation")
     }
     private fun digest(file: File): String {
         val digest = MessageDigest.getInstance("SHA-256")

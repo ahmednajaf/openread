@@ -16,6 +16,7 @@ import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collect
 import java.io.File
 import java.util.UUID
 
@@ -30,6 +31,9 @@ class ReadingService : MediaSessionService() {
     private var loadedKey: String? = null
     private var clip: SpokenClip? = null
     private var currentFile: File? = null
+    private val streamQueue = java.util.ArrayDeque<Pair<File, SpokenClip>>()
+    private var streaming = false
+    private var streamFinished = false
     override fun onCreate() {
         super.onCreate(); runtime = (application as OpenReadApplication).reader; runtime.service = this
         player = ExoPlayer.Builder(this).build().apply {
@@ -37,7 +41,14 @@ class ReadingService : MediaSessionService() {
             setHandleAudioBecomingNoisy(true); setWakeMode(C.WAKE_MODE_LOCAL)
             addListener(object : Player.Listener {
                 override fun onIsPlayingChanged(isPlaying: Boolean) { runtime.update { it.copy(playing = isPlaying, highlight = if (isPlaying) it.highlight else null) } }
-                override fun onPlaybackStateChanged(playbackState: Int) { if (playbackState == Player.STATE_ENDED) advance(1, true) }
+                override fun onPlaybackStateChanged(playbackState: Int) { if (playbackState == Player.STATE_ENDED) {
+                    if (streaming) {
+                        currentFile?.delete(); currentFile = null; clip = null
+                        if (streamQueue.isNotEmpty()) playStreamClip()
+                        else if (streamFinished) advance(1, true)
+                        else runtime.update { it.copy(preparing = true, status = "Preparing the next Qwen audio…", highlight = null) }
+                    } else advance(1, true)
+                } }
                 override fun onPlayerError(error: androidx.media3.common.PlaybackException) { stopReading(); runtime.fail(IllegalStateException("Audio could not play. Please try again.")); stopForeground(STOP_FOREGROUND_DETACH) }
             })
         }
@@ -99,6 +110,20 @@ class ReadingService : MediaSessionService() {
         generation = scope.launch {
             try {
                 runtime.engine.prepare(download = false)
+                ensureActive(); if (token != request) return@launch
+                if (QwenEngine.isVoice(state.voice)) {
+                    streaming = true; streamFinished = false
+                    runtime.engine.qwen.stream(passage.text, state.voice, state.direction).collect { chunk ->
+                        ensureActive(); if (token != request) return@collect
+                        val file = withContext(Dispatchers.IO) { File(File(cacheDir, "playback").apply { mkdirs() }, "${UUID.randomUUID()}.wav").apply { writeBytes(chunk.wav) } }
+                        streamQueue.add(file to chunk)
+                        if (currentFile == null) playStreamClip()
+                    }
+                    ensureActive(); if (token != request) return@launch
+                    streamFinished = true
+                    if (currentFile == null && streamQueue.isEmpty()) advance(1, true)
+                    return@launch
+                }
                 val audio = runtime.engine.generate(passage.text, state.voice)
                 ensureActive(); if (token != request) return@launch
                 val directory = File(cacheDir, "playback").apply { mkdirs() }
@@ -115,8 +140,18 @@ class ReadingService : MediaSessionService() {
             }
         }
     }
-    private fun pauseReading() { generation?.cancel(); token = UUID.randomUUID(); player.pause(); runtime.update { it.copy(playing = false, preparing = false, highlight = null, status = "Paused") }; runtime.persistPosition(); stopForeground(STOP_FOREGROUND_DETACH) }
-    fun stopReading() { generation?.cancel(); token = UUID.randomUUID(); player.stop(); loadedKey = null; clip = null; currentFile?.delete(); currentFile = null; runtime.update { it.copy(playing = false, preparing = false, highlight = null) } }
+    private fun playStreamClip() {
+        if (streamQueue.isEmpty()) return
+        val (file, audio) = streamQueue.removeFirst(); currentFile = file; clip = audio
+        player.setMediaItem(MediaItem.Builder().setUri(android.net.Uri.fromFile(file)).setMediaMetadata(MediaMetadata.Builder().setTitle(runtime.state.value.reading?.title).setArtist("OpenRead · ${runtime.state.value.voice}").build()).build())
+        player.setPlaybackSpeed(runtime.state.value.speed); player.prepare(); player.play()
+        runtime.update { it.copy(preparing = false, status = "Listening · Qwen timing is approximate") }
+    }
+    private fun discardStream() {
+        streaming = false; streamQueue.forEach { it.first.delete() }; streamQueue.clear()
+    }
+    private fun pauseReading() { if (streaming) { player.stop(); currentFile?.delete(); currentFile = null; clip = null; loadedKey = null; discardStream() }; generation?.cancel(); token = UUID.randomUUID(); player.pause(); runtime.update { it.copy(playing = false, preparing = false, highlight = null, status = "Paused") }; runtime.persistPosition(); stopForeground(STOP_FOREGROUND_DETACH) }
+    fun stopReading() { discardStream(); generation?.cancel(); token = UUID.randomUUID(); player.stop(); loadedKey = null; clip = null; currentFile?.delete(); currentFile = null; runtime.update { it.copy(playing = false, preparing = false, highlight = null) } }
     fun setSpeed(speed: Float) { player.setPlaybackSpeed(speed) }
     private fun advance(delta: Int, active: Boolean) {
         val next = runtime.state.value.index + delta
@@ -136,6 +171,6 @@ class ReadingService : MediaSessionService() {
     }
     override fun onTaskRemoved(rootIntent: Intent?) { if (!player.playWhenReady && !runtime.state.value.preparing) stopSelf() }
     override fun onDestroy() {
-        runtime.persistPosition(); scope.cancel(); session?.release(); player.release(); currentFile?.delete(); runtime.service = null; super.onDestroy()
+        runtime.persistPosition(); discardStream(); scope.cancel(); session?.release(); player.release(); currentFile?.delete(); runtime.service = null; super.onDestroy()
     }
 }

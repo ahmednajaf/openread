@@ -24,8 +24,8 @@ settings:
   base:
     SWIFT_VERSION: "5.0"
     SWIFT_STRICT_CONCURRENCY: targeted
-    CURRENT_PROJECT_VERSION: 7
-    MARKETING_VERSION: 0.6.0
+    CURRENT_PROJECT_VERSION: 10
+    MARKETING_VERSION: 0.6.1
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: ""
     OPENREAD_BUNDLE_ID: dev.openread.mobile
@@ -41,6 +41,9 @@ targets:
     sources:
       - OpenRead
       - ../shared/swift
+      - path: ../shared/pronunciation
+        type: folder
+        buildPhase: resources
       - path: ../shared/speech/espeak-ng-data
         type: folder
         buildPhase: resources
@@ -125,10 +128,14 @@ targets:
       - ../../apple/SafariExtension/SafariWebExtensionHandler.swift
       - ../../apple/SafariExtension/PrivacyInfo.xcprivacy
       - OpenRead/VoiceEngine.swift
+      - OpenRead/ContextPronunciation.swift
       - OpenRead/KittenInference.swift
       - OpenRead/LibraryStore.swift
       - ../shared/swift
       - path: ../shared/models.json
+        buildPhase: resources
+      - path: ../shared/pronunciation
+        type: folder
         buildPhase: resources
       - path: ../shared/speech/espeak-ng-data
         type: folder

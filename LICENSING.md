@@ -30,3 +30,5 @@ notice and the GPL text; the extension JavaScript is supplied as readable source
 Contributions are accepted under these same project terms, with any separately
 licensed upstream material identified and its required notices preserved. See
 [CONTRIBUTING.md](https://github.com/ahmednajaf/openread/blob/master/CONTRIBUTING.md).
+
+The contextual pronunciation model is licensed separately under CC BY-SA 4.0 with upstream Apache-2.0 notices retained. See `app/mobile/shared/pronunciation/NOTICE.txt` and its full licence files.

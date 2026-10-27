@@ -21,6 +21,7 @@ import kotlin.coroutines.coroutineContext
 internal object NativePhonemizer {
     init { System.loadLibrary("openread_phonemizer") }
     external fun phonemize(dataParent: String, text: String): String
+    external fun phonemizeContext(dataParent: String, text: String, replacements: String): String
 }
 
 /** Kitten Mini runs entirely on the phone. Only the explicitly requested model download uses a network. */
@@ -61,10 +62,11 @@ class KittenEngine(val models: ModelStore) {
     }
     private val mutex = Mutex()
     private val environment = OrtEnvironment.getEnvironment().apply { setTelemetry(false) }
+    private var pronunciation: ContextPronunciation? = null
     private var session: OrtSession? = null
     private val embeddings = mutableMapOf<String, Embedding>()
     private val cache = LinkedHashMap<String, SpokenClip>()
-    suspend fun release() = mutex.withLock { session?.close(); session = null; embeddings.clear(); cache.clear() }
+    suspend fun release() = mutex.withLock { session?.close(); session = null; pronunciation?.close(); pronunciation = null; embeddings.clear(); cache.clear() }
     suspend fun prepare(download: Boolean, progress: (Float) -> Unit = {}) = mutex.withLock { withContext(Dispatchers.IO) {
         if (session != null) return@withContext
         models.prepare(download = download, progress = progress)
@@ -84,7 +86,12 @@ class KittenEngine(val models: ModelStore) {
         cache[key]?.let { return@withContext it }
         val engine = checkNotNull(session) { "Download natural voices in Settings first." }
         val embedding = checkNotNull(embeddings[voices[voice] ?: voices.getValue("Kiki")]) { "This voice is missing from the download." }
-        val phonemes = NativePhonemizer.phonemize(models.root.path, text)
+        val replacements = runCatching {
+            val frontend = pronunciation ?: ContextPronunciation(File(models.root, "pronunciation")).also { pronunciation = it }
+            frontend.replacements(text)
+        }.getOrDefault("")
+        coroutineContext.ensureActive()
+        val phonemes = if (replacements.isEmpty()) NativePhonemizer.phonemize(models.root.path, text) else NativePhonemizer.phonemizeContext(models.root.path, text, replacements)
         val encoded = tokens(phonemes); require(encoded.size > 3) { "There are no spoken words in this passage." }
         val chunks = speechChunks(phonemes)
         val samples = ArrayList<Float>(); var durations = LongArray(0)

@@ -84,6 +84,20 @@ final class BookTests: XCTestCase {
         let cached = try await engine.generate(text, voice: "qwen:ryan", instruction: "Warm, natural storytelling.")
         XCTAssertEqual(cached.wav, clip.wav)
     }
+    func testQwenStreamsAudibleChunksBeforeThePassageCompletes() async throws {
+        guard QwenFiles.installed("expressive") else { throw XCTSkip("Install Qwen to exercise real incremental inference.") }
+        let engine = QwenEngine(); let text = "A natural voice makes room for a sentence. Then the next thought can follow."
+        let start = Date(); var first: TimeInterval?; var pcm = Data(); var chunks = 0
+        for try await chunk in engine.stream(text, voice: "qwen:ryan", instruction: "") {
+            if first == nil { first = Date().timeIntervalSince(start) }
+            XCTAssertGreaterThan(chunk.wav.count, 44); XCTAssertGreaterThan(chunk.duration, 0)
+            pcm.append(chunk.wav.dropFirst(44)); chunks += 1
+        }
+        let elapsed = Date().timeIntervalSince(start)
+        XCTAssertGreaterThan(chunks, 1); XCTAssertLessThan(try XCTUnwrap(first), elapsed)
+        let complete = try await engine.generate(text, voice: "qwen:ryan", instruction: "")
+        XCTAssertEqual(pcm, complete.wav.dropFirst(44), "Streaming must not repeat or lose any generated samples")
+    }
     func testQwenClonesALocalSyntheticReferenceWithoutAHostedService() async throws {
         guard QwenFiles.installed("clone"), FileManager.default.fileExists(atPath: QwenFiles.root.appendingPathComponent("test-reference.wav").path) else { throw XCTSkip("Preload the optional Qwen cloning pack and synthetic reference to run this test.") }
         let engine = QwenEngine()
