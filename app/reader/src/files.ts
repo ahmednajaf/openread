@@ -1,4 +1,5 @@
 import { api } from './api';
+import { validChapters } from './layout';
 
 export function download(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
@@ -29,6 +30,7 @@ export async function restoreLibrary(file: File) {
   // Validate the complete backup before writing any entries.
   for (const d of backup.documents) {
     if (!d || typeof d.text !== 'string' || !d.text.trim() || d.text.length > 250000 || typeof d.title !== 'string' || d.title.length > 240 || (d.id !== undefined && (typeof d.id !== 'string' || d.id.length > 80)) || (d.source !== undefined && (typeof d.source !== 'string' || d.source.length > 1000)) || !Number.isInteger(d.position ?? 0) || (d.position ?? 0) < 0 || (d.position ?? 0) > 250000 || !Array.isArray(d.bookmarks || []) || (d.bookmarks || []).length > 200 || (d.bookmarks || []).some((m: any) => !m || !Number.isInteger(m.position) || m.position < 0 || m.position > 250000 || typeof m.label !== 'string' || m.label.length > 160)) throw new Error('The backup contains an invalid reading. Nothing has been restored.');
+    if (!validChapters(d.chapters === undefined ? [] : d.chapters, d.text)) throw new Error('The backup contains invalid chapters. Nothing has been restored.');
   }
   for (const d of backup.documents) await api('/library/save', d);
 }
