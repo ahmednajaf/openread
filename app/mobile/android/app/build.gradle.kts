@@ -30,6 +30,7 @@ android {
 }
 val sharedAssets by tasks.registering(Copy::class) {
     from("../../shared") { include("*.json", "*.txt") }
+    from("../../shared/speech") { include("espeak-ng-data/**") }
     into(layout.buildDirectory.dir("generated/sharedAssets"))
 }
 tasks.named("preBuild") { dependsOn(sharedAssets) }

@@ -47,6 +47,19 @@ class ModelStore(private val context: Context) {
         }
         progress(1f)
     }
+    fun preparePronunciation() {
+        // Versioned with the app, not a network download. Replace legacy data on
+        // app upgrade atomically so the engine and compiled dictionary match.
+        fun copy(path: String) {
+            val children = context.assets.list(path).orEmpty()
+            if (children.isNotEmpty()) { children.forEach { copy("$path/$it") }; return }
+            val destination = File(root, path); destination.parentFile?.mkdirs()
+            val temporary = File(destination.path + ".new")
+            context.assets.open(path).use { input -> temporary.outputStream().use { input.copyTo(it) } }
+            require(temporary.renameTo(destination)) { "The pronunciation dictionary could not be installed." }
+        }
+        copy("espeak-ng-data")
+    }
     private fun digest(file: File): String {
         val digest = MessageDigest.getInstance("SHA-256")
         file.inputStream().use { input -> val buffer = ByteArray(1024 * 1024); while (true) { val count = input.read(buffer); if (count < 0) break; digest.update(buffer, 0, count) } }

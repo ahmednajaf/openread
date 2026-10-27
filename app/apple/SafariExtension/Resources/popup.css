@@ -1,0 +1,20 @@
+html,body{margin:0;width:354px;background:transparent;overflow:hidden;color-scheme:light dark}
+body{min-height:490px;max-height:600px;font:13px/1.5 -apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif}
+#connection{padding:20px;color:#626c7e;width:354px;box-sizing:border-box}
+.toolbar-popup .popover{position:relative;inset:auto;margin:0;width:354px;max-width:none;border-radius:0;padding:20px;background:transparent;box-shadow:none;border:0;backdrop-filter:none;-webkit-backdrop-filter:none}
+.toolbar-popup .glass-content{max-height:450px;overflow-y:auto;overscroll-behavior:contain}
+
+html.chrome-popup,html.chrome-popup body{background:#faf9fc}@media(prefers-color-scheme:dark){html.chrome-popup,html.chrome-popup body{background:#16141b}}
+
+/* Match the reading app; Safari continues to own the outer native material. */
+.toolbar-popup.shell{--popup-ink:#25242d;--popup-secondary:#756e80;--popup-line:#54406814;color:var(--popup-ink)}
+.toolbar-popup.shell[data-foreground=dark]{--popup-ink:#edeaf1;--popup-secondary:#b6adbf;--popup-line:#b3a0c71f}
+.toolbar-popup .popover{padding:22px}.toolbar-popup header{padding-bottom:24px}.toolbar-popup .brand{font-size:21px;letter-spacing:-1px}.toolbar-popup .brand-dot{color:#b6abc9}
+.toolbar-popup .document-title{font:400 25px/1.2 Georgia,'Times New Roman',serif;letter-spacing:-.7px;margin-top:10px}
+.toolbar-popup .document-meta,.toolbar-popup .session-row,.toolbar-popup .speed-labels,.toolbar-popup footer,.toolbar-popup .options-button,.toolbar-popup .voice-row select,.toolbar-popup .speed-value,.toolbar-popup .secondary,.toolbar-popup .licence-notice{color:var(--popup-secondary)}
+.toolbar-popup .transport{padding:25px 0}.toolbar-popup .listen[data-openread-material=control]{background:linear-gradient(155deg,#fff,#eae4f4a6);color:#524562;border-color:#ffffffb3;box-shadow:inset 0 1px 0 #fff,0 2px 8px #28203712}
+.toolbar-popup.shell[data-foreground=dark] .listen[data-openread-material=control]{background:linear-gradient(155deg,#d2c4e4,#b6a6cf);color:#34283e;border-color:#f0e3ff75;box-shadow:inset 0 1px 0 #ffffff60,0 2px 8px #0002}
+.toolbar-popup .voice-row,.toolbar-popup .options-button,.toolbar-popup footer{border-color:var(--popup-line)}.toolbar-popup .setting-icon,.toolbar-popup .preview{color:#9781c0}
+.toolbar-popup input[type=range]{background:linear-gradient(to right,#9781c0 var(--speed-progress,11.111%),var(--popup-line) var(--speed-progress,11.111%));accent-color:#9781c0}.toolbar-popup .speed-value{background:#9781c012}
+.toolbar-popup .option input:checked,.toolbar-popup .load-paste{background:#9781c0}.toolbar-popup .secondary{background:#9781c00a}.toolbar-popup .secondary:hover{background:#9781c015}
+.toolbar-popup.shell[data-foreground=dark] .secondary{background:#c4a9e50a}.toolbar-popup.shell[data-foreground=dark] .preview{color:#c0a9df}.toolbar-popup .transport>.icon-button{color:var(--popup-secondary)}

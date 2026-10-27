@@ -5,7 +5,7 @@ import UniformTypeIdentifiers
     @StateObject private var library = LibraryStore()
     @StateObject private var playback = PlaybackController()
     var body: some Scene {
-        WindowGroup { LibraryView().environmentObject(library).environmentObject(playback).tint(Color(red: 0.53, green: 0.43, blue: 0.72)) }
+        WindowGroup { LibraryView().environmentObject(library).environmentObject(playback).tint(ReaderStyle.accent) }
     }
 }
 
@@ -28,31 +28,78 @@ struct LibraryView: View {
     private var filtered: [Reading] { library.readings.filter { search.isEmpty || $0.title.localizedCaseInsensitiveContains(search) || $0.text.localizedCaseInsensitiveContains(search) } }
     var body: some View {
         NavigationStack {
-            List {
-                Section {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Your words.\nYour rhythm.").font(.system(size: 37, weight: .regular, design: .serif))
-                        Text("A natural voice. A little more focus.").foregroundStyle(.secondary)
-                        Button { openSample() } label: { Label("Try The Odyssey", systemImage: "headphones") }.buttonStyle(.borderedProminent)
-                    }.padding(.vertical, 20).listRowBackground(Color.clear)
-                }
-                if !playback.installed {
-                    Section { Button { settingsOpen = true } label: { Label("Set up natural voices", systemImage: "arrow.down.circle").font(.headline) } }
-                }
-                Section("Your library") {
-                    ForEach(filtered) { reading in
-                        Button { playback.open(reading); readerOpen = true } label: {
-                            HStack(spacing: 16) {
-                                Image(systemName: "book.closed.fill").font(.title2).foregroundStyle(.tint).frame(width: 42, height: 58).background(.tint.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
-                                VStack(alignment: .leading, spacing: 5) { Text(reading.title).font(.headline).foregroundStyle(.primary); Text("\(reading.wordCount) words · saved on this device").font(.caption).foregroundStyle(.secondary) }
-                            }.padding(.vertical, 6)
-                        }.swipeActions { Button("Delete", role: .destructive) { do { try library.remove(reading.id); if playback.reading?.id == reading.id { playback.stop() } } catch { self.error = error.localizedDescription } } }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 30) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "book.pages").font(.title3.weight(.light))
+                        Text("openread.").font(.system(.title2, design: .rounded, weight: .bold)).tracking(-1)
+                        Spacer()
+                        Text("FREE, BY DESIGN").font(.system(size: 9, weight: .semibold)).tracking(2).foregroundStyle(.secondary)
+                    }.padding(.top, 8)
+                    VStack(alignment: .leading, spacing: 18) {
+                        Text("A LITTLE LESS EFFORT").font(.system(size: 10, weight: .semibold)).tracking(2.6).foregroundStyle(.secondary)
+                        (Text("Your words.\n") + Text("Your rhythm.").italic().foregroundColor(ReaderStyle.accent))
+                            .font(.system(size: 48, weight: .regular, design: .serif)).tracking(-2).fixedSize(horizontal: false, vertical: true)
+                        Text("A natural voice. A little more focus.")
+                            .font(.subheadline).foregroundStyle(.secondary)
+                    }.padding(.top, 15)
+                    Button { openSample() } label: {
+                        VStack(alignment: .leading, spacing: 25) {
+                            HStack(alignment: .top) {
+                                VStack(alignment: .leading, spacing: 7) {
+                                    Text("PICK UP A CLASSIC").font(.system(size: 9, weight: .semibold)).tracking(2).foregroundStyle(.secondary)
+                                    Text("The Odyssey").font(.system(size: 30, design: .serif)).foregroundStyle(.primary)
+                                    Text("Homer · Book I").font(.caption).foregroundStyle(.secondary)
+                                }
+                                Spacer(); BookEmblem()
+                            }
+                            HStack {
+                                Label("Let the words come to you", systemImage: "headphones").font(.subheadline.weight(.medium))
+                                Spacer(); Image(systemName: "play.fill").font(.subheadline).padding(14).background(.tint.opacity(0.12), in: Circle())
+                            }
+                        }.padding(24).frame(maxWidth: .infinity, alignment: .leading).readerGlass()
+                    }.buttonStyle(.plain).accessibilityLabel("Try The Odyssey")
+                    if !playback.installed {
+                        Button { settingsOpen = true } label: {
+                            HStack(spacing: 13) {
+                                Image(systemName: "waveform.circle").font(.title)
+                                VStack(alignment: .leading, spacing: 4) { Text("Make yourself at home").font(.subheadline.weight(.semibold)); Text("Download your eight on-device voices").font(.caption).foregroundStyle(.secondary) }
+                                Spacer(); Image(systemName: "arrow.down").font(.subheadline)
+                            }.padding(18).readerGlass()
+                        }.buttonStyle(.plain)
                     }
-                    if filtered.isEmpty { ContentUnavailableView(search.isEmpty ? "Room for your next read" : "No matching readings", systemImage: "books.vertical", description: Text(AppFiles.sharingHint)) }
-                }
-                Section { Text("Free. On your device. Yours to keep.").font(.footnote).foregroundStyle(.secondary) }
+                    VStack(alignment: .leading, spacing: 18) {
+                        HStack {
+                            Text("Your library").font(.system(.title2, design: .serif))
+                            Spacer(); Text("\(filtered.count) saved").font(.caption).foregroundStyle(.secondary)
+                        }
+                        ForEach(filtered) { reading in
+                            Button { playback.open(reading); readerOpen = true } label: {
+                                HStack(spacing: 18) {
+                                    BookCover(reading: reading)
+                                    VStack(alignment: .leading, spacing: 7) {
+                                        Text(reading.title).font(.system(.headline, design: .serif)).foregroundStyle(.primary).multilineTextAlignment(.leading).lineLimit(2)
+                                        Text("\(reading.wordCount) words · \(max(1, reading.wordCount / 165)) min").font(.caption).foregroundStyle(.secondary)
+                                        if reading.position > 0 { ProgressView(value: Double(reading.position) / Double(max(1, reading.text.utf16.count))).frame(maxWidth: 100).tint(ReaderStyle.accent) }
+                                    }
+                                    Spacer(minLength: 0); Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+                                }.padding(.vertical, 8)
+                            }.buttonStyle(.plain)
+                            .contextMenu { Button("Delete reading", systemImage: "trash", role: .destructive) { do { try library.remove(reading.id); if playback.reading?.id == reading.id { playback.stop() } } catch { self.error = error.localizedDescription } } }
+                        }
+                        if filtered.isEmpty {
+                            VStack(alignment: .leading, spacing: 10) {
+                                Image(systemName: "text.badge.plus").font(.title2.weight(.light)).foregroundStyle(.secondary)
+                                Text(search.isEmpty ? "Room for your next read." : "No matching readings.").font(.system(.title3, design: .serif))
+                                Text(AppFiles.sharingHint).font(.subheadline).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                                if search.isEmpty { Button("Add a reading") { pasteOpen = true }.font(.subheadline.weight(.medium)).padding(.top, 5) }
+                            }.padding(24).frame(maxWidth: .infinity, alignment: .leading).background(.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 24))
+                        }
+                    }
+                    Label("On your device. Yours to keep.", systemImage: "lock.shield").font(.caption).foregroundStyle(.secondary).frame(maxWidth: .infinity).padding(.vertical, 12)
+                }.padding(.horizontal, 26).padding(.bottom, 25).frame(maxWidth: 650).frame(maxWidth: .infinity)
             }
-            .listStyle(.insetGrouped).navigationTitle("OpenRead")
+            .background(ReadingBackdrop()).navigationTitle("").navigationBarTitleDisplayMode(.inline)
             .searchable(text: $search, prompt: "Find a reading")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { Button { settingsOpen = true } label: { Image(systemName: "slider.horizontal.3") }.accessibilityLabel("Settings") }
@@ -78,7 +125,7 @@ struct LibraryView: View {
                 case .failure(let error): self.error = error.localizedDescription
                 }
             }
-            .onOpenURL { url in run { try await importer.file(url) } }
+            .onOpenURL { url in if url.scheme == "openread" { readerOpen = false; Task { await receiveInbox() } } else { run { try await importer.file(url) } } }
             .onAppear {
                 playback.onPosition = { id, offset in
                     if var reading = library.readings.first(where: { $0.id == id }) { reading.position = offset; do { try library.save(reading) } catch { self.error = error.localizedDescription } }

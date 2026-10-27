@@ -11,6 +11,13 @@ class NativeReaderTest {
     private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
     private val context get() = instrumentation.targetContext
     private fun fixture(name: String): File = File(context.cacheDir, name).apply { writeBytes(instrumentation.context.assets.open(name).use { it.readBytes() }) }
+    @Test fun englishPronunciationPreservesClausePunctuation() {
+        val models = ModelStore(context)
+        models.preparePronunciation()
+        val ipa = NativePhonemizer.phonemize(models.root.path, "Hello, world! Are you ready? Yes; let's begin.")
+        assertEquals(",!?;.", ipa.filter { it in ",!?;." })
+        assertTrue(ipa.contains("ˈ"))
+    }
     @Test fun importsPreserveWordsAndReadingOrder() = runBlocking {
         val importer = DocumentImporter(context, ModelStore(context))
         val article = importer.file(fixture("article.html"))

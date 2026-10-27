@@ -13,18 +13,6 @@
       "sha256": "40ad2638952b77b7b2f30127e2608e169fc69dd256b53bd8aaa3409a33193c42",
       "url": "https://huggingface.co/KittenML/kitten-tts-mini-0.8/resolve/c02725660cea441db4c383af69f1f26f5cd00947/voices.npz",
       "license": "Apache-2.0"
-    },
-    {
-      "name": "en_rules",
-      "url": "https://raw.githubusercontent.com/espeak-ng/espeak-ng/59eb19938f12e30881c81d86ce4a7de25414c9f4/dictsource/en_rules",
-      "sha256": "8e75e9341ea735cc514b29a7d3a95c6c241c1cc176ad43e5699b8f7f66ab3194",
-      "license": "GPL-3.0-or-later"
-    },
-    {
-      "name": "en_list",
-      "url": "https://raw.githubusercontent.com/espeak-ng/espeak-ng/59eb19938f12e30881c81d86ce4a7de25414c9f4/dictsource/en_list",
-      "sha256": "24eb79018ed6253c10682096de672ce9265c1fe15c3e19e7f754d57a0fcd9790",
-      "license": "GPL-3.0-or-later"
     }
   ],
   "ocrAssets": [

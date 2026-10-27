@@ -18,7 +18,13 @@ import MediaPlayer
         didSet { UserDefaults.standard.set(voice, forKey: "voice"); restartForVoice() }
     }
     @Published var rate: Float = min(2, max(0.5, UserDefaults.standard.float(forKey: "rate") == 0 ? 1 : UserDefaults.standard.float(forKey: "rate"))) {
-        didSet { rate = min(2, max(0.5, rate)); UserDefaults.standard.set(rate, forKey: "rate"); audio?.rate = rate; nowPlaying() }
+        didSet {
+            let bounded: Float = rate.isFinite ? min(2, max(0.5, rate)) : 1
+            // @Published re-enters this observer when assigned. Only correct an
+            // out-of-range value; assigning every time overflows the stack.
+            if bounded != rate { rate = bounded; return }
+            UserDefaults.standard.set(rate, forKey: "rate"); audio?.rate = rate; nowPlaying()
+        }
     }
     @Published var follow = true
     @Published var highlight = true { didSet { if !highlight { highlighted = nil } } }
@@ -37,7 +43,15 @@ import MediaPlayer
 
     override init() {
         super.init()
-        Task { installed = await engine.isInstalled() }
+        Task {
+            installed = await engine.isInstalled()
+            if installed {
+                // Prepare the shared Safari cache in the full app, where model
+                // compilation has enough memory. No network request is made.
+                do { try await engine.prepare(download: false) { _ in } }
+                catch { self.error = "Your downloaded voices could not be prepared. Try Download voices in Settings." }
+            }
+        }
         tick = Timer.scheduledTimer(withTimeInterval: 0.04, repeats: true) { [weak self] _ in Task { @MainActor in self?.updateClock() } }
         interruptionObserver = NotificationCenter.default.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main) { [weak self] notification in
             if notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt == AVAudioSession.InterruptionType.began.rawValue {

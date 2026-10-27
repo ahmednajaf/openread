@@ -10,32 +10,41 @@ struct ReaderView: View {
     var body: some View {
         VStack(spacing: 0) {
             if let reading = player.reading {
-                VStack(spacing: 8) {
+                VStack(spacing: 12) {
                     Text(reading.author?.uppercased() ?? "YOUR READING").font(.caption2.weight(.semibold)).tracking(2).foregroundStyle(.secondary)
-                    Text(reading.title).font(.system(.title, design: .serif)).multilineTextAlignment(.center)
+                    Text(reading.title).font(.system(size: 34, weight: .regular, design: .serif)).tracking(-0.8).multilineTextAlignment(.center)
                     Text("\(reading.wordCount) words · about \(max(1, Int(Double(reading.wordCount) / (165 * Double(player.rate))))) min").font(.caption).foregroundStyle(.secondary)
-                }.padding(.horizontal, 24).padding(.top, 20)
+                }.padding(.horizontal, 26).padding(.top, 24).padding(.bottom, 10)
                 ReadingTextView(text: reading.text, highlighted: player.highlighted, follow: player.follow)
             }
         }
-        .background(Color(uiColor: .systemGroupedBackground)).navigationBarTitleDisplayMode(.inline)
+        .background(ReadingBackdrop()).navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
-            VStack(spacing: 12) {
-                HStack {
-                    Button { settings = true } label: { Label(player.voice.capitalized, systemImage: "waveform").font(.subheadline.weight(.medium)) }
-                    Spacer()
-                    Menu { ForEach([0.5, 0.75, 1, 1.25, 1.5, 1.75, 2], id: \.self) { speed in Button("\(speed.formatted())×") { player.rate = Float(speed) } } } label: { Text("\(player.rate.formatted())×").font(.subheadline.monospacedDigit()) }.accessibilityLabel("Reading speed")
-                }
-                HStack(spacing: 38) {
-                    Button { player.previous() } label: { Image(systemName: "backward.end.fill") }.disabled(player.index == 0).accessibilityLabel("Previous passage")
+            VStack(spacing: 15) {
+                ProgressView(value: player.progress).tint(ReaderStyle.accent).accessibilityLabel("Reading progress")
+                HStack(spacing: 16) {
+                    Button { settings = true } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "waveform").font(.body).frame(width: 36, height: 36).background(.tint.opacity(0.10), in: Circle())
+                            VStack(alignment: .leading, spacing: 3) { Text(player.voice.capitalized).font(.subheadline.weight(.semibold)); Text("On-device voice").font(.system(size: 10)).foregroundStyle(.secondary) }
+                        }
+                    }.buttonStyle(.plain).accessibilityLabel("Choose voice")
+                    Spacer(minLength: 0)
+                    Button { player.previous() } label: { Image(systemName: "backward.end.fill").frame(width: 26, height: 44) }.disabled(player.index == 0).accessibilityLabel("Previous passage")
                     Button {
                         if !player.installed { settings = true } else { player.toggle() }
                     } label: {
-                        Group { if player.isPreparing { ProgressView() } else { Image(systemName: player.isPlaying ? "pause.fill" : "play.fill") } }.font(.title2).frame(width: 62, height: 48)
-                    }.buttonStyle(.borderedProminent).clipShape(Capsule()).accessibilityLabel(player.isPlaying || player.isPreparing ? "Pause reading" : "Listen to reading")
-                    Button { player.next() } label: { Image(systemName: "forward.end.fill") }.disabled(!player.canNext).accessibilityLabel("Next passage")
+                        Group { if player.isPreparing { ProgressView() } else { Image(systemName: player.isPlaying ? "pause.fill" : "play.fill").contentTransition(.symbolEffect(.replace)) } }.font(.title3).frame(width: 50, height: 50)
+                    }.nativePrimaryButton().clipShape(Circle()).accessibilityLabel(player.isPlaying || player.isPreparing ? "Pause reading" : "Listen to reading")
+                    Button { player.next() } label: { Image(systemName: "forward.end.fill").frame(width: 26, height: 44) }.disabled(!player.canNext).accessibilityLabel("Next passage")
                 }
-                Text(player.status + " · \(min(player.index + 1, player.passageCount)) of \(player.passageCount)").font(.caption2).foregroundStyle(.secondary)
+                HStack {
+                    Text(player.status).font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                    Menu { ForEach([0.5, 0.75, 1, 1.25, 1.5, 1.75, 2], id: \.self) { speed in Button("\(speed.formatted())×") { player.rate = Float(speed) } } } label: { Text("\(player.rate.formatted())×").font(.caption.weight(.medium).monospacedDigit()) }.accessibilityLabel("Reading speed")
+                    Text("·").foregroundStyle(.tertiary)
+                    Text("\(min(player.index + 1, player.passageCount)) / \(player.passageCount)").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                }
             }.padding(20).readerGlass().padding(.horizontal, 18).padding(.bottom, 6)
         }
         .toolbar { ToolbarItem(placement: .topBarTrailing) { Button { options = true } label: { Image(systemName: "ellipsis") }.accessibilityLabel("Reading options") } }

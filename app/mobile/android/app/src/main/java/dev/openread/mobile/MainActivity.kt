@@ -35,6 +35,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -94,7 +96,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
             Scaffold(containerColor = colors.background, topBar = {
-                TopAppBar(title = { Text(if (reader) "Now reading" else "OpenRead", style = MaterialTheme.typography.titleLarge) },
+                TopAppBar(title = { Text(if (reader) "Now reading" else "openread.", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold) },
                     navigationIcon = { if (reader) IconButton(onClick = { reader = false; runtime.persistPosition() }) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Library") } },
                     actions = {
                         if (reader) IconButton(onClick = { options = true }) { Icon(Icons.Rounded.MoreHoriz, "Reading options") }
@@ -111,13 +113,22 @@ class MainActivity : ComponentActivity() {
                     Text("${state.reading!!.wordCount} words · ${state.voice}", Modifier.padding(horizontal = 24.dp), color = colors.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
                     NativeReadingText(state, Modifier.weight(1f).fillMaxWidth())
                 } else LazyColumn(Modifier.padding(padding).fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    item { Text("Your words.\nYour rhythm.", style = MaterialTheme.typography.headlineLarge, fontFamily = FontFamily.Serif, modifier = Modifier.padding(vertical = 12.dp)) }
+                    item {
+                        Column(Modifier.padding(top = 24.dp, bottom = 20.dp)) {
+                            Text("A LITTLE LESS EFFORT", style = MaterialTheme.typography.labelSmall, letterSpacing = 2.sp, color = colors.onSurfaceVariant)
+                            Spacer(Modifier.height(22.dp))
+                            Text("Your words.", fontSize = 46.sp, lineHeight = 52.sp, fontFamily = FontFamily.Serif, letterSpacing = (-1.5).sp)
+                            Text("Your rhythm.", fontSize = 46.sp, lineHeight = 52.sp, fontFamily = FontFamily.Serif, fontStyle = FontStyle.Italic, letterSpacing = (-1.5).sp, color = colors.primary)
+                            Spacer(Modifier.height(18.dp))
+                            Text("A natural voice. A little more focus.", style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
+                        }
+                    }
                     item { Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         FilledTonalButton(onClick = { paste = true }, modifier = Modifier.weight(1f)) { Icon(Icons.Rounded.ContentPaste, null); Spacer(Modifier.width(8.dp)); Text("Paste text") }
                         FilledTonalButton(onClick = { filePicker.launch(arrayOf("application/pdf", "application/epub+zip", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/*", "image/*")) }, modifier = Modifier.weight(1f)) { Icon(Icons.Rounded.Add, null); Spacer(Modifier.width(8.dp)); Text("Import") }
                     } }
                     item { ElevatedCard(onClick = { runImport { val json = JSONObject(assets.open("odyssey.json").bufferedReader().use { it.readText() }); Reading(id = "odyssey-sample", title = json.getString("title"), text = json.getString("text"), author = json.optString("author")) } }, modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(24.dp)) { Text("TRY A READING", style = MaterialTheme.typography.labelSmall, color = colors.primary); Spacer(Modifier.height(12.dp)); Text("The Odyssey", style = MaterialTheme.typography.headlineMedium, fontFamily = FontFamily.Serif); Spacer(Modifier.height(6.dp)); Text("Athene Visits Telemachus", color = colors.onSurfaceVariant); Spacer(Modifier.height(18.dp)); Text("Open sample  →", color = colors.primary) }
+                        Column(Modifier.padding(24.dp)) { Text("PICK UP A CLASSIC", style = MaterialTheme.typography.labelSmall, color = colors.primary); Spacer(Modifier.height(12.dp)); Text("The Odyssey", style = MaterialTheme.typography.headlineMedium, fontFamily = FontFamily.Serif); Spacer(Modifier.height(6.dp)); Text("Homer · Book I", color = colors.onSurfaceVariant); Spacer(Modifier.height(18.dp)); Text("Let the words come to you  →", color = colors.primary) }
                     } }
                     item { Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("Your library", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))

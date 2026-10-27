@@ -20,9 +20,7 @@ import kotlin.coroutines.coroutineContext
 
 internal object NativePhonemizer {
     init { System.loadLibrary("openread_phonemizer") }
-    external fun create(rules: String, list: String): Long
-    external fun phonemize(handle: Long, text: String): String
-    external fun destroy(handle: Long)
+    external fun phonemize(dataParent: String, text: String): String
 }
 
 /** Kitten Mini runs entirely on the phone. Only the explicitly requested model download uses a network. */
@@ -32,7 +30,27 @@ class KittenEngine(val models: ModelStore) {
             "Bruno" to "expr-voice-3-m", "Hugo" to "expr-voice-4-m", "Leo" to "expr-voice-5-m", "Bella" to "expr-voice-2-f")
         private const val SYMBOLS = "\$;:,.!?¡¿—…\"«»“” ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzɑɐɒæɓʙβɔɕçɗɖðʤəɘɚɛɜɝɞɟʄɡɠɢʛɦɧħɥʜɨɪʝɭɬɫɮʟɱɯɰŋɳɲɴøɵɸθœɶʘɹɺɾɻʀʁɽʂʃʈʧʉʊʋⱱʌɣɤʍχʎʏʑʐʒʔʡʕʢǀǁǂǃˈˌːˑʼʴʰʱʲʷˠˤ˞↓↑→↗↘’̩‘ᵻ"
         private val symbols = SYMBOLS.withIndex().associate { it.value to it.index.toLong() }
-        internal fun tokens(phonemes: String): LongArray = longArrayOf(0) + phonemes.mapNotNull { symbols[it] }.toLongArray() + longArrayOf(10, 0)
+        internal fun tokens(phonemes: String): LongArray {
+            val prepared = Regex("[\\p{L}\\p{N}_]+|[^\\p{L}\\p{N}_\\s]").findAll(phonemes).joinToString(" ") { it.value }
+            return longArrayOf(0) + prepared.mapNotNull { symbols[it] }.toLongArray() + longArrayOf(10, 0)
+        }
+        internal fun speechChunks(phonemes: String, limit: Int = 397): List<String> {
+            val result = mutableListOf<String>(); var pending = ""
+            for (word in phonemes.split(Regex("\\s+")).filter { it.isNotEmpty() }) {
+                require(tokens(word).size - 3 <= limit) { "This passage contains an unusually long word. Try a shorter excerpt." }
+                val next = if (pending.isEmpty()) word else "$pending $word"
+                if (tokens(next).size - 3 > limit) { result += pending; pending = word } else pending = next
+                if (word.last() in ".!?;:" && tokens(pending).size - 3 >= 40) { result += pending; pending = "" }
+            }
+            if (pending.isNotEmpty()) result += pending
+            return result
+        }
+        internal fun trimSilence(samples: FloatArray): FloatArray {
+            val last = samples.indexOfLast { kotlin.math.abs(it) > 0.0001f }
+            if (last < 0) return samples
+            val keep = maxOf(samples.size - 4800, minOf(samples.size, last + 1 + 2400))
+            return samples.copyOf(keep)
+        }
         internal fun wav(samples: FloatArray): ByteArray {
             val output = ByteBuffer.allocate(44 + samples.size * 2).order(ByteOrder.LITTLE_ENDIAN)
             output.put("RIFF".toByteArray()).putInt(36 + samples.size * 2).put("WAVEfmt ".toByteArray()).putInt(16)
@@ -44,48 +62,45 @@ class KittenEngine(val models: ModelStore) {
     private val mutex = Mutex()
     private val environment = OrtEnvironment.getEnvironment().apply { setTelemetry(false) }
     private var session: OrtSession? = null
-    private var phonemizer = 0L
     private val embeddings = mutableMapOf<String, Embedding>()
     private val cache = LinkedHashMap<String, SpokenClip>()
     suspend fun prepare(download: Boolean, progress: (Float) -> Unit = {}) = mutex.withLock { withContext(Dispatchers.IO) {
         if (session != null) return@withContext
         models.prepare(download = download, progress = progress)
-        val handle = NativePhonemizer.create(File(models.root, "en_rules").path, File(models.root, "en_list").path)
-        try {
+        models.preparePronunciation()
+        run {
             val loaded = readEmbeddings(File(models.root, "voices.npz"))
             val engine = OrtSession.SessionOptions().use { options ->
                 options.setIntraOpNumThreads(2)
                 options.setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT)
                 environment.createSession(File(models.root, "kitten_tts_mini_v0_8.onnx").path, options)
             }
-            phonemizer = handle; embeddings.putAll(loaded); session = engine
-        } catch (error: Throwable) { NativePhonemizer.destroy(handle); throw error }
+            embeddings.putAll(loaded); session = engine
+        }
     } }
     suspend fun generate(text: String, voice: String): SpokenClip = mutex.withLock { withContext(Dispatchers.Default) {
         val key = "$voice\n$text"
         cache[key]?.let { return@withContext it }
         val engine = checkNotNull(session) { "Download natural voices in Settings first." }
         val embedding = checkNotNull(embeddings[voices[voice] ?: voices.getValue("Kiki")]) { "This voice is missing from the download." }
-        val phonemes = NativePhonemizer.phonemize(phonemizer, text.replace(Regex("\\s+"), " "))
+        val phonemes = NativePhonemizer.phonemize(models.root.path, text)
         val encoded = tokens(phonemes); require(encoded.size > 3) { "There are no spoken words in this passage." }
-        val body = encoded.drop(1).dropLast(2)
-        val chunks = body.chunked(397)
+        val chunks = speechChunks(phonemes)
         val samples = ArrayList<Float>(); var durations = LongArray(0)
         for (chunk in chunks) {
             coroutineContext.ensureActive()
-            val ids = longArrayOf(0) + chunk.toLongArray() + longArrayOf(10, 0)
+            val ids = tokens(chunk)
             // The style row and voice-specific speed priors match Kitten's published Mini configuration.
             val speed = 1f
             OnnxTensor.createTensor(environment, LongBuffer.wrap(ids), longArrayOf(1, ids.size.toLong())).use { input ->
-                val row = embedding.row(phonemes.length)
+                val row = embedding.row(maxOf(1, text.codePointCount(0, text.length) * chunk.length / maxOf(1, phonemes.length)))
                 OnnxTensor.createTensor(environment, FloatBuffer.wrap(row), longArrayOf(1, row.size.toLong())).use { style ->
                     OnnxTensor.createTensor(environment, FloatBuffer.wrap(floatArrayOf(speed)), longArrayOf(1)).use { rate ->
                         engine.run(mapOf("input_ids" to input, "style" to style, "speed" to rate)).use { result ->
                             val value = result.get("waveform").orElseGet { result[0] } as OnnxTensor
                             val buffer = value.floatBuffer; val audio = FloatArray(buffer.remaining()); buffer.get(audio)
                             require(audio.all { it.isFinite() }) { "The voice returned invalid audio. Try another voice." }
-                            val trim = if (audio.size > 6000) 5000 else 0
-                            samples.addAll(audio.take(audio.size - trim))
+                            samples.addAll(trimSilence(audio).asList())
                             if (chunks.size == 1 && result.get("duration").isPresent) {
                                 val frames = (result.get("duration").get() as OnnxTensor).longBuffer
                                 durations = LongArray(frames.remaining()).also { frames.get(it) }
@@ -110,7 +125,7 @@ class KittenEngine(val models: ModelStore) {
         // with the inter-word space divided across the neighbouring words.
         var left = 2.0 * (frames[0] - 3).coerceAtLeast(0); var right = left; var token = 1
         return groups.mapIndexed { index, group ->
-            val length = group.value.length
+            val length = tokens(group.value).size - 3
             if (token + length > frames.size) return null
             val start = (left / 80.0).coerceIn(0.0, duration)
             val wordFrames = frames.sliceArray(token until token + length).sum()

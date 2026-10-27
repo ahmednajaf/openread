@@ -1,6 +1,5 @@
 import Foundation
 import CryptoKit
-import KittenTTS
 
 struct VoiceAsset: Codable, Sendable {
     let name: String; let url: URL; let sha256: String
@@ -21,7 +20,7 @@ struct SpokenClip: Sendable { let wav: Data; let words: [SpokenWord]; let durati
 
 actor VoiceEngine {
     static let voices = ["kiki", "rosie", "jasper", "luna", "bruno", "hugo", "leo", "bella"]
-    private var engine: KittenTTS?
+    private var engine: KittenInference?
     private var cache: [String: SpokenClip] = [:]
     private var cacheOrder: [String] = []
     private var ready = false
@@ -52,29 +51,15 @@ actor VoiceEngine {
             try? FileManager.default.removeItem(at: destination)
             try FileManager.default.moveItem(at: temporary, to: destination)
         }
-        let phonemizer = EPhonemizer(rulesFileURL: root.appendingPathComponent("en_rules"), listFileURL: root.appendingPathComponent("en_list"))
-        engine = try await KittenTTS(KittenTTSConfig(model: .mini, defaultVoice: .kiki, phonemizer: .custom(phonemizer),
-            modelFiles: .init(onnxURL: root.appendingPathComponent("kitten_tts_mini_v0_8.onnx"), voicesURL: root.appendingPathComponent("voices.npz")),
-            ortNumThreads: 2, maxTokensPerChunk: 400))
+        engine = try KittenInference(root: root)
         ready = true; progress(1)
     }
     func generate(_ text: String, voice: String) async throws -> SpokenClip {
         guard let engine else { throw ReadingError.missingModels }
         let key = voice + "\n" + text
         if let clip = cache[key] { return clip }
-        let selected = KittenVoice.allCases.first { $0.displayName.lowercased() == voice } ?? .kiki
-        let result = try await engine.generate(text, voice: selected, speed: 1)
+        let clip = try engine.generate(text, voice: voice)
         try Task.checkCancellation()
-        guard result.duration > 0.02, result.samples.allSatisfy(\.isFinite), result.samples.contains(where: { abs($0) > 0.00001 }) else { throw ReadingError.noText }
-        let sourceWords = ReadingText.words(in: text)
-        let predicted = result.wordTimings.compactMap { timing -> SpokenWord? in
-            guard sourceWords.indices.contains(timing.wordIndex) else { return nil }
-            let start = max(0, min(result.duration, timing.startTime)); let end = max(start, min(result.duration, timing.endTime))
-            return .init(range: sourceWords[timing.wordIndex], start: start, end: end)
-        }
-        let words = predicted.count == sourceWords.count && predicted.allSatisfy({ $0.end > $0.start }) ? predicted
-            : ReadingText.estimatedWords(text, duration: result.duration).map { .init(range: $0.range, start: $0.start, end: $0.end) }
-        let clip = SpokenClip(wav: result.wavData(), words: words, duration: result.duration)
         cache[key] = clip; cacheOrder.removeAll { $0 == key }; cacheOrder.append(key)
         while cacheOrder.count > 3 { cache.removeValue(forKey: cacheOrder.removeFirst()) }
         return clip

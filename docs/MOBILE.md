@@ -2,7 +2,7 @@
 
 Native previews are in this repository: **SwiftUI for iPhone/iPad** and **Kotlin + Jetpack Compose for Android**. They run Kitten Mini directly on the device. You do not need the Mac helper, an account or a subscription.
 
-These are developer previews, not App Store or Play Store releases. Build and simulator tests pass; physical-phone testing and store release preparation are still needed.
+These are developer previews, not App Store or Play Store releases. The updated voice engine has been tested on a physical iPhone. Store release preparation and wider device testing are ongoing.
 
 ## What you can use
 
@@ -12,7 +12,7 @@ These are developer previews, not App Store or Play Store releases. Build and si
 - PDF, EPUB, DOCX, HTML, text and image imports. Scanned PDFs and photos use on-device OCR. Android's English scanner is a separate, optional 4 MB download.
 - Background audio and system media controls.
 - Text and WAV exports, plus portable iPhone/Android library backups.
-- Android's **Share → OpenRead**, and an iOS share extension in the full build.
+- Android's **Share → OpenRead**, plus share and Safari extensions in the full Apple build.
 
 Appearance follows your phone. iOS 26 uses SwiftUI's native glass material; iOS 17–25 use Apple's system material. Android uses native Material 3 controls.
 
@@ -23,16 +23,37 @@ Mobile currently focuses on reading. The desktop's optional AI summaries, podcas
 You need a Mac with **Xcode 26 or later** and an iPhone/iPad running **iOS 17 or later**. The checked-in Xcode project opens directly; Node, Python and XcodeGen are not needed to build it.
 
 1. Download this repository and open `app/mobile/ios/OpenRead.xcodeproj` in Xcode. Allow its pinned Swift packages to finish loading.
-2. Select the **OpenReadPersonal** scheme for a free Apple account. This build supports paste, file import, OCR and the reader; it leaves out the share extension and App Groups.
+2. Select the **OpenReadPersonal** scheme for a free Apple account. This build supports paste, file import, OCR and the reader; it leaves out the share/Safari extensions and App Groups.
 3. Connect your phone, select it as the destination, then select your Personal Team under **Signing & Capabilities** for the OpenReadPersonal target. Give it a unique bundle identifier if Xcode asks.
 4. Press **Run**. Follow Apple's device trust/Developer Mode prompts on your phone, if shown.
 5. In OpenRead, open **Settings → Download voices**, then try **The Odyssey** or paste your own text.
 
 Apple's free personal provisioning expires after seven days; reopen Xcode and run the app again to renew it. See [Apple's account guide](https://developer.apple.com/help/account/basics/about-your-developer-account). App Store/TestFlight distribution is a separate Apple Developer Program process.
 
-For the **full iOS share extension**, use the OpenRead scheme with a development team that supports App Groups. Configure unique `OPENREAD_BUNDLE_ID` and `OPENREAD_APP_GROUP` values in the project's build settings, assign the same team to OpenRead and OpenReadShare, and register/enable that group for both targets. Both entitlement files and the runtime container use that single group setting. Share-sheet handoff still needs validation on a correctly signed physical device.
+For the **full iOS share and Safari extensions**, use the OpenRead scheme with a development team that supports App Groups. Configure unique `OPENREAD_BUNDLE_ID` and `OPENREAD_APP_GROUP` values in the project's build settings, assign the same team to OpenRead, OpenReadShare and OpenReadSafari, and register/enable that group for all three targets. The entitlement files and runtime container use that single group setting. Share-sheet handoff still needs validation on a correctly signed physical device.
 
 The personal and full builds have separate libraries. Export a mobile library backup before switching between them.
+
+## Safari on iPhone and Mac
+
+The full Apple builds include OpenRead's toolbar extension. Download voices in
+the containing app first; Safari and the app share that download through their
+App Group. Chrome's separate desktop helper is not used by this native variant.
+
+On iPhone, enable OpenRead under **Settings → Apps → Safari → Extensions**,
+including your Safari profile. Open an article, select OpenRead in Safari's
+page menu, and look for the **openread.** panel with the Kiki voice selector.
+Safari's own Listen to Page action is a separate Apple feature. If prompted,
+tap **Start listening** on the webpage to allow audio playback.
+
+On Mac, open `app/apple/OpenReadMac.xcodeproj`, choose your developer team and
+run the OpenReadMac scheme. Download voices in that app, then enable its
+extension in Safari Settings. Use the same bundle identifier/App Group settings
+for both Mac targets. A signed development build is not an App Store release.
+
+The iPhone Safari voice transport is still being checked on hardware; if it
+fails, save the page to the native app to listen. The Mac extension has played
+the Odyssey article with its native engine. Word timings remain approximate.
 
 ## Try it on Android
 
@@ -52,7 +73,7 @@ The local APK is `app/build/outputs/apk/debug/app-debug.apk` inside the Android 
 
 **Keep it:** choose Save in Reading options. Readings stay on that device. Export a library backup before changing phones or uninstalling. Restore merges and validates the whole backup before writing; matching IDs replace their saved entries. Mobile backups work between these two native apps, not the desktop library format.
 
-**Listen offline:** after the model download, speech and scanning run on the phone. Voice files come from pinned upstream URLs with SHA-256 verification. Your reading text is not sent to the model host. Download hosts receive the usual request/IP information during setup; imported website hosts receive your request when you open a link.
+**Listen offline:** after the model download, speech and scanning run on the phone. Voice files come from pinned upstream URLs with SHA-256 verification. Apple apps also prepare an approximately 80 MB local runtime cache so Safari can map the weights without duplicate copies. Your reading text is not sent to the model host. Download hosts receive the usual request/IP information during setup; imported website hosts receive your request when you open a link.
 
 **Useful limits:** 20 MB per imported file, 250,000 characters per reading, 200 PDF pages, at most 20 scanned PDF pages per import, and 200 saved readings/25 MB per mobile library backup. WAV exports accept excerpts up to 25,000 characters and use the voice's normal speed. EPUB DRM is not removed. Word timings are approximate; generation speed and background behaviour still need testing across physical phones.
 
@@ -76,6 +97,6 @@ cd app/mobile/android
 
 The core tests cover exact Unicode ranges, repeated words, passage ordering and atomic backup validation. Device/simulator tests cover article links and lists, EPUB spine order, DOCX paragraphs, rejected external XML entities, local voice generation, WAV exports audio playback and offline OCR. Voice/OCR tests explicitly skip when their model files are absent. Install the voice pack in the test app first to exercise inference; tests never silently download it.
 
-If editing `project.yml`, regenerate the checked-in Xcode project with XcodeGen 2.46.0. Android's wrapper pins Gradle 8.11.1 and its distribution checksum. Android ONNX Runtime is pinned to 1.24.3 to avoid the CPU-detection crash observed with 1.24.2 on the ARM emulator.
+After changing shared extension files, run `node dev/scripts/build-apple-extension.cjs`. The generated Safari resources are committed for Xcode-only builds. If editing `project.yml`, regenerate the checked-in Xcode project with XcodeGen 2.46.0. Android's wrapper pins Gradle 8.11.1 and its distribution checksum. Android ONNX Runtime is pinned to 1.24.3 to avoid the CPU-detection crash observed with 1.24.2 on the ARM emulator.
 
 Native sources are under `app/mobile/ios` and `app/mobile/android`. Shared model pins, test fixtures, the Odyssey sample and the attributed pronunciation engine live in `app/mobile/shared`. See [mobile notices](../app/mobile/shared/NOTICES.txt) and [third-party inventory](../THIRD_PARTY.md).

@@ -1,0 +1,118 @@
+name: OpenReadMac
+options:
+  deploymentTarget:
+    macOS: "14.0"
+packages:
+  OpenReadInference:
+    path: ../mobile/shared/inference
+  OpenReadSpeech:
+    path: ../mobile/shared/speech
+  ONNXRuntime:
+    url: https://github.com/microsoft/onnxruntime-swift-package-manager
+    exactVersion: 1.24.2
+  ZIPFoundation:
+    url: https://github.com/weichsel/ZIPFoundation
+    exactVersion: 0.9.19
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    SWIFT_STRICT_CONCURRENCY: targeted
+    MARKETING_VERSION: 0.5.1
+    CURRENT_PROJECT_VERSION: 5
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: ""
+    OPENREAD_BUNDLE_ID: app.getopenread.reader
+    OPENREAD_APP_GROUP: group.app.getopenread.reader
+    ENABLE_HARDENED_RUNTIME: YES
+targets:
+  OpenReadMac:
+    type: application
+    platform: macOS
+    sources:
+      - MacApp
+      - ../mobile/ios/OpenRead/VoiceEngine.swift
+      - ../mobile/ios/OpenRead/KittenInference.swift
+      - ../mobile/ios/OpenRead/LibraryStore.swift
+      - ../mobile/shared/swift
+      - path: ../mobile/shared/models.json
+        buildPhase: resources
+      - path: ../mobile/shared/NOTICES.txt
+        buildPhase: resources
+      - path: ../mobile/shared/speech/espeak-ng-data
+        type: folder
+        buildPhase: resources
+    dependencies:
+      - package: OpenReadInference
+      - package: OpenReadSpeech
+      - package: ONNXRuntime
+        product: onnxruntime
+      - package: ZIPFoundation
+      - target: OpenReadMacSafari
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: "$(OPENREAD_BUNDLE_ID)"
+        INFOPLIST_FILE: MacApp/Info.plist
+        CODE_SIGN_ENTITLEMENTS: MacApp/Mac.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+  OpenReadMacSafari:
+    type: app-extension
+    platform: macOS
+    sources:
+      - SafariExtension/SafariWebExtensionHandler.swift
+      - SafariExtension/PrivacyInfo.xcprivacy
+      - ../mobile/ios/OpenRead/VoiceEngine.swift
+      - ../mobile/ios/OpenRead/KittenInference.swift
+      - ../mobile/ios/OpenRead/LibraryStore.swift
+      - ../mobile/shared/swift
+      - path: ../mobile/shared/models.json
+        buildPhase: resources
+      - path: ../mobile/shared/speech/espeak-ng-data
+        type: folder
+        buildPhase: resources
+      - path: SafariExtension/Resources/background.js
+        buildPhase: resources
+      - path: SafariExtension/Resources/core.js
+        buildPhase: resources
+      - path: SafariExtension/Resources/extract.js
+        buildPhase: resources
+      - path: SafariExtension/Resources/player.js
+        buildPhase: resources
+      - path: SafariExtension/Resources/highlighter.js
+        buildPhase: resources
+      - path: SafariExtension/Resources/content.js
+        buildPhase: resources
+      - path: SafariExtension/Resources/popup.html
+        buildPhase: resources
+      - path: SafariExtension/Resources/popup.js
+        buildPhase: resources
+      - path: SafariExtension/Resources/settings.js
+        buildPhase: resources
+      - path: SafariExtension/Resources/glass.js
+        buildPhase: resources
+      - path: SafariExtension/Resources/popup.css
+        buildPhase: resources
+      - path: SafariExtension/Resources/reader.css
+        buildPhase: resources
+      - path: SafariExtension/Resources/manifest.json
+        buildPhase: resources
+      - path: SafariExtension/Resources/icons
+        type: folder
+        buildPhase: resources
+    dependencies:
+      - package: OpenReadInference
+      - package: OpenReadSpeech
+      - package: ONNXRuntime
+        product: onnxruntime
+      - package: ZIPFoundation
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: "$(OPENREAD_BUNDLE_ID).safari"
+        INFOPLIST_FILE: SafariExtension/Info.plist
+        CODE_SIGN_ENTITLEMENTS: SafariExtension/MacNative.entitlements
+        APPLICATION_EXTENSION_API_ONLY: YES
+        SKIP_INSTALL: YES
+schemes:
+  OpenReadMac:
+    build:
+      targets:
+        OpenReadMac: all
