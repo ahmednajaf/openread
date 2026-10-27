@@ -1,0 +1,4077 @@
+{
+  "confidence": 0.99,
+  "grammar_confidence": 0.9,
+  "words": {
+    "abstract": [
+      {
+        "id": 0,
+        "ipa": "ˈæbˌstɹækt",
+        "description": "adjective-noun",
+        "tags": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 1,
+        "ipa": "əbˈstɹækt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "abuse": [
+      {
+        "id": 2,
+        "ipa": "əˈbjuːs",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 3,
+        "ipa": "əˈbjuːz",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "abuses": [
+      {
+        "id": 4,
+        "ipa": null,
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 5,
+        "ipa": null,
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "addict": [
+      {
+        "id": 6,
+        "ipa": "ˈædəkt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 7,
+        "ipa": "əˈdɪkt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "advocate": [
+      {
+        "id": 8,
+        "ipa": "ˈædvəkət",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 9,
+        "ipa": "ˈædvəˌkeɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "affect": [
+      {
+        "id": 11,
+        "ipa": "ˈæˌfɛkt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 10,
+        "ipa": "əˈfɛkt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "affiliate": [
+      {
+        "id": 12,
+        "ipa": "əˈfɪˌliːət",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 13,
+        "ipa": null,
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "aged": [
+      {
+        "id": 15,
+        "ipa": "ˈeɪʤəd",
+        "description": "old",
+        "tags": []
+      },
+      {
+        "id": 14,
+        "ipa": "ˈeɪʤd",
+        "description": "of a certain age",
+        "tags": []
+      }
+    ],
+    "aggregate": [
+      {
+        "id": 16,
+        "ipa": "ˈæɡɹəɡət",
+        "description": "adjective-noun",
+        "tags": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 17,
+        "ipa": "ˈæɡɹəˌɡeɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "alternate": [
+      {
+        "id": 18,
+        "ipa": "ˈɑːltɚnət",
+        "description": "adjective-noun",
+        "tags": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 19,
+        "ipa": "ˈɑːltɚˌneɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "analyses": [
+      {
+        "id": 20,
+        "ipa": "əˈnæləˌsiːz",
+        "description": "analysis",
+        "tags": []
+      },
+      {
+        "id": 21,
+        "ipa": "ˈænəˌlaɪzəz",
+        "description": "analyze",
+        "tags": []
+      }
+    ],
+    "animate": [
+      {
+        "id": 22,
+        "ipa": "ˈænəmət",
+        "description": "adjective-noun",
+        "tags": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 23,
+        "ipa": "ˈænəˌmeɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "appropriate": [
+      {
+        "id": 24,
+        "ipa": "əˈpɹoʊˌpɹiːət",
+        "description": "adjective",
+        "tags": [
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "id": 25,
+        "ipa": "əˈpɹoʊˌpɹiːˌeɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "approximate": [
+      {
+        "id": 26,
+        "ipa": "əˈpɹɑːksəmət",
+        "description": "adjective",
+        "tags": [
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "id": 27,
+        "ipa": "əˈpɹɑːsəˌmeɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "articulate": [
+      {
+        "id": 28,
+        "ipa": "ɑːɹˈtɪkjələt",
+        "description": "adjective",
+        "tags": [
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "id": 29,
+        "ipa": "ˌɑːɹˈtɪkjəˌleɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "associate": [
+      {
+        "id": 30,
+        "ipa": "əˈsoʊˌsiːət",
+        "description": "adjective-noun",
+        "tags": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 31,
+        "ipa": "əˈsoʊˌsiːˌeɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "attribute": [
+      {
+        "id": 32,
+        "ipa": "ˈætɹəˌbjuːt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 33,
+        "ipa": "əˈtɹɪˌbjuːt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "august": [
+      {
+        "id": 35,
+        "ipa": "ˌɑːˈɡʌst",
+        "description": "adjective",
+        "tags": [
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "id": 34,
+        "ipa": "ˈɑːɡəst",
+        "description": "month",
+        "tags": []
+      },
+      {
+        "id": 36,
+        "ipa": "ˈaʊˌɡʊst",
+        "description": "given name",
+        "tags": []
+      }
+    ],
+    "axes": [
+      {
+        "id": 37,
+        "ipa": "ˈækˌsiːz",
+        "description": "axis",
+        "tags": []
+      },
+      {
+        "id": 38,
+        "ipa": "ˈæksəz",
+        "description": "ax",
+        "tags": []
+      }
+    ],
+    "bass": [
+      {
+        "id": 39,
+        "ipa": "ˈbeɪs",
+        "description": "music",
+        "tags": []
+      },
+      {
+        "id": 40,
+        "ipa": "ˈbæs",
+        "description": "animal",
+        "tags": []
+      }
+    ],
+    "blessed": [
+      {
+        "id": 41,
+        "ipa": "ˈblɛsəd",
+        "description": "adjective",
+        "tags": [
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "id": 42,
+        "ipa": "ˈblɛst",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "bologna": [
+      {
+        "id": 44,
+        "ipa": "bəˈloʊnjə",
+        "description": "city",
+        "tags": []
+      },
+      {
+        "id": 43,
+        "ipa": "bəˈloʊˌniː",
+        "description": "meat",
+        "tags": []
+      }
+    ],
+    "bow": [
+      {
+        "id": 45,
+        "ipa": "ˈboʊ",
+        "description": "knot / weapon / region of London",
+        "tags": []
+      },
+      {
+        "id": 46,
+        "ipa": "ˈbaʊ",
+        "description": "gesture / front of ship / bow-wow / river",
+        "tags": []
+      }
+    ],
+    "buffet": [
+      {
+        "id": 47,
+        "ipa": "ˌbʌˈfeɪ",
+        "description": "dining",
+        "tags": []
+      },
+      {
+        "id": 48,
+        "ipa": "ˈbʌfət",
+        "description": "strike / last name",
+        "tags": []
+      }
+    ],
+    "celtic": [
+      {
+        "id": 50,
+        "ipa": "ˈsɛltək",
+        "description": "sports team",
+        "tags": []
+      },
+      {
+        "id": 49,
+        "ipa": "ˈkɛltək",
+        "description": "ethnicity / language",
+        "tags": []
+      }
+    ],
+    "close": [
+      {
+        "id": 51,
+        "ipa": "ˈkloʊs",
+        "description": "adjective-noun / actress",
+        "tags": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 52,
+        "ipa": "ˈkloʊz",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "combine": [
+      {
+        "id": 53,
+        "ipa": "ˈkɑːmˌbaɪn",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 54,
+        "ipa": "kəmˈbaɪn",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "compact": [
+      {
+        "id": 55,
+        "ipa": "ˈkɑːmˌpækt",
+        "description": "adjective-noun",
+        "tags": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 56,
+        "ipa": "kəmˈpækt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "compound": [
+      {
+        "id": 57,
+        "ipa": "ˈkɑːmˌpaʊnd",
+        "description": "adjective-noun",
+        "tags": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 58,
+        "ipa": "kəmˈpaʊnd",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "compress": [
+      {
+        "id": 60,
+        "ipa": "ˈkɑːmˌpɹɛs",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 59,
+        "ipa": "kəmˈpɹɛs",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "conduct": [
+      {
+        "id": 61,
+        "ipa": "ˈkɑːnˌdʌkt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 62,
+        "ipa": "kənˈdʌkt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "confines": [
+      {
+        "id": 63,
+        "ipa": "ˈkɑːnˌfaɪnz",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 64,
+        "ipa": "kənˈfaɪnz",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "conflict": [
+      {
+        "id": 65,
+        "ipa": "ˈkɑːnfləkt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 66,
+        "ipa": "kənˈflɪkt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "conglomerate": [
+      {
+        "id": 67,
+        "ipa": "kənˈɡlɑːmɚət",
+        "description": "adjective-noun",
+        "tags": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 68,
+        "ipa": "kənˈɡlɑːmɚˌeɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "conjugate": [
+      {
+        "id": 69,
+        "ipa": "ˈkɑːnʤəɡət",
+        "description": "adjective-noun",
+        "tags": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 70,
+        "ipa": "ˈkɑːnʤəˌɡeɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "conscript": [
+      {
+        "id": 71,
+        "ipa": "ˈkɑːnˌskɹɪpt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 72,
+        "ipa": "kənˈskɹɪpt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "console": [
+      {
+        "id": 73,
+        "ipa": "ˈkɑːnˌsoʊl",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 74,
+        "ipa": "kənˈsoʊl",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "consort": [
+      {
+        "id": 75,
+        "ipa": "ˈkɑːnˌsɔːɹt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 76,
+        "ipa": "kənˈsɔːɹt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "construct": [
+      {
+        "id": 77,
+        "ipa": "ˈkɑːnˌstɹʌkt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 78,
+        "ipa": "kənˈstɹʌkt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "consummate": [
+      {
+        "id": 79,
+        "ipa": "ˈkɑːnsəmət",
+        "description": "adjective",
+        "tags": [
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "id": 80,
+        "ipa": "ˈkɑːnsəˌmeɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "content": [
+      {
+        "id": 81,
+        "ipa": "kənˈtɛnt",
+        "description": "adjective-noun-verb",
+        "tags": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      },
+      {
+        "id": 82,
+        "ipa": "ˈkɑːnˌtɛnt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      }
+    ],
+    "contest": [
+      {
+        "id": 83,
+        "ipa": "ˈkɑːnˌtɛst",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 84,
+        "ipa": "kənˈtɛst",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "contract": [
+      {
+        "id": 85,
+        "ipa": "ˈkɑːnˌtɹækt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 86,
+        "ipa": "kənˈtɹækt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "contrast": [
+      {
+        "id": 87,
+        "ipa": "ˈkɑːnˌtɹæst",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 88,
+        "ipa": "kənˈtɹæst",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "converse": [
+      {
+        "id": 89,
+        "ipa": "ˈkɑːnvɚs",
+        "description": "adjective-noun",
+        "tags": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 90,
+        "ipa": "kənˈvɚs",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "convert": [
+      {
+        "id": 91,
+        "ipa": "ˈkɑːnvɚt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 92,
+        "ipa": "kənˈvɚt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "convict": [
+      {
+        "id": 93,
+        "ipa": "ˈkɑːnvəkt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 94,
+        "ipa": "kənˈvɪkt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "coordinate": [
+      {
+        "id": 95,
+        "ipa": "ˌkoʊˈɔːɹdənət",
+        "description": "adjective-noun",
+        "tags": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 96,
+        "ipa": "ˌkoʊˈɔːɹdəˌneɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "correlate": [
+      {
+        "id": 97,
+        "ipa": "ˈkɔːɹələt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 98,
+        "ipa": "ˈkɔːɹəˌleɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "decrease": [
+      {
+        "id": 99,
+        "ipa": "ˈdiːˌkɹiːs",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 100,
+        "ipa": "dəˈkɹiːs",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "defect": [
+      {
+        "id": 101,
+        "ipa": "ˈdiːˌfɛkt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 102,
+        "ipa": "dəˈfɛkt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "degenerate": [
+      {
+        "id": 103,
+        "ipa": "dəˈʤɛnɚət",
+        "description": "adjective-noun",
+        "tags": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 104,
+        "ipa": "dəˈʤɛnɚˌeɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "delegate": [
+      {
+        "id": 105,
+        "ipa": "ˈdɛləɡət",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 106,
+        "ipa": "ˈdɛləˌɡeɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "deliberate": [
+      {
+        "id": 107,
+        "ipa": "dəˈlɪbɚət",
+        "description": "adjective",
+        "tags": [
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "id": 108,
+        "ipa": "dəˈlɪbɚˌeɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "desert": [
+      {
+        "id": 109,
+        "ipa": "ˈdɛzɚt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 110,
+        "ipa": "dəˈzɚt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "deviate": [
+      {
+        "id": 111,
+        "ipa": "ˈdiːˌviːət",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 112,
+        "ipa": "ˈdiːˌviːˌeɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "diagnoses": [
+      {
+        "id": 113,
+        "ipa": "ˌdaɪəɡˈnoʊˌsiːz",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 114,
+        "ipa": "ˌdaɪəɡˈnoʊsəz",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "diffuse": [
+      {
+        "id": 115,
+        "ipa": "dəˈfjuːs",
+        "description": "adjective",
+        "tags": [
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "id": 116,
+        "ipa": "dəˈfjuːz",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "discard": [
+      {
+        "id": 117,
+        "ipa": "ˈdɪsˌkɑːɹd",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 118,
+        "ipa": "dəsˈkɑːɹd",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "discharge": [
+      {
+        "id": 119,
+        "ipa": "ˈdɪsˌʧɑːɹʤ",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 120,
+        "ipa": "dəsˈʧɑːɹʤ",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "discount": [
+      {
+        "id": 121,
+        "ipa": "ˈdɪsˌkaʊnt",
+        "description": "adjective-noun",
+        "tags": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 122,
+        "ipa": "dəsˈkaʊnt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "document": [
+      {
+        "id": 123,
+        "ipa": "ˈdɑːˌkjuːmənt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 124,
+        "ipa": "ˈdɑːkjəˌmɛnt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "dove": [
+      {
+        "id": 125,
+        "ipa": "ˈdʌv",
+        "description": "bird / river",
+        "tags": []
+      },
+      {
+        "id": 126,
+        "ipa": "ˈdoʊv",
+        "description": "dive",
+        "tags": []
+      }
+    ],
+    "duplicate": [
+      {
+        "id": 127,
+        "ipa": "ˈduːpləkət",
+        "description": "adjective-noun",
+        "tags": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 128,
+        "ipa": "ˈduːpləkˌeɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "elaborate": [
+      {
+        "id": 129,
+        "ipa": "əˈlæbɚət",
+        "description": "adjective",
+        "tags": [
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "id": 130,
+        "ipa": "ˌiːˈlæbɚeɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "entrance": [
+      {
+        "id": 131,
+        "ipa": "ˈɛntɹəns",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 132,
+        "ipa": "əˈntɹæns",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "escort": [
+      {
+        "id": 133,
+        "ipa": "ˈɛsˌkɔːɹt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 134,
+        "ipa": "əsˈkɔːɹt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "estimate": [
+      {
+        "id": 135,
+        "ipa": "ˈɛstəmət",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 136,
+        "ipa": "ˈɛstəˌmeɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "excuse": [
+      {
+        "id": 137,
+        "ipa": "əkˈskjuːs",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 138,
+        "ipa": "əkˈskjuːz",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "expatriate": [
+      {
+        "id": 139,
+        "ipa": "ˌɛkˈspeɪˌtɹiːət",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 140,
+        "ipa": "ˌɛkˈspeɪˌtɹiːˌeɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "exploit": [
+      {
+        "id": 141,
+        "ipa": "ˈɛkˌsplɔɪt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 142,
+        "ipa": "əkˈsplɔɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "export": [
+      {
+        "id": 143,
+        "ipa": "ˈɛkˌspɔːɹt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 144,
+        "ipa": "əkˈspɔːɹt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "expose": [
+      {
+        "id": 145,
+        "ipa": "ˌɛkˌspoʊˈzeɪ",
+        "description": "exposé",
+        "tags": []
+      },
+      {
+        "id": 146,
+        "ipa": "əkˈspoʊz",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "extract": [
+      {
+        "id": 147,
+        "ipa": "ˈɛkˌstɹækt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 148,
+        "ipa": "əkˈstɹækt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "fragment": [
+      {
+        "id": 149,
+        "ipa": "ˈfɹæɡmənt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 150,
+        "ipa": "ˌfɹæɡˈmɛnt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "frequent": [
+      {
+        "id": 151,
+        "ipa": "ˈfɹiːkwənt",
+        "description": "adjective",
+        "tags": [
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "id": 152,
+        "ipa": "ˌfɹiːˈkwɛnt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "graduate": [
+      {
+        "id": 153,
+        "ipa": "ˈɡɹæˌʤuːət",
+        "description": "adjective-noun",
+        "tags": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 154,
+        "ipa": "ˈɡɹæˌʤuːˌeɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "house": [
+      {
+        "id": 155,
+        "ipa": "ˈhaʊs",
+        "description": "adjective-noun",
+        "tags": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 156,
+        "ipa": "ˈhaʊz",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "impact": [
+      {
+        "id": 157,
+        "ipa": "ˈɪmˌpækt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 158,
+        "ipa": "əmˈpækt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "implant": [
+      {
+        "id": 159,
+        "ipa": "ˈɪmˌplænt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 160,
+        "ipa": "əmˈplænt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "implement": [
+      {
+        "id": 161,
+        "ipa": "ˈɪmpləmənt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 162,
+        "ipa": "ˈɪmpləˌmɛnt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "import": [
+      {
+        "id": 163,
+        "ipa": "ˈɪmˌpɔːɹt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 164,
+        "ipa": "əmˈpɔːɹt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "incense": [
+      {
+        "id": 165,
+        "ipa": "ˈɪnˌsɛns",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 166,
+        "ipa": "ənˈsɛns",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "incline": [
+      {
+        "id": 167,
+        "ipa": "ˈɪnˌklaɪn",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 168,
+        "ipa": "ənˈklaɪn",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "increase": [
+      {
+        "id": 169,
+        "ipa": "ˈɪnˌkɹiːs",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 170,
+        "ipa": "ənˈkɹiːs",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "increment": [
+      {
+        "id": 171,
+        "ipa": "ˈɪnkɹəmənt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 172,
+        "ipa": "ˈɪnkɹəˌmɛnt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "initiate": [
+      {
+        "id": 173,
+        "ipa": "əˈnɪˌʃiːət",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 174,
+        "ipa": "ˌɪˈnɪˌʃiːˌeɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "insert": [
+      {
+        "id": 175,
+        "ipa": "ˈɪnsɚt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 176,
+        "ipa": "ənˈsɚt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "instrument": [
+      {
+        "id": 177,
+        "ipa": "ˈɪnstɹəmənt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 178,
+        "ipa": "ˈɪnstɹəˌmɛnt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "insult": [
+      {
+        "id": 179,
+        "ipa": "ˈɪnˌsʌlt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 180,
+        "ipa": "ˌɪnˈsʌlt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "interchange": [
+      {
+        "id": 181,
+        "ipa": "ˈɪntɚˌʧeɪnʤ",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 182,
+        "ipa": "ˌɪntɚˈʧeɪnʤ",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "intimate": [
+      {
+        "id": 183,
+        "ipa": "ˈɪntəmət",
+        "description": "adjective-noun",
+        "tags": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 184,
+        "ipa": "ˈɪntəˌmeɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "intrigue": [
+      {
+        "id": 185,
+        "ipa": "ˈɪnˌtɹiːɡ",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 186,
+        "ipa": "ənˈtɹiːɡ",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "invalid": [
+      {
+        "id": 187,
+        "ipa": "ənˈvæləd",
+        "description": "adjective",
+        "tags": [
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "id": 188,
+        "ipa": "ˈɪnvələd",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      }
+    ],
+    "invert": [
+      {
+        "id": 189,
+        "ipa": "ˈɪnvɚt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 190,
+        "ipa": "ənˈvɚt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "invite": [
+      {
+        "id": 191,
+        "ipa": "ˈɪnˌvaɪt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 192,
+        "ipa": "ənˈvaɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "isolate": [
+      {
+        "id": 194,
+        "ipa": "ˈaɪsələt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 193,
+        "ipa": "ˈaɪsəˌleɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "jesus": [
+      {
+        "id": 195,
+        "ipa": "ˈʤiːzəs",
+        "description": "biblical figure",
+        "tags": []
+      },
+      {
+        "id": 196,
+        "ipa": "ˌheɪˈsuːs",
+        "description": "Spanish given name",
+        "tags": []
+      }
+    ],
+    "job": [
+      {
+        "id": 198,
+        "ipa": "ˈʤoʊb",
+        "description": "biblical figure",
+        "tags": []
+      },
+      {
+        "id": 197,
+        "ipa": "ˈʤɑːb",
+        "description": "work",
+        "tags": []
+      }
+    ],
+    "laminate": [
+      {
+        "id": 199,
+        "ipa": "ˈlæmənət",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 200,
+        "ipa": "ˈlæməˌneɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "lead": [
+      {
+        "id": 201,
+        "ipa": "ˈlɛd",
+        "description": "material",
+        "tags": []
+      },
+      {
+        "id": 202,
+        "ipa": "ˈliːd",
+        "description": "noun-verb",
+        "tags": [
+          4,
+          5,
+          6,
+          7,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "learned": [
+      {
+        "id": 203,
+        "ipa": "ˈlɚnəd",
+        "description": "adjective",
+        "tags": [
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "id": 204,
+        "ipa": "ˈlɚnd",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "live": [
+      {
+        "id": 205,
+        "ipa": "ˈlaɪv",
+        "description": "adjective",
+        "tags": [
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "id": 206,
+        "ipa": "ˈlɪv",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "lives": [
+      {
+        "id": 207,
+        "ipa": "ˈlaɪvz",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 208,
+        "ipa": "ˈlɪvz",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "mate": [
+      {
+        "id": 210,
+        "ipa": "ˈmɑːˌteɪ",
+        "description": "maté",
+        "tags": []
+      },
+      {
+        "id": 209,
+        "ipa": "ˈmeɪt",
+        "description": "noun-verb",
+        "tags": [
+          4,
+          5,
+          6,
+          7,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "minute": [
+      {
+        "id": 212,
+        "ipa": "ˌmaɪˈnuːt",
+        "description": "adjective",
+        "tags": [
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "id": 211,
+        "ipa": "ˈmɪnət",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      }
+    ],
+    "misuse": [
+      {
+        "id": 213,
+        "ipa": "ˌmɪsˈjuːs",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 214,
+        "ipa": "ˌmɪsˈjuːz",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "mobile": [
+      {
+        "id": 215,
+        "ipa": "ˈmoʊbəl",
+        "description": "adjective",
+        "tags": [
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "id": 216,
+        "ipa": "ˌmoʊˈbiːl",
+        "description": "city",
+        "tags": []
+      },
+      {
+        "id": 217,
+        "ipa": "ˈmoʊˌbiːl",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      }
+    ],
+    "moderate": [
+      {
+        "id": 218,
+        "ipa": "ˈmɑːdɚət",
+        "description": "adjective-noun",
+        "tags": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 219,
+        "ipa": "mɑːdɚˈeɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "moped": [
+      {
+        "id": 220,
+        "ipa": "ˈmoʊˌpɛd",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 221,
+        "ipa": "ˈmoʊpt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "mouth": [
+      {
+        "id": 222,
+        "ipa": "ˈmaʊθ",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 223,
+        "ipa": "ˈmaʊð",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "nestle": [
+      {
+        "id": 224,
+        "ipa": "ˈnɛˌsliː",
+        "description": "Nestlé",
+        "tags": []
+      },
+      {
+        "id": 225,
+        "ipa": "ˈnɛsəl",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "object": [
+      {
+        "id": 226,
+        "ipa": "ˈɑːbʤəkt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 227,
+        "ipa": "əbˈʤɛkt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "ornament": [
+      {
+        "id": 228,
+        "ipa": "ˈɔːɹnəmənt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 229,
+        "ipa": "ˌɔɹːnəˈmɛnt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "overthrow": [
+      {
+        "id": 230,
+        "ipa": "ˈoʊvɚˌθɹoʊ",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 231,
+        "ipa": "ˌoʊvɚˈθɹoʊ",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "pasty": [
+      {
+        "id": 232,
+        "ipa": "ˈpeɪˌstiː",
+        "description": "adjective-noun",
+        "tags": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 233,
+        "ipa": "ˈpæsˌtiː",
+        "description": "food",
+        "tags": []
+      }
+    ],
+    "perfect": [
+      {
+        "id": 234,
+        "ipa": "ˈpɚfəkt",
+        "description": "adjective-noun",
+        "tags": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 235,
+        "ipa": "pɚˈfɛkt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "perfume": [
+      {
+        "id": 236,
+        "ipa": "ˈpɚˌfjuːm",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 237,
+        "ipa": "pɚˈfjuːm",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "permit": [
+      {
+        "id": 238,
+        "ipa": "ˈpɚmət",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 239,
+        "ipa": "pɚˈmɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "pervert": [
+      {
+        "id": 240,
+        "ipa": "ˈpɚvɚt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 241,
+        "ipa": "pɚˈvɚt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "pigment": [
+      {
+        "id": 242,
+        "ipa": "ˈpɪɡmənt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 243,
+        "ipa": "pəɡˈmɛnt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "polish": [
+      {
+        "id": 245,
+        "ipa": "ˈpoʊləʃ",
+        "description": "ethnicity / language",
+        "tags": []
+      },
+      {
+        "id": 244,
+        "ipa": "ˈpɑːləʃ",
+        "description": "noun-verb",
+        "tags": [
+          4,
+          5,
+          6,
+          7,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "postulate": [
+      {
+        "id": 246,
+        "ipa": "ˈpɑːsʧələt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 247,
+        "ipa": "ˈpɑːsʧəˌleɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "precipitate": [
+      {
+        "id": 248,
+        "ipa": "pɹəˈsɪpətət",
+        "description": "adjective-noun",
+        "tags": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 249,
+        "ipa": "pɹəˈsɪpəˌteɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "predicate": [
+      {
+        "id": 250,
+        "ipa": "ˈpɹɛdəkət",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 251,
+        "ipa": "ˈpɹɛdəˌkeɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "present": [
+      {
+        "id": 252,
+        "ipa": "ˈpɹɛzənt",
+        "description": "adjective",
+        "tags": [
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "id": 253,
+        "ipa": "ˌpɹiːˈzɛnt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "produce": [
+      {
+        "id": 254,
+        "ipa": "ˈpɹoʊˌduːs",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 255,
+        "ipa": "pɹəˈduːs",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "progress": [
+      {
+        "id": 256,
+        "ipa": "ˈpɹɑːˌɡɹɛs",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 257,
+        "ipa": "pɹəˈɡɹɛs",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "project": [
+      {
+        "id": 258,
+        "ipa": "ˈpɹɑːˌʤɛkt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 259,
+        "ipa": "pɹəˈʤɛkt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "protest": [
+      {
+        "id": 260,
+        "ipa": "ˈpɹoʊˌtɛst",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 261,
+        "ipa": "pɹəˈtɛst",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "ravel": [
+      {
+        "id": 262,
+        "ipa": "ɹəˈvɛl",
+        "description": "French composer",
+        "tags": []
+      },
+      {
+        "id": 263,
+        "ipa": "ˈɹævəl",
+        "description": "noun-verb",
+        "tags": [
+          4,
+          5,
+          6,
+          7,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "reading": [
+      {
+        "id": 266,
+        "ipa": "ˈɹiːdəŋ",
+        "description": "present participle-noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 267,
+        "ipa": "ˈɹɛdəŋ",
+        "description": "city",
+        "tags": []
+      }
+    ],
+    "read": [
+      {
+        "id": 264,
+        "ipa": "ˈɹɛd",
+        "description": "past tense verb",
+        "tags": [
+          13,
+          15
+        ]
+      },
+      {
+        "id": 265,
+        "ipa": "ˈɹiːd",
+        "description": "present tense verb",
+        "tags": [
+          12,
+          16,
+          17
+        ]
+      }
+    ],
+    "rebel": [
+      {
+        "id": 268,
+        "ipa": "ˈɹɛbəl",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 269,
+        "ipa": "ɹəˈbɛl",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "record": [
+      {
+        "id": 270,
+        "ipa": "ˈɹɛkɚd",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 271,
+        "ipa": "ɹəˈkɔːɹd",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "recount": [
+      {
+        "id": 272,
+        "ipa": "ˈɹiːˌkaʊnt",
+        "description": "count again",
+        "tags": []
+      },
+      {
+        "id": 273,
+        "ipa": "ˌɹiːˈkaʊnt",
+        "description": "give an account",
+        "tags": []
+      }
+    ],
+    "refund": [
+      {
+        "id": 274,
+        "ipa": "ˈɹiːˌfʌnd",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 275,
+        "ipa": "ˌɹɪˈfʌnd",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "refuse": [
+      {
+        "id": 276,
+        "ipa": "ˈɹɛˌfjuːs",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 277,
+        "ipa": "ɹəˈfjuːz",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "reject": [
+      {
+        "id": 278,
+        "ipa": "ˈɹiːˌʤɛkt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 279,
+        "ipa": "ɹəˈʤɛkt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "rerelease": [
+      {
+        "id": 280,
+        "ipa": "ˈɹiːɹəˌliːs",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 281,
+        "ipa": "ˌɹiːɹəˈliːs",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "resume": [
+      {
+        "id": 282,
+        "ipa": "ˈɹɛzəˌmeɪ",
+        "description": "résumé",
+        "tags": []
+      },
+      {
+        "id": 283,
+        "ipa": "ɹəˈzuːm",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "retard": [
+      {
+        "id": 284,
+        "ipa": "ˈɹiːˌtɑːɹd",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 285,
+        "ipa": "ɹəˈtɑːɹd",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "rodeo": [
+      {
+        "id": 287,
+        "ipa": "ˌɹoʊˈdeɪˌoʊ",
+        "description": "street",
+        "tags": []
+      },
+      {
+        "id": 286,
+        "ipa": "ˈɹoʊˌdiːˌoʊ",
+        "description": "noun-verb",
+        "tags": [
+          4,
+          5,
+          6,
+          7,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "row": [
+      {
+        "id": 288,
+        "ipa": "ˈɹoʊ",
+        "description": "line / propel a boat",
+        "tags": []
+      },
+      {
+        "id": 289,
+        "ipa": "ˈɹaʊ",
+        "description": "quarrel",
+        "tags": []
+      }
+    ],
+    "sake": [
+      {
+        "id": 291,
+        "ipa": "ˈsɑːˌkeɪ",
+        "description": "beverage",
+        "tags": []
+      },
+      {
+        "id": 290,
+        "ipa": "ˈseɪk",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      }
+    ],
+    "separate": [
+      {
+        "id": 292,
+        "ipa": "ˈsɛpɚət",
+        "description": "adjective-noun",
+        "tags": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 293,
+        "ipa": "ˈsɛpɚˌeɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "sow": [
+      {
+        "id": 295,
+        "ipa": "ˈsaʊ",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 294,
+        "ipa": "ˈsoʊ",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "subject": [
+      {
+        "id": 296,
+        "ipa": "ˈsʌbˌʤɛkt",
+        "description": "adjective-noun",
+        "tags": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 297,
+        "ipa": "səbˈʤɛkt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "subordinate": [
+      {
+        "id": 298,
+        "ipa": "səˈbɔːɹdənət",
+        "description": "adjective-noun",
+        "tags": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 299,
+        "ipa": "səˈbɔːɹdəˌneɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "supplement": [
+      {
+        "id": 300,
+        "ipa": "ˈsʌpləmənt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 301,
+        "ipa": "ˈsʌpləˌmɛnt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "suspect": [
+      {
+        "id": 302,
+        "ipa": "ˈsʌsˌpɛkt",
+        "description": "adjective-noun",
+        "tags": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 303,
+        "ipa": "səsˈpɛkt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "syndicate": [
+      {
+        "id": 304,
+        "ipa": "ˈsɪndəkət",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 305,
+        "ipa": "ˈsɪndəˌkeɪt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "tear": [
+      {
+        "id": 306,
+        "ipa": "ˈtiːɹ",
+        "description": "cry",
+        "tags": []
+      },
+      {
+        "id": 307,
+        "ipa": "ˈtɛɹ",
+        "description": "rip",
+        "tags": []
+      }
+    ],
+    "transform": [
+      {
+        "id": 309,
+        "ipa": "ˈtɹænsˌfɔːɹm",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 308,
+        "ipa": "ˌtɹænsˈfɔːɹm",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "transplant": [
+      {
+        "id": 310,
+        "ipa": "ˈtɹænsˌplænt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 311,
+        "ipa": "ˌtɹænsˈplænt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "transport": [
+      {
+        "id": 312,
+        "ipa": "ˈtɹænsˌpɔːɹt",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 313,
+        "ipa": "ˌtɹænsˈpɔːɹt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "upset": [
+      {
+        "id": 314,
+        "ipa": "ˈʌpˌsɛt",
+        "description": "adjective-noun",
+        "tags": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 315,
+        "ipa": "ˌʌpˈsɛt",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "uses": [
+      {
+        "id": 318,
+        "ipa": "ˈjuːsəz",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 319,
+        "ipa": "ˈjuːzəz",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "use": [
+      {
+        "id": 316,
+        "ipa": "ˈjuːs",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 317,
+        "ipa": "ˈjuːz",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "wind": [
+      {
+        "id": 320,
+        "ipa": "ˈwɪnd",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 321,
+        "ipa": "ˈwaɪnd",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "winds": [
+      {
+        "id": 322,
+        "ipa": "ˈwɪndz",
+        "description": "noun",
+        "tags": [
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      {
+        "id": 323,
+        "ipa": "ˈwaɪndz",
+        "description": "verb",
+        "tags": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "wound": [
+      {
+        "id": 324,
+        "ipa": "ˈwuːnd",
+        "description": "noun-verb",
+        "tags": [
+          4,
+          5,
+          6,
+          7,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      },
+      {
+        "id": 325,
+        "ipa": "ˈwaʊnd",
+        "description": "past tense",
+        "tags": [
+          13,
+          15
+        ]
+      }
+    ]
+  }
+}

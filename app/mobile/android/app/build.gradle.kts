@@ -11,8 +11,8 @@ android {
         applicationId = "dev.openread.mobile"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.6.0"
+        versionCode = 3
+        versionName = "0.6.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         externalNativeBuild { cmake { cppFlags += "-std=c++17" } }
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
@@ -31,6 +31,7 @@ android {
 val sharedAssets by tasks.registering(Copy::class) {
     from("../../shared") { include("*.json", "*.txt") }
     from("../../shared/speech") { include("espeak-ng-data/**") }
+    from("../../shared") { include("pronunciation/**") }
     into(layout.buildDirectory.dir("generated/sharedAssets"))
 }
 tasks.named("preBuild") { dependsOn(sharedAssets) }

@@ -97,6 +97,21 @@ def trim_silence(samples):
     return samples[:len(samples) - trim] if trim else samples
 
 
+def phoneme_chunks(sounds, vocabulary, limit=397):
+    def size(text):
+        prepared = ' '.join(re.findall(r'\w+|[^\w\s]', text))
+        return sum(char in vocabulary for char in prepared)
+    result = []; pending = ''
+    for word in sounds.split():
+        if size(word) > limit: raise VoiceError('voice_passage_complex')
+        joined = (pending + ' ' + word).strip()
+        if size(joined) > limit: result.append(pending); pending = word
+        else: pending = joined
+        if word[-1] in '.!?;:' and size(pending) >= 40: result.append(pending); pending = ''
+    if pending: result.append(pending)
+    return result
+
+
 class KittenVoice:
     def __init__(self):
         import numpy as np
@@ -108,6 +123,8 @@ class KittenVoice:
         self.session = ort.InferenceSession(str(ROOT / '.local/kitten-mini/kitten_tts_mini_v0_8.onnx'), sess_options=options, providers=['CPUExecutionProvider'])
         self.voices = np.load(ROOT / '.local/kitten-mini/voices.npz', allow_pickle=False)
         self.phonemizer = phonemizer.backend.EspeakBackend(language='en-us', preserve_punctuation=True, with_stress=True)
+        from pronunciation import EnglishFrontend
+        self.english = EnglishFrontend(self.phonemizer)
         self.vocab = {char: index for index, char in enumerate(SYMBOLS)}
         self.np = np
 
@@ -116,13 +133,15 @@ class KittenVoice:
         np = self.np
         key = ALIASES[voice.split(':', 1)[1]]
         audio_parts = []
-        for section in features.sections(text, 320):
-            sounds = self.phonemizer.phonemize([section])[0]
-            sounds = ' '.join(re.findall(r'\w+|[^\w\s]', sounds))
+        # Resolve pronunciation using the complete passage before any acoustic
+        # token-window splitting, matching the native apps.
+        full_sounds = self.english.phonemize(text)
+        for chunk in phoneme_chunks(full_sounds, self.vocab):
+            sounds = ' '.join(re.findall(r'\w+|[^\w\s]', chunk))
             tokens = [0] + [self.vocab[c] for c in sounds if c in self.vocab] + [10, 0]
             if len(tokens) > 510:
                 raise VoiceError('voice_passage_complex')
-            ref = min(len(section), self.voices[key].shape[0] - 1)
+            ref = min(max(1, len(text) * len(chunk) // max(1, len(full_sounds))), self.voices[key].shape[0] - 1)
             result = self.session.run(None, {'input_ids': np.array([tokens], dtype=np.int64), 'style': self.voices[key][ref:ref + 1], 'speed': np.array([1.0], dtype=np.float32)})
             samples = np.asarray(result[0]).reshape(-1)
             audio_parts.append(trim_silence(samples))

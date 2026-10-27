@@ -22,8 +22,8 @@ settings:
   base:
     SWIFT_VERSION: "5.0"
     SWIFT_STRICT_CONCURRENCY: targeted
-    MARKETING_VERSION: 0.6.0
-    CURRENT_PROJECT_VERSION: 7
+    MARKETING_VERSION: 0.6.1
+    CURRENT_PROJECT_VERSION: 8
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: ""
     OPENREAD_BUNDLE_ID: app.getopenread.reader
@@ -36,10 +36,13 @@ targets:
     sources:
       - MacApp
       - ../mobile/ios/OpenRead/PlaybackController.swift
+      - ../mobile/ios/OpenRead/AppleReadingTools.swift
+      - ../mobile/ios/OpenRead/VoicePackDownloads.swift
       - ../mobile/ios/OpenRead/DocumentImporter.swift
       - ../mobile/ios/OpenRead/QwenEngine.swift
       - ../mobile/ios/OpenRead/QwenSettingsSection.swift
       - ../mobile/ios/OpenRead/VoiceEngine.swift
+      - ../mobile/ios/OpenRead/ContextPronunciation.swift
       - ../mobile/ios/OpenRead/KittenInference.swift
       - ../mobile/ios/OpenRead/LibraryStore.swift
       - ../mobile/shared/swift
@@ -48,6 +51,9 @@ targets:
       - path: ../mobile/shared/models.json
         buildPhase: resources
       - path: ../mobile/shared/NOTICES.txt
+        buildPhase: resources
+      - path: ../mobile/shared/pronunciation
+        type: folder
         buildPhase: resources
       - path: ../mobile/shared/speech/espeak-ng-data
         type: folder
@@ -75,10 +81,14 @@ targets:
       - SafariExtension/SafariWebExtensionHandler.swift
       - SafariExtension/PrivacyInfo.xcprivacy
       - ../mobile/ios/OpenRead/VoiceEngine.swift
+      - ../mobile/ios/OpenRead/ContextPronunciation.swift
       - ../mobile/ios/OpenRead/KittenInference.swift
       - ../mobile/ios/OpenRead/LibraryStore.swift
       - ../mobile/shared/swift
       - path: ../mobile/shared/models.json
+        buildPhase: resources
+      - path: ../mobile/shared/pronunciation
+        type: folder
         buildPhase: resources
       - path: ../mobile/shared/speech/espeak-ng-data
         type: folder

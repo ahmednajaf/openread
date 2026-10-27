@@ -24,6 +24,8 @@ jobs:
       - run: node dev/scripts/build-apple-extension.cjs
       - run: git diff --exit-code -- app/apple/SafariExtension/Resources/
       - run: git diff --exit-code -- extension/ app/reader/dist/
+      - name: Install context-model test runtime
+        run: python -m pip install numpy==2.2.6 onnxruntime==1.24.2
       - run: npm test
       - name: Build portable Qwen CPU engine
         run: cmake -S app/mobile/shared/qwen -B /tmp/openread-qwen -DCMAKE_BUILD_TYPE=Release && cmake --build /tmp/openread-qwen --parallel 2

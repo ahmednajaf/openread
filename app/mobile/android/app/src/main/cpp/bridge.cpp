@@ -24,3 +24,13 @@ Java_dev_openread_mobile_NativePhonemizer_phonemize(JNIEnv* env, jobject, jstrin
         return env->NewString(reinterpret_cast<const jchar*>(result.data()), result.size());
     } catch (const std::exception& error) { fail(env, error.what()); return nullptr; }
 }
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_dev_openread_mobile_NativePhonemizer_phonemizeContext(JNIEnv* env, jobject, jstring dataParent, jstring text, jstring replacements) {
+    try {
+        std::unique_ptr<char, decltype(&openread_speech_free)> output(openread_speech_phonemize_context(utf8(env,dataParent).c_str(),utf8(env,text).c_str(),utf8(env,replacements).c_str()),openread_speech_free);
+        if(!output)throw std::runtime_error("Contextual pronunciation could not finish.");
+        auto result=std::wstring_convert<std::codecvt_utf8_utf16<char16_t>,char16_t>().from_bytes(output.get());
+        return env->NewString(reinterpret_cast<const jchar*>(result.data()),result.size());
+    }catch(const std::exception& error){fail(env,error.what());return nullptr;}
+}

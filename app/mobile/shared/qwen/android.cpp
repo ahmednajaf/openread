@@ -11,10 +11,18 @@ static std::string utf8(JNIEnv* env, jstring value) {
  env->ReleaseStringChars(value,units);return result;
 }
 static void fail(JNIEnv* env, const char* message) { env->ThrowNew(env->FindClass("java/lang/IllegalStateException"), message); }
-static int32_t keepGoing(const qwen3_tts_audio_chunk_t*, void* user) {
- auto* env=static_cast<JNIEnv*>(user); auto type=env->FindClass("java/lang/Thread");
+struct ChunkReceiver { JNIEnv* env; jobject receiver; jmethodID method; };
+static int32_t keepGoing(const qwen3_tts_audio_chunk_t* chunk, void* user) {
+ auto& state=*static_cast<ChunkReceiver*>(user);auto* env=state.env;auto type=env->FindClass("java/lang/Thread");
  auto thread=env->CallStaticObjectMethod(type,env->GetStaticMethodID(type,"currentThread","()Ljava/lang/Thread;"));
- bool interrupted=env->CallBooleanMethod(thread,env->GetMethodID(type,"isInterrupted","()Z"));env->DeleteLocalRef(thread);env->DeleteLocalRef(type);return interrupted?0:1;
+ bool interrupted=env->CallBooleanMethod(thread,env->GetMethodID(type,"isInterrupted","()Z"));env->DeleteLocalRef(thread);env->DeleteLocalRef(type);
+ if(interrupted || env->ExceptionCheck())return 0;
+ if(state.receiver && chunk && chunk->sample_rate==24000 && chunk->n_samples>0 && chunk->n_samples<=24000*5){
+  auto samples=env->NewFloatArray(chunk->n_samples);if(!samples)return 0;env->SetFloatArrayRegion(samples,0,chunk->n_samples,chunk->samples);
+  bool keep=env->CallBooleanMethod(state.receiver,state.method,samples,chunk->start_text_byte,chunk->end_text_byte);env->DeleteLocalRef(samples);
+  if(!keep || env->ExceptionCheck())return 0;
+ }
+ return 1;
 }
 extern "C" JNIEXPORT jlong JNICALL Java_dev_openread_mobile_NativeQwen_create(JNIEnv* env,jobject,jstring root,jstring model) {
  const char* path=env->GetStringUTFChars(root,nullptr); const char* name=env->GetStringUTFChars(model,nullptr);
@@ -23,20 +31,21 @@ extern "C" JNIEXPORT jlong JNICALL Java_dev_openread_mobile_NativeQwen_create(JN
  if(!ok){if(ctx)qwen3_tts_free(ctx);fail(env,"Qwen could not load. Reinstall its optional voice pack.");return 0;}return reinterpret_cast<jlong>(ctx);
 }
 extern "C" JNIEXPORT void JNICALL Java_dev_openread_mobile_NativeQwen_destroy(JNIEnv*,jobject,jlong handle){qwen3_tts_free(reinterpret_cast<qwen3_tts_context_t*>(handle));}
-extern "C" JNIEXPORT jfloatArray JNICALL Java_dev_openread_mobile_NativeQwen_generate(JNIEnv* env,jobject,jlong handle,jstring text,jstring speaker,jstring direction,jstring prompt) {
+extern "C" JNIEXPORT jfloatArray JNICALL Java_dev_openread_mobile_NativeQwen_generate(JNIEnv* env,jobject,jlong handle,jstring text,jstring speaker,jstring direction,jstring prompt,jobject receiver) {
  if(!handle || env->GetStringLength(text)>1600 || env->GetStringLength(direction)>500){fail(env,"Choose a shorter speech passage.");return nullptr;}
  auto sourceText=utf8(env,text);auto speakerText=utf8(env,speaker);auto directionText=utf8(env,direction);const char* source=sourceText.c_str();const char* voice=speakerText.c_str();const char* instruct=directionText.c_str();
  qwen3_tts_params_t params{720,.7f,.9f,40,4,0,0,1.1f,2050,instruct,voice,1.f};
- qwen3_tts_result_t result{}; qwen3_tts_streaming_params_t streaming{params,1.5f,1.f,1};
- if(prompt){const char* path=env->GetStringUTFChars(prompt,nullptr);result=std::string(path).find(".speaker.json")!=std::string::npos ? qwen3_tts_synthesize_with_speaker_embedding_streaming(reinterpret_cast<qwen3_tts_context_t*>(handle),source,path,streaming,keepGoing,env) : qwen3_tts_synthesize_with_icl_prompt_streaming(reinterpret_cast<qwen3_tts_context_t*>(handle),source,path,streaming,keepGoing,env);env->ReleaseStringUTFChars(prompt,path);}
- else result=qwen3_tts_synthesize_streaming(reinterpret_cast<qwen3_tts_context_t*>(handle),source,streaming,keepGoing,env);
+ qwen3_tts_result_t result{}; qwen3_tts_streaming_params_t streaming{params,1.f,1.f,1};
+ ChunkReceiver sink{env,receiver,nullptr};if(receiver){auto type=env->GetObjectClass(receiver);sink.method=env->GetMethodID(type,"onAudio","([FII)Z");env->DeleteLocalRef(type);if(!sink.method)return nullptr;}
+ if(prompt){const char* path=env->GetStringUTFChars(prompt,nullptr);result=std::string(path).find(".speaker.json")!=std::string::npos ? qwen3_tts_synthesize_with_speaker_embedding_streaming(reinterpret_cast<qwen3_tts_context_t*>(handle),source,path,streaming,keepGoing,&sink) : qwen3_tts_synthesize_with_icl_prompt_streaming(reinterpret_cast<qwen3_tts_context_t*>(handle),source,path,streaming,keepGoing,&sink);env->ReleaseStringUTFChars(prompt,path);}
+ else result=qwen3_tts_synthesize_streaming(reinterpret_cast<qwen3_tts_context_t*>(handle),source,streaming,keepGoing,&sink);
 
  jfloatArray output=nullptr;
  bool valid=result.success && result.audio && result.sample_rate==24000 && result.audio_len>240 && result.audio_len<=24000*90;
  if(valid)for(int i=0;i<result.audio_len;i++)if(!std::isfinite(result.audio[i])){valid=false;break;}
  if(valid){output=env->NewFloatArray(result.audio_len);if(output)env->SetFloatArrayRegion(output,0,result.audio_len,result.audio);}
  qwen3_tts_free_result(result);
- if(!valid && keepGoing(nullptr,env))fail(env,"Qwen could not finish this passage. Try again or choose another voice.");return output;
+ if(!valid && !env->ExceptionCheck() && keepGoing(nullptr,&sink))fail(env,"Qwen could not finish this passage. Try again or choose another voice.");return output;
 }
 extern "C" JNIEXPORT jboolean JNICALL Java_dev_openread_mobile_NativeQwen_clone(JNIEnv* env,jobject,jlong handle,jstring sample,jstring transcript,jstring output){
  if(!handle || env->GetStringLength(transcript)>2000)return false;

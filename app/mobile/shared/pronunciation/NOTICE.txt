@@ -1,0 +1,26 @@
+OPENREAD CONTEXTUAL ENGLISH PRONUNCIATION
+
+The model is fine-tuned from Google BERT Mini, Apache-2.0:
+https://huggingface.co/google/bert_uncased_L-4_H-256_A-4
+revision 387825ce42dbb39b87911cdf8e383ee3b25184f8
+
+Homograph annotations and pronunciation descriptions: Gorman, Mazovetskiy and
+Nikolaev (2018), Improving homograph disambiguation with machine learning.
+WikipediaHomographData, Google Research Datasets, Apache-2.0:
+https://github.com/google-research-datasets/WikipediaHomographData
+revision 8f008f021e88f8b71118a27ae655f1f3121162bc
+This is not an official Google product.
+
+Additional grammatical supervision: Universal Dependencies English Web
+Treebank annotations, copyright 2013-2021 The Board of Trustees of The Leland
+Stanford Junior University, CC BY-SA 4.0:
+https://github.com/UniversalDependencies/UD_English-EWT
+revision c5baffde1e106bcd828c520109eb905bfc3ac06f
+Underlying texts retain their original authors' rights; no corpus text is
+bundled with OpenRead. See the corpus README for full provenance.
+
+Changes: fine-tuning for contextual pronunciation and grammar, integer weight
+quantization, and ORT conversion for offline CPU inference. The derived model
+is distributed under CC BY-SA 4.0, retaining the upstream Apache notices.
+Training and evaluation instructions are in docs/PRONUNCIATION.md.
+The runtime adapter is OpenRead software under GPL-3.0-or-later.

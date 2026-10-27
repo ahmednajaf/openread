@@ -31,8 +31,12 @@ import MediaPlayer
     @Published var highlight = true { didSet { if !highlight { highlighted = nil } } }
     @Published var sleepMinutes = 0
     let engine = VoiceEngine()
+    let voiceDownloads = VoicePackDownloads()
     @Published var direction = UserDefaults.standard.string(forKey: "voice-direction") ?? "" { didSet { UserDefaults.standard.set(direction, forKey: "voice-direction") } }
     private var audio: AVAudioPlayer?
+    private var streamQueue: [SpokenClip] = []
+    private var streaming = false
+    private var streamFinished = false
     private var words: [SpokenWord] = []
     private var passages: [ReadingPassage] = []
     private var textWindows: [NSRange] = []
@@ -78,6 +82,7 @@ import MediaPlayer
     var position: Int { passages.indices.contains(index) ? passages[index].range.location : 0 }
     var progress: Double { guard let reading, !reading.text.isEmpty else { return 0 }; return min(1, Double(position) / Double(reading.text.utf16.count)) }
     var passageCount: Int { passages.count }
+    var currentPassage: String { passages.indices.contains(index) ? passages[index].text : "" }
     var activeChapter: Int { reading?.chapterList.lastIndex(where: { $0.offset <= position }) ?? 0 }
     var textWindow: NSRange { textWindows.last(where: { $0.location <= position }) ?? NSRange(location: 0, length: 0) }
     func seekTextWindow(_ delta: Int) {
@@ -112,7 +117,9 @@ import MediaPlayer
         } else { generateAndPlay() }
     }
     func pause() {
-        generation = UUID(); task?.cancel(); prefetch?.cancel(); prefetch = nil; audio?.pause(); isPreparing = false; isPlaying = false; highlighted = nil
+        generation = UUID(); task?.cancel(); prefetch?.cancel(); prefetch = nil
+        if streaming { audio?.stop(); audio = nil; streaming = false; streamQueue.removeAll() }
+        audio?.pause(); isPreparing = false; isPlaying = false; highlighted = nil
         status = "Paused"; persistPosition(); nowPlaying()
     }
     func stop() { pause(); audio = nil; words = []; highlighted = nil; status = "Ready" }
@@ -166,6 +173,20 @@ import MediaPlayer
         task = Task {
             do {
                 try await engine.prepare(voice: voice, download: false) { _ in }
+                #if OPENREAD_QWEN
+                if chosenVoice.hasPrefix("qwen:") {
+                    streaming = true; streamFinished = false; streamQueue.removeAll()
+                    for try await chunk in engine.qwen.stream(passage.text, voice: chosenVoice, instruction: direction) {
+                        guard token == generation, !Task.isCancelled else { return }
+                        streamQueue.append(chunk)
+                        if audio == nil { try playStreamChunk() }
+                    }
+                    guard token == generation, !Task.isCancelled else { return }
+                    streamFinished = true
+                    if audio == nil { finishPassage() }
+                    return
+                }
+                #endif
                 let clip = try await engine.generate(passage.text, voice: chosenVoice, instruction: direction)
                 guard token == generation, !Task.isCancelled else { return }
                 try configureAudio()
@@ -178,8 +199,21 @@ import MediaPlayer
                     let next = passages[index + 1].text
                     prefetch = Task { _ = try? await engine.generate(next, voice: chosenVoice, instruction: direction) }
                 }
-            } catch { if token == generation, !Task.isCancelled { isPreparing = false; isPlaying = false; status = "Paused"; self.error = error.localizedDescription } }
+            } catch { if token == generation, !Task.isCancelled { isPreparing = false; isPlaying = false; streaming = false; streamQueue.removeAll(); audio?.stop(); audio = nil; status = "Paused"; self.error = error.localizedDescription } }
         }
+    }
+    private func playStreamChunk() throws {
+        guard !streamQueue.isEmpty else { return }
+        let clip = streamQueue.removeFirst(); try configureAudio()
+        let next = try AVAudioPlayer(data: clip.wav); next.delegate = self; next.enableRate = true; next.rate = rate
+        audio = next; words = clip.words
+        guard next.play() else { throw ReadingError.noText }
+        isPreparing = false; isPlaying = true; status = "Listening · Qwen timing is approximate"; persistPosition(); nowPlaying()
+    }
+    private func finishPassage() {
+        streaming = false; streamQueue.removeAll(); audio = nil; highlighted = nil; isPlaying = false
+        if canNext { index += 1; generateAndPlay() }
+        else { isPreparing = false; status = "Finished"; index = 0; persistPosition(); nowPlaying() }
     }
     private func updateClock() {
         if let deadline = sleepDeadline, deadline <= Date(), isPlaying || isPreparing { pause(); sleepDeadline = nil; sleepMinutes = 0; status = "Sleep timer finished" }
@@ -201,8 +235,12 @@ import MediaPlayer
         Task { @MainActor in
             guard self.audio === player else { return }
             self.audio = nil; self.highlighted = nil; self.isPlaying = false
-            if flag, self.canNext { self.index += 1; self.generateAndPlay() }
-            else { self.status = flag ? "Finished" : "Paused"; if flag { self.index = 0 }; self.persistPosition(); self.nowPlaying() }
+            if self.streaming, flag {
+                if !self.streamQueue.isEmpty { do { try self.playStreamChunk() } catch { self.stop(); self.error = error.localizedDescription } }
+                else if self.streamFinished { self.finishPassage() }
+                else { self.isPreparing = true; self.status = "Preparing the next Qwen audio…"; self.nowPlaying() }
+            } else if flag { self.finishPassage() }
+            else { self.stop(); self.status = "Paused"; self.persistPosition(); self.nowPlaying() }
         }
     }
 }

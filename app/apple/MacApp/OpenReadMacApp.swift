@@ -6,6 +6,7 @@ import UniformTypeIdentifiers
 @main struct OpenReadMacApp: App {
     @StateObject private var library = LibraryStore()
     @StateObject private var player = PlaybackController()
+    @State private var aiPassage: AppleReadingPassage?
     @State private var importing = false
     @State private var installed = false
     @State private var downloading = false
@@ -49,7 +50,8 @@ import UniformTypeIdentifiers
                     }.padding(45).frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
-            .toolbar { Button("Import book", systemImage: "doc.badge.plus") { importing = true } }
+            .sheet(item: $aiPassage) { AppleReadingToolsSheet(passage: $0.text) }
+            .toolbar { Button("On-device AI", systemImage: "sparkles") { aiPassage = AppleReadingPassage(text: player.currentPassage) }.disabled(player.reading == nil); Button("Import book", systemImage: "doc.badge.plus") { importing = true } }
             .fileImporter(isPresented: $importing, allowedContentTypes: [.pdf, .plainText, .html, UTType(filenameExtension: "epub")!, UTType(filenameExtension: "docx")!]) { result in
                 if case .success(let url) = result { Task { do { let book = try await DocumentImporter().file(url); try library.save(book); player.open(book); selected = book.id } catch { self.error = error.localizedDescription } } }
             }
@@ -72,6 +74,7 @@ import UniformTypeIdentifiers
                     if !installed { Button("Download Kitten voices · 83 MB") { setup() } }
                     Picker("Voice", selection: $player.voice) { ForEach(VoiceEngine.kittenVoices, id: \.self) { Text(VoiceEngine.name($0)).tag($0) } }
                 }
+                Section("On-device AI") { Text(AppleReadingTools.availability).font(.footnote).foregroundStyle(.secondary) }
                 QwenSettingsSection()
             }.formStyle(.grouped).environmentObject(player).tabItem { Label("Voices", systemImage: "waveform") }
             ScrollView { Text((Bundle.main.url(forResource: "NOTICES", withExtension: "txt").flatMap { try? String(contentsOf: $0, encoding: .utf8) }) ?? "See licences in the source repository.").font(.caption).textSelection(.enabled).padding() }.tabItem { Label("Licences", systemImage: "doc.text") }

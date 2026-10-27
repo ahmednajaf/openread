@@ -63,9 +63,10 @@ struct ReadingBackup: Codable {
 }
 
 enum ReadingError: LocalizedError {
-    case invalidReading, fileTooLarge, unsupportedFile, noText, downloadFailed, checksumFailed, missingModels, sharingUnavailable, speechTooComplex
+    case pronunciationUnavailable, invalidReading, fileTooLarge, unsupportedFile, noText, downloadFailed, checksumFailed, missingModels, sharingUnavailable, speechTooComplex
     var errorDescription: String? {
         switch self {
+        case .pronunciationUnavailable: "The bundled pronunciation model could not load. Reinstall the latest OpenRead build."
         case .speechTooComplex: "This passage contains an unusually long word. Try a shorter excerpt."
         case .invalidReading: "This reading or backup is invalid. Nothing was imported."
         case .fileTooLarge: "This document exceeds the import limit: 100 MB per file or 20 million text characters."

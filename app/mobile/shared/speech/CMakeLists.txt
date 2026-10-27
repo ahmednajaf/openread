@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22.1)
 project(openread_speech LANGUAGES C CXX)
 set(ENGINE common mnemonics error ieee80 compiledata compiledict dictionary encoding intonation langopts numbers phoneme phonemelist readclause setlengths soundicon spect ssml synthdata synthesize tr_languages translate translateword voices wavegen speech espeak_api)
-set(SOURCES openread_speech.cpp)
+set(SOURCES openread_speech.cpp context_alignment.cpp)
 foreach(name IN LISTS ENGINE)
   list(APPEND SOURCES "vendor/libespeak-ng/${name}.c")
 endforeach()

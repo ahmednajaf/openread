@@ -11,6 +11,9 @@ int openread_inference_run(void *session, const int64_t *tokens, size_t token_co
                           const float *style, size_t style_count,
                           float **samples, size_t *sample_count,
                           int64_t **frames, size_t *frame_count);
+int openread_context_inference_run(void *session, const int64_t *tokens, const int64_t *mask,
+                                  size_t batch, size_t width, float **scores, size_t *score_count,
+                                  float **grammar, size_t *grammar_count);
 void openread_inference_free(void *buffer);
 #ifdef __cplusplus
 }

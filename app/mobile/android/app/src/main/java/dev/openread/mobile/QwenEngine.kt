@@ -2,6 +2,8 @@ package dev.openread.mobile
 
 import android.content.Context
 import android.net.Uri
+import kotlinx.coroutines.channels.trySendBlocking
+import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
@@ -15,11 +17,14 @@ import java.security.MessageDigest
 import java.util.UUID
 import kotlin.coroutines.coroutineContext
 
+@androidx.annotation.Keep
+internal fun interface QwenAudioCallback { fun onAudio(samples: FloatArray, startByte: Int, endByte: Int): Boolean }
+
 internal object NativeQwen {
     init { System.loadLibrary("openread_qwen") }
     external fun create(root: String, model: String): Long
     external fun destroy(handle: Long)
-    external fun generate(handle: Long, text: String, speaker: String, direction: String, prompt: String?): FloatArray
+    external fun generate(handle: Long, text: String, speaker: String, direction: String, prompt: String?, receiver: QwenAudioCallback?): FloatArray
     external fun clone(handle: Long, sample: String, transcript: String, output: String): Boolean
 }
 data class PersonalVoice(val id: String, val name: String, val transcript: String)
@@ -74,20 +79,31 @@ class QwenEngine(private val context: Context) {
         require(!memory.lowMemory && memory.availMem >= 1_900_000_000L) { "There is not enough memory available for Qwen. Close other apps or choose a Kitten voice." }
         handle = NativeQwen.create(root.path, model); loaded = model
     }
-    suspend fun generate(text: String, voice: String, direction: String): SpokenClip = mutex.withLock { withContext(Dispatchers.IO) {
+    suspend fun generate(text: String, voice: String, direction: String, onChunk: ((SpokenClip) -> Unit)? = null): SpokenClip = mutex.withLock { withContext(Dispatchers.IO) {
         coroutineContext.ensureActive(); require(text.length <= 1600 && direction.length <= 500)
         val clone = voice.startsWith("qwen:clone:"); val key = voice.removePrefix(if (clone) "qwen:clone:" else "qwen:")
         if (clone) UUID.fromString(key) else require(key in speakers)
         val cacheKey = voice + "\n" + direction + "\n" + text
-        cache[cacheKey]?.let { return@withContext it }
+        cache[cacheKey]?.let { onChunk?.invoke(it); return@withContext it }
         load(clone)
         val quick = clone && profiles().firstOrNull { it.id == key }?.transcript?.isBlank() == true
-        val samples = kotlinx.coroutines.runInterruptible { NativeQwen.generate(handle, text, if (clone) "" else key, if (clone) "" else direction, if (clone) File(root, "Profiles/$key" + if (quick) ".speaker.json" else ".icl").path else null) }
+        val receiver = onChunk?.let { send -> QwenAudioCallback { samples, start, end ->
+            require(samples.all { it.isFinite() }) { "Qwen returned invalid audio." }
+            val bytes = text.toByteArray(Charsets.UTF_8); val a = start.coerceAtLeast(0); val b = end.coerceAtMost(bytes.size)
+            val valid = a < b && a <= bytes.size && (a == bytes.size || bytes[a].toInt() and 0xc0 != 0x80) && (b == bytes.size || bytes[b].toInt() and 0xc0 != 0x80)
+            val duration = samples.size / 24000.0
+            val words = if (valid) { val offset = String(bytes, 0, a, Charsets.UTF_8).length; ReadingText.estimatedWords(String(bytes, a, b-a, Charsets.UTF_8), duration).map { it.copy(offset = it.offset + offset) } } else emptyList()
+            send(SpokenClip(KittenEngine.wav(samples), words, duration)); true
+        } }
+        val samples = kotlinx.coroutines.runInterruptible { NativeQwen.generate(handle, text, if (clone) "" else key, if (clone) "" else direction, if (clone) File(root, "Profiles/$key" + if (quick) ".speaker.json" else ".icl").path else null, receiver) }
         coroutineContext.ensureActive(); val duration = samples.size / 24000.0
         val clip = SpokenClip(KittenEngine.wav(samples), ReadingText.estimatedWords(text, duration), duration)
         cache[cacheKey] = clip; while (cache.size > 3) cache.remove(cache.keys.first())
         clip
     } }
+    fun stream(text: String, voice: String, direction: String): kotlinx.coroutines.flow.Flow<SpokenClip> = kotlinx.coroutines.flow.channelFlow {
+        generate(text, voice, direction) { trySendBlocking(it).getOrThrow() }
+    }.buffer(3)
     suspend fun clone(name: String, transcript: String, sample: Uri, permission: Boolean): PersonalVoice = mutex.withLock { withContext(Dispatchers.IO) {
         require(permission && name.trim().isNotEmpty() && name.length <= 80 && transcript.length <= 2000) { "Add a voice name and permission confirmation. A transcript is optional." }
         val directory = File(root, "Profiles").apply { mkdirs() }; val voice = PersonalVoice(UUID.randomUUID().toString(), name.trim(), transcript.trim())

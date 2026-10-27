@@ -2,6 +2,7 @@ package dev.openread.mobile
 
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.collect
 import org.junit.Assert.*
 import org.junit.Assume.assumeTrue
 import org.junit.Test
@@ -60,6 +61,20 @@ class BookTest {
             assertEquals(original.copy(cachedWordCount = original.wordCount, cachedTextLength = original.text.length), library.load(original.id)); assertEquals(1, library.readings.value.size)
             assertEquals(1, books.listFiles()?.size)
         } finally { library.close(); root.deleteRecursively() }
+    }
+    @Test fun qwenStreamsBeforeTheFullPassageAndDoesNotDropSamples() = runBlocking {
+        val engine = QwenEngine(context); assumeTrue(engine.installed("expressive"))
+        try {
+            val text = "A natural voice makes room for a sentence. Then the next thought can follow."
+            val pcm = java.io.ByteArrayOutputStream(); val start = System.nanoTime(); var first = 0L; var chunks = 0
+            engine.stream(text, "qwen:ryan", "").collect { clip ->
+                if (first == 0L) first = System.nanoTime() - start
+                assertTrue(clip.duration > 0); pcm.write(clip.wav,44,clip.wav.size-44); chunks++
+            }
+            assertTrue(chunks > 1); assertTrue(first < System.nanoTime()-start)
+            val full = engine.generate(text,"qwen:ryan","")
+            assertArrayEquals(full.wav.copyOfRange(44,full.wav.size),pcm.toByteArray())
+        } finally { engine.release() }
     }
     @Test fun qwenRunsOnAndroidWithRealModelWeights() = runBlocking {
         val engine = QwenEngine(context); assumeTrue(engine.installed("expressive"))

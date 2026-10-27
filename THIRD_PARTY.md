@@ -80,3 +80,14 @@ from [Serveurperso's GGUF conversion](https://huggingface.co/Serveurperso/Qwen3-
 `app/mobile/shared/qwen-models.json` pins its revision, sizes and SHA-256.
 No weights or personal voice profiles are committed. The bundled native notices
 include the runtime and GGML licences alongside the Apache-2.0 text.
+
+
+Contextual pronunciation pack
+-----------------------------
+The bundled BERT Mini context model and its derived dictionary metadata are
+CC BY-SA 4.0, retaining Apache-2.0 notices from Google BERT Mini and Google's
+WikipediaHomographData. Additional grammar annotations are from Universal
+Dependencies English EWT, copyright 2013-2021 Stanford University, CC BY-SA 4.0.
+The pack was fine-tuned and quantized for OpenRead. Source revisions, full
+licences, attribution and reproduction instructions are retained in
+app/mobile/shared/pronunciation/ and docs/PRONUNCIATION.md.

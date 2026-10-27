@@ -94,6 +94,7 @@ class KokoroVoice:
         self.model = None
         self.np = None
         self.kitten = None
+        self.english = None
         self.qwen = None
 
     def synthesize(self, text, voice='af_heart', instruction=''):
@@ -123,7 +124,14 @@ class KokoroVoice:
             options["continuous"] = True
         if not getattr(self.model, 'has_timings', False):
             raise RuntimeError('This model needs duration outputs for word highlighting.')
-        audio, rate, timings = self.model.create_timed(text, **options)
+        spoken = text
+        if language == 'en-us':
+            from pronunciation import EnglishFrontend
+            if self.english is None:
+                self.english = EnglishFrontend(phonemizer.backend.EspeakBackend(language=language, preserve_punctuation=True, with_stress=True))
+            spoken = self.english.phonemize(text)
+            options['is_phonemes'] = True
+        audio, rate, timings = self.model.create_timed(spoken, **options)
         tokens = re.findall(r'\S+', text)
         # Phonemize in one batch to avoid initializing eSpeak once per word.
         sounds = phonemizer.phonemize(tokens, language, preserve_punctuation=True, with_stress=True)

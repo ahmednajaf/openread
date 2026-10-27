@@ -27,8 +27,9 @@ private final class MappedInference {
 
 struct EnglishPronunciation {
     static func phonemes(_ text: String) throws -> String {
-        guard let parent = Bundle.main.resourceURL,
-              let result = openread_speech_phonemize(parent.path, text) else { throw ReadingError.missingModels }
+        guard let parent = Bundle.main.resourceURL else { throw ReadingError.missingModels }
+        let replacements = (try? ContextPronunciation.shared?.replacements(text)) ?? ""
+        guard let result = replacements.isEmpty ? openread_speech_phonemize(parent.path, text) : openread_speech_phonemize_context(parent.path, text, replacements) else { throw ReadingError.missingModels }
         defer { openread_speech_free(result) }
         let value = String(cString: result).replacingOccurrences(of: "\n", with: " ")
         guard !value.trimmingCharacters(in: .whitespaces).isEmpty else { throw ReadingError.noText }
