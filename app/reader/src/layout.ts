@@ -25,13 +25,17 @@ export function readingLayout(text: string, chunks: { text: string; paragraph?: 
   // Keep list line breaks and original whitespace in the DOM, while speech
   // uses normalized spaces. Every spoken UTF-16 boundary maps back to source.
   const normalized = paragraphs.map(p => {
-    let text = ''; const offsets: number[] = [];
-    for (const token of p.matchAll(/\s+|[^\s]/gu)) {
-      const value = /^\s/u.test(token[0]) ? ' ' : token[0];
-      for (let i = 0; i < value.length; i++) offsets.push(token.index + i);
-      text += value;
+    let removed = 0;
+    const changes: { at: number; removed: number }[] = [];
+    for (const match of p.matchAll(/\s+/gu)) {
+      if (match[0].length > 1) { const at = match.index - removed; removed += match[0].length - 1; changes.push({ at, removed }); }
     }
-    offsets.push(p.length); return { text, offsets };
+    const sourceOffset = (index: number) => {
+      let lower = 0, upper = changes.length;
+      while (lower < upper) { const middle = (lower + upper) >>> 1; if (changes[middle].at < index) lower = middle + 1; else upper = middle; }
+      return index + (lower ? changes[lower - 1].removed : 0);
+    };
+    return { text: p.replace(/\s+/gu, ' '), sourceOffset };
   });
   const cursors = paragraphs.map(() => 0);
   const items = chunks.map(chunk => {
@@ -39,7 +43,11 @@ export function readingLayout(text: string, chunks: { text: string; paragraph?: 
     const start = normalized[paragraph]?.text.indexOf(chunk.text, cursors[paragraph]) ?? -1;
     if (start < 0) throw new Error('This reading could not be mapped to its source text.');
     cursors[paragraph] = start + chunk.text.length;
-    return { ...chunk, paragraph, start: normalized[paragraph].offsets[start], offsets: normalized[paragraph].offsets.slice(start, start + chunk.text.length + 1) };
+    const sourceOffset = (offset: number) => normalized[paragraph].sourceOffset(start + offset);
+    // Keep compatibility for external callers that inspect offsets, but allocate
+    // that array only on demand. Playback uses the sparse whitespace mapping.
+    return { ...chunk, paragraph, start: sourceOffset(0), sourceOffset,
+      get offsets() { return Array.from({ length: chunk.text.length + 1 }, (_, index) => sourceOffset(index)); } };
   });
   return { paragraphs, items };
 }

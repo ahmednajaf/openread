@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from './api';
 import { readingLayout, chapterLayout, validChapters, type Chapter } from './layout';
 export type Reading = { id?: string; title: string; text: string; source?: string; position?: number; author?: string; book?: string; chapter?: string; chapters?: Chapter[]; sample?: boolean; bookmarks?: { position: number; label: string }[] };
-export function useReader(reading: Reading, voice: string, rate: number, follow: boolean, highlight: boolean) {
+export function useReader(reading: Reading, voice: string, rate: number, follow: boolean, highlight: boolean, instruction = "") {
   const player = useRef<LocalPlayer | null>(null);
   const layout = useMemo(() => readingLayout(reading.text, OpenReadCore.passages(reading.text)), [reading.text]);
   const chapters = useMemo(() => chapterLayout(validChapters(reading.chapters || [], reading.text) ? reading.chapters || [] : [], layout.items), [reading.chapters, layout]);
@@ -18,15 +18,15 @@ export function useReader(reading: Reading, voice: string, rate: number, follow:
     let alive = true;
     const clear = () => { range.current = null; if (alive) setRects([]); };
     player.current = new OpenReadPlayer({ AudioClass: Audio,
-      request: async message => ({ ok: true, ...await api<Omit<Speech, 'ok'>>('/synthesize', { text: message.text, voice: message.voice }) }),
+      request: async message => ({ ok: true, ...await api<Omit<Speech, 'ok'>>('/synthesize', { text: message.text, voice: message.voice, instruction: message.instruction || "" }) }),
       onChange: state => { if (alive) { setPhase(state); setPhaseReading(owner.current); } if (state.status !== 'playing') clear(); },
       onWordClear: clear, onError: message => { if (alive) setError(message); },
       onWord: (offset, length) => {
         const item = player.current?.items[player.current.index];
         if (!item) return;
-        const start = item.offsets?.[offset] ?? (item.start || 0) + offset;
-        const end = item.offsets?.[offset + length] ?? start + length;
-        const p = article.current?.children[item.paragraph || 0]; const node = p?.firstChild;
+        const start = item.sourceOffset?.(offset) ?? item.offsets?.[offset] ?? (item.start || 0) + offset;
+        const end = item.sourceOffset?.(offset + length) ?? item.offsets?.[offset + length] ?? start + length;
+        const p = article.current?.querySelector(`[data-paragraph="${item.paragraph || 0}"]`); const node = p?.firstChild;
         if (!node || node.nodeType !== Node.TEXT_NODE || end > (node.textContent?.length || 0)) return;
         const next = document.createRange(); next.setStart(node, start); next.setEnd(node, end); range.current = next; paint();
         const rect = next.getBoundingClientRect();
@@ -39,7 +39,7 @@ export function useReader(reading: Reading, voice: string, rate: number, follow:
     return () => { alive = false; player.current?.destroy(); window.removeEventListener('scroll', reposition); window.removeEventListener('resize', reposition); };
   }, []);
   useEffect(() => { owner.current = reading; setError(''); player.current?.load(layout.items); if (reading.position) player.current?.seek(Math.min(reading.position, layout.items.length - 1), false); setProgress(0); }, [layout, reading.id]);
-  useEffect(() => { player.current?.configure({ voice, rate }); }, [voice, rate]);
+  useEffect(() => { player.current?.configure({ voice, rate, instruction }); }, [voice, rate, instruction]);
   useEffect(() => { paint(); }, [highlight]);
   useEffect(() => {
     const interval = setInterval(() => {
@@ -51,17 +51,22 @@ export function useReader(reading: Reading, voice: string, rate: number, follow:
   const isCurrent = phaseReading?.text === reading.text && phaseReading?.id === reading.id;
   const position = isCurrent ? phase.index : reading.position || 0;
   const activeChapter = chapters.reduce((current, chapter, index) => chapter.index <= position ? index : current, 0);
-  return { article, player, phase, rects, error, setError, progress, isCurrent, paragraphs: layout.paragraphs, chapters, activeChapter,
-    goToChapter(index: number) {
-      const chapter = chapters[index];
-      if (!chapter) return;
-      setError(''); player.current?.seek(chapter.index);
-      const paragraph = article.current?.children[chapter.paragraph] as HTMLElement | undefined;
+  useEffect(() => {
+    const chapter = chapters[activeChapter];
+    if (!chapter) return;
+      const paragraph = article.current?.querySelector(`[data-paragraph="${chapter.paragraph}"]`) as HTMLElement | undefined;
       if (paragraph) {
         const navigation = article.current?.previousElementSibling;
         paragraph.style.scrollMarginTop = `${(navigation?.getBoundingClientRect().height || 0) + 120}px`;
         paragraph.scrollIntoView({ block: 'start', behavior: 'instant' });
       }
+  }, [activeChapter, chapters]);
+  return { article, player, phase, rects, error, setError, progress, isCurrent, paragraphs: layout.paragraphs, visibleParagraphs: layout.paragraphs.slice(chapters[activeChapter]?.paragraph || 0, chapters[activeChapter + 1]?.paragraph).map((text, index) => ({ text, index: index + (chapters[activeChapter]?.paragraph || 0) })), chapters, activeChapter,
+    goToChapter(index: number) {
+      const chapter = chapters[index];
+      if (!chapter) return;
+      setError(''); player.current?.seek(chapter.index);
+
     },
     toggle() { setError(''); if (['playing', 'loading'].includes(player.current?.status || '')) player.current?.pause(); else void player.current?.play(); },
   };

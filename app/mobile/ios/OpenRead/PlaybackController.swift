@@ -12,10 +12,11 @@ import MediaPlayer
     @Published var highlighted: NSRange?
     @Published var error: String?
     @Published var installed = false
+    @Published var kittenInstalled = false
     @Published var downloadProgress = 0.0
     @Published var downloading = false
     @Published var voice: String = VoiceEngine.voices.contains(UserDefaults.standard.string(forKey: "voice") ?? "") ? UserDefaults.standard.string(forKey: "voice")! : "kiki" {
-        didSet { UserDefaults.standard.set(voice, forKey: "voice"); restartForVoice() }
+        didSet { UserDefaults.standard.set(voice, forKey: "voice"); restartForVoice(); Task { installed = await engine.isInstalled(voice: voice) } }
     }
     @Published var rate: Float = min(2, max(0.5, UserDefaults.standard.float(forKey: "rate") == 0 ? 1 : UserDefaults.standard.float(forKey: "rate"))) {
         didSet {
@@ -29,12 +30,15 @@ import MediaPlayer
     @Published var follow = true
     @Published var highlight = true { didSet { if !highlight { highlighted = nil } } }
     @Published var sleepMinutes = 0
-    private let engine = VoiceEngine()
+    let engine = VoiceEngine()
+    @Published var direction = UserDefaults.standard.string(forKey: "voice-direction") ?? "" { didSet { UserDefaults.standard.set(direction, forKey: "voice-direction") } }
     private var audio: AVAudioPlayer?
     private var words: [SpokenWord] = []
     private var passages: [ReadingPassage] = []
+    private var textWindows: [NSRange] = []
     private var generation = UUID()
     private var task: Task<Void, Never>?
+    private var prefetch: Task<Void, Never>?
     private var tick: Timer?
     private var sleepDeadline: Date?
     private var interruptionObserver: NSObjectProtocol?
@@ -44,8 +48,9 @@ import MediaPlayer
     override init() {
         super.init()
         Task {
-            installed = await engine.isInstalled()
-            if installed {
+            kittenInstalled = await engine.isInstalled()
+            installed = await engine.isInstalled(voice: voice)
+            if kittenInstalled {
                 // Prepare the shared Safari cache in the full app, where model
                 // compilation has enough memory. No network request is made.
                 do { try await engine.prepare(download: false) { _ in } }
@@ -53,6 +58,7 @@ import MediaPlayer
             }
         }
         tick = Timer.scheduledTimer(withTimeInterval: 0.04, repeats: true) { [weak self] _ in Task { @MainActor in self?.updateClock() } }
+        #if os(iOS)
         interruptionObserver = NotificationCenter.default.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main) { [weak self] notification in
             if notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt == AVAudioSession.InterruptionType.began.rawValue {
                 Task { @MainActor in self?.pause() }
@@ -61,6 +67,7 @@ import MediaPlayer
         routeObserver = NotificationCenter.default.addObserver(forName: AVAudioSession.routeChangeNotification, object: nil, queue: .main) { [weak self] notification in
             if notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt == AVAudioSession.RouteChangeReason.oldDeviceUnavailable.rawValue { Task { @MainActor in self?.pause() } }
         }
+        #endif
         let commands = MPRemoteCommandCenter.shared()
         commands.playCommand.addTarget { [weak self] _ in Task { @MainActor in self?.play() }; return .success }
         commands.pauseCommand.addTarget { [weak self] _ in Task { @MainActor in self?.pause() }; return .success }
@@ -71,10 +78,18 @@ import MediaPlayer
     var position: Int { passages.indices.contains(index) ? passages[index].range.location : 0 }
     var progress: Double { guard let reading, !reading.text.isEmpty else { return 0 }; return min(1, Double(position) / Double(reading.text.utf16.count)) }
     var passageCount: Int { passages.count }
+    var activeChapter: Int { reading?.chapterList.lastIndex(where: { $0.offset <= position }) ?? 0 }
+    var textWindow: NSRange { textWindows.last(where: { $0.location <= position }) ?? NSRange(location: 0, length: 0) }
+    func seekTextWindow(_ delta: Int) {
+        guard let index = textWindows.lastIndex(where: { $0.location <= position }), textWindows.indices.contains(index + delta) else { return }
+        seekOffset(textWindows[index + delta].location)
+    }
+    var visibleText: String { guard let reading else { return "" }; return (reading.text as NSString).substring(with: textWindow) }
+    var visibleHighlight: NSRange? { guard let highlighted, NSLocationInRange(highlighted.location, textWindow) else { return nil }; return NSRange(location: highlighted.location - textWindow.location, length: min(highlighted.length, NSMaxRange(textWindow) - highlighted.location)) }
     var canNext: Bool { index + 1 < passages.count }
 
     func open(_ reading: Reading) {
-        stop(); self.reading = reading; passages = ReadingText.passages(reading.text)
+        stop(); var book = reading; book.cachedWordCount = reading.wordCount; book.cachedTextLength = reading.text.utf16.count; self.reading = book; passages = ReadingText.passages(reading); textWindows = ReadingText.windows(reading, passages: passages)
         index = passages.lastIndex(where: { $0.range.location <= reading.position }) ?? 0
         status = "Ready"; error = nil
     }
@@ -82,7 +97,7 @@ import MediaPlayer
         guard !downloading else { return }
         downloading = true; downloadProgress = 0; error = nil
         task = Task {
-            do { try await engine.prepare(download: true) { value in Task { @MainActor in self.downloadProgress = value } }; installed = true }
+            do { try await engine.prepare(download: true) { value in Task { @MainActor in self.downloadProgress = value } }; kittenInstalled = true; installed = await engine.isInstalled(voice: voice) }
             catch { if !Task.isCancelled { self.error = error.localizedDescription } }
             downloading = false
         }
@@ -97,7 +112,7 @@ import MediaPlayer
         } else { generateAndPlay() }
     }
     func pause() {
-        generation = UUID(); task?.cancel(); audio?.pause(); isPreparing = false; isPlaying = false; highlighted = nil
+        generation = UUID(); task?.cancel(); prefetch?.cancel(); prefetch = nil; audio?.pause(); isPreparing = false; isPlaying = false; highlighted = nil
         status = "Paused"; persistPosition(); nowPlaying()
     }
     func stop() { pause(); audio = nil; words = []; highlighted = nil; status = "Ready" }
@@ -112,10 +127,10 @@ import MediaPlayer
     func setSleep(_ minutes: Int) { sleepMinutes = minutes; sleepDeadline = minutes > 0 ? Date().addingTimeInterval(Double(minutes) * 60) : nil }
     func exportAudio(progress: @escaping @Sendable (Int, Int) -> Void) async throws -> URL {
         guard let reading else { throw ReadingError.noText }
-        guard reading.text.utf16.count <= 25_000 else { throw ImportFailure(message: "Export an excerpt under 25,000 characters at a time.") }
+        // Audio is written a passage at a time; the WAV format remains bounded below.
         let selectedVoice = voice
-        try await engine.prepare(download: false) { _ in }
-        let parts = ReadingText.passages(reading.text)
+        try await engine.prepare(voice: voice, download: false) { _ in }
+        let parts = ReadingText.passages(reading)
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("OpenRead-\(UUID().uuidString).wav")
         FileManager.default.createFile(atPath: url.path, contents: nil)
         let handle = try FileHandle(forWritingTo: url)
@@ -125,6 +140,7 @@ import MediaPlayer
                 try Task.checkCancellation()
                 let clip = try await engine.generate(part.text, voice: selectedVoice)
                 guard clip.wav.count > 44 else { throw ReadingError.noText }
+                guard try handle.offset() - 44 + UInt64(clip.wav.count - 44) < UInt64(UInt32.max) - 36 else { throw ReadingError.fileTooLarge }
                 try handle.write(contentsOf: clip.wav.dropFirst(44))
                 progress(index + 1, parts.count)
             }
@@ -139,16 +155,18 @@ import MediaPlayer
     }
     private func restartForVoice() { let resume = isPlaying || isPreparing; stop(); if resume { play() } }
     private func configureAudio() throws {
+        #if os(iOS)
         try AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: [])
         try AVAudioSession.sharedInstance().setActive(true)
+        #endif
     }
     private func generateAndPlay() {
         let token = UUID(); generation = token; error = nil; isPreparing = true; status = "Preparing on your device…"
         let passage = passages[index]; let chosenVoice = voice
         task = Task {
             do {
-                try await engine.prepare(download: false) { _ in }
-                let clip = try await engine.generate(passage.text, voice: chosenVoice)
+                try await engine.prepare(voice: voice, download: false) { _ in }
+                let clip = try await engine.generate(passage.text, voice: chosenVoice, instruction: direction)
                 guard token == generation, !Task.isCancelled else { return }
                 try configureAudio()
                 let player = try AVAudioPlayer(data: clip.wav)
@@ -158,7 +176,7 @@ import MediaPlayer
                 isPlaying = true; status = "Listening"; nowPlaying(); persistPosition()
                 if canNext {
                     let next = passages[index + 1].text
-                    Task { _ = try? await engine.generate(next, voice: chosenVoice) }
+                    prefetch = Task { _ = try? await engine.generate(next, voice: chosenVoice, instruction: direction) }
                 }
             } catch { if token == generation, !Task.isCancelled { isPreparing = false; isPlaying = false; status = "Paused"; self.error = error.localizedDescription } }
         }

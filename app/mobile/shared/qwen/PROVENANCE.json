@@ -1,0 +1,13 @@
+{
+  "runtime": {
+    "url": "https://github.com/Danmoreng/qwen3-tts.cpp",
+    "revision": "16bb5afcd06311031c72a8488f8d59660dc2fb46",
+    "license": "MIT"
+  },
+  "ggml": {
+    "url": "https://github.com/ggml-org/ggml",
+    "revision": "af97976c7810cdabb1863172f31c432dab767de7",
+    "license": "MIT"
+  },
+  "selection": "CPU inference sources, unchanged. Build adapters live outside vendor."
+}

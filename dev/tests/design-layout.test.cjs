@@ -60,3 +60,14 @@ test('chapter metadata rejects missing starts, duplicate IDs and invalid paragra
     assert.equal(validChapters(bad, text), false);
   }
 });
+
+test('a complete novel keeps sparse source mappings instead of one retained offset per character', () => {
+  const paragraph = 'A patient reader follows each sentence. '.repeat(50).trim();
+  const text = Array.from({ length: 600 }, () => paragraph).join('\n\n');
+  assert.ok(text.length > 1_000_000);
+  const result = readingLayout(text, core.passages(text));
+  const last = result.items.at(-1);
+  assert.equal(typeof last.sourceOffset, 'function');
+  assert.equal(result.paragraphs[last.paragraph].slice(last.sourceOffset(0), last.sourceOffset(last.text.length)), last.text);
+  assert.equal(typeof Object.getOwnPropertyDescriptor(last, 'offsets').get, 'function');
+});

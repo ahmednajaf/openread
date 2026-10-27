@@ -40,18 +40,18 @@
       this.cancel(); this.index = Math.max(0, Math.min(this.items.length - 1, index)); this.status = 'paused'; this.emit();
       if (autoplay && this.items.length) void this.speak();
     }
-    configure({ rate = this.rate, voice = this.voice }) {
+    configure({ rate = this.rate, voice = this.voice, instruction = this.instruction || "" }) {
       this.rate = Math.max(.5, Math.min(5, Number(rate) || 1));
-      if (voice === this.voice) { if (this.audio) this.audio.playbackRate = this.rate; this.emit(); return; }
+      if (voice === this.voice && instruction === (this.instruction || "")) { if (this.audio) this.audio.playbackRate = this.rate; this.emit(); return; }
       const active = ['playing', 'loading'].includes(this.status);
       const previousStatus = this.status;
-      this.cancel(); this.voice = voice; this.cache.clear(); this.status = active ? 'paused' : previousStatus; this.emit(); if (active) void this.speak();
+      this.cancel(); this.voice = voice; this.instruction = instruction; this.cache.clear(); this.status = active ? 'paused' : previousStatus; this.emit(); if (active) void this.speak();
     }
     async generate(index) {
       this.validate(this.items[index]);
       const key = `${this.session}:${this.voice}:${index}`;
       if (this.cache.has(key)) return this.cache.get(key);
-      const pending = this.request({ type: 'synthesize', text: this.items[index].text, voice: this.voice }).then((result) => {
+      const pending = this.request({ type: 'synthesize', text: this.items[index].text, voice: this.voice, ...(this.instruction ? { instruction: this.instruction } : {}) }).then((result) => {
         if (!result?.ok || !result.audio) throw new Error(result?.error || 'The natural voice is unavailable.');
         if (!result.words?.length) throw new Error('Update and restart the local voice helper to enable word highlighting.');
         return result;

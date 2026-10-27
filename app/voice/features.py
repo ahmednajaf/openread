@@ -25,8 +25,8 @@ except ImportError:
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[2]
-MAX_DOCUMENT = 250_000
-MAX_FILE = 20 * 1024 * 1024
+MAX_DOCUMENT = 20_000_000
+MAX_FILE = 100 * 1024 * 1024
 OLLAMA = 'http://127.0.0.1:11434'
 AI_MODEL = 'qwen3:4b'
 
@@ -37,20 +37,20 @@ class ToolError(ValueError):
 
 def document_text(value):
     if not isinstance(value, str) or not value.strip() or len(value) > MAX_DOCUMENT:
-        raise ToolError('Choose text containing 1–250,000 characters. Split larger books into chapters.')
+        raise ToolError('Choose text containing 1–20,000,000 characters.')
     return value.strip()
 
 
 def decode_file(payload):
     value = payload.get('data')
     if not isinstance(value, str) or len(value) > (MAX_FILE * 4 // 3 + 4):
-        raise ToolError('Choose a file smaller than 20 MB.')
+        raise ToolError('Choose a file smaller than 100 MB.')
     try:
         data = base64.b64decode(value, validate=True)
     except (ValueError, TypeError):
         raise ToolError('The file could not be decoded.') from None
     if not data or len(data) > MAX_FILE:
-        raise ToolError('Choose a file smaller than 20 MB.')
+        raise ToolError('Choose a file smaller than 100 MB.')
     name = payload.get('name', '')
     if not isinstance(name, str) or len(name) > 240:
         raise ToolError('Invalid filename.')
@@ -261,7 +261,7 @@ def epub_document(data, cancelled):
             paragraph += count
             characters += len(text) + (2 if len(parts) > 1 else 0)
             if characters > MAX_DOCUMENT:
-                raise ToolError('This EPUB contains over 250,000 characters. Split the book into smaller volumes.')
+                raise ToolError('This EPUB contains over 20 million characters. Split the book into smaller volumes.')
         text = document_text('\n\n'.join(parts))
         validate_chapters(chapters, text)
         metadata = {local(e): ' '.join((e.text or '').split())[:240] for e in package.iter() if local(e) in ('title', 'creator')}
@@ -291,9 +291,9 @@ def xml(data):
 
 def checked_zip(data):
     archive = zipfile.ZipFile(io.BytesIO(data))
-    if len(archive.infolist()) > 3000 or sum(i.file_size for i in archive.infolist()) > 50 * 1024 * 1024:
+    if len(archive.infolist()) > 10000 or sum(i.file_size for i in archive.infolist()) > 200 * 1024 * 1024:
         archive.close()
-        raise ToolError('This document expands beyond the 50 MB import limit.')
+        raise ToolError('This document expands beyond the 200 MB import limit.')
     if any(i.flag_bits & 1 for i in archive.infolist()):
         archive.close()
         raise ToolError('Password-protected documents are not supported.')
@@ -331,7 +331,7 @@ def pdf_text(data, cancelled):
     reader = PdfReader(io.BytesIO(data))
     if reader.is_encrypted:
         raise ToolError('Open an unlocked copy of this PDF first.')
-    if len(reader.pages) > 200:
+    if len(reader.pages) > 2000:
         raise ToolError('Import up to 200 PDF pages at a time. Split this PDF into sections.')
     parts = []
     scan = None
@@ -371,7 +371,7 @@ def pdf_text(data, cancelled):
         if text:
             parts.append(text)
         if sum(len(p) for p in parts) > MAX_DOCUMENT:
-            raise ToolError('This PDF contains over 250,000 characters. Import fewer pages.')
+            raise ToolError('This PDF contains over 20 million characters. Import fewer pages.')
     return '\n\n'.join(parts)
 
 
@@ -683,7 +683,7 @@ def transcribe(payload, cancelled=lambda: None, progress=lambda _: None):
             progress(f'Transcribing {int(segment.end)} of {int(info.duration)} seconds…')
             text.append(segment.text.strip())
             if sum(map(len, text)) > MAX_DOCUMENT:
-                raise ToolError('This transcript exceeds 250,000 characters.')
+                raise ToolError('This transcript exceeds 20 million characters.')
     return {'text': document_text(' '.join(text)), 'language': info.language, 'duration': info.duration}
 
 
@@ -723,7 +723,7 @@ def export_audio(payload, synthesize, cancelled, progress):
                     target.setframerate(rate)
                 target.writeframes(source.readframes(source.getnframes()))
                 target.writeframes(b'\0\0' * int(rate * .2))
-            if output.tell() > 150 * 1024 * 1024:
+            if output.tell() > 1200 * 1024 * 1024:
                 raise ToolError('This audio is too large. Export a shorter section.')
     return {'audio': base64.b64encode(output.getvalue()).decode('ascii'), 'filename': 'openread.wav', 'mime': 'audio/wav'}
 

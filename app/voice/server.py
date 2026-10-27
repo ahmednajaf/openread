@@ -13,6 +13,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import features
 import kitten
+import qwen
 import wave
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -40,7 +41,7 @@ def validate_payload(payload):
     text = payload["text"].strip()
     if not text or len(text) > MAX_TEXT:
         raise ValueError(f"Text must contain 1–{MAX_TEXT} characters.")
-    if not isinstance(payload.get('voice', 'af_heart'), str) or payload.get('voice', 'af_heart') not in VOICES:
+    if not isinstance(payload.get('voice', 'af_heart'), str) or payload.get('voice', 'af_heart') not in {*VOICES, *(profile['id'] for profile in qwen.profiles())}:
         raise ValueError('Unknown voice.')
     return text
 
@@ -94,17 +95,27 @@ class KokoroVoice:
         from kokoro_onnx import Kokoro
         runtime.disable_telemetry_events()
         models = ROOT / ".local" / "models"
-        self.model = Kokoro(str(models / "kokoro-v1.0.onnx"), str(models / "voices-v1.0.bin"))
+        self.Kokoro = Kokoro
+        self.model = None
         self.np = np
         self.kitten = None
+        self.qwen = None
 
-    def synthesize(self, text, voice='af_heart'):
+    def synthesize(self, text, voice='af_heart', instruction=''):
+        if voice.startswith('qwen:'):
+            self.model = None; self.kitten = None
+            if self.qwen is None: self.qwen = qwen.QwenVoice()
+            return self.qwen.synthesize(text, voice, instruction)
+        if self.qwen is not None: self.qwen.close(); self.qwen = None
         if voice.startswith('kitten:'):
+            self.model = None
             from kitten import KittenVoice
             if self.kitten is None:
                 self.kitten = KittenVoice()
             return self.kitten.synthesize(text, voice)
         import phonemizer
+        self.kitten = None
+        if self.model is None: self.model = self.Kokoro(str(ROOT / ".local/models/kokoro-v1.0.onnx"), str(ROOT / ".local/models/voices-v1.0.bin"))
         language = VOICES[voice][1]
         options = {"voice": voice, "speed": 1.0, "lang": language}
         # Current exports support overlapping windows for continuous prosody.
@@ -132,14 +143,16 @@ class KokoroVoice:
 
 def make_server(voice, port=PORT, allow_preview=False, library=None):
     inference = threading.Lock()
+    pack_setup = threading.Lock()
     slots = threading.BoundedSemaphore(3)
     library = library or features.Library()
     jobs = features.Jobs()
 
-    def synthesize(text, selected_voice):
+    def synthesize(text, selected_voice, instruction=""):
         validate_payload({'text': text, 'voice': selected_voice})
+        if not isinstance(instruction, str) or len(instruction) > 500: raise features.ToolError('Keep voice direction under 500 characters.')
         with inference:
-            return voice.synthesize(text, selected_voice)
+            return voice.synthesize(text, selected_voice, instruction=instruction) if instruction and selected_voice.startswith("qwen:") else voice.synthesize(text, selected_voice)
 
     class Handler(BaseHTTPRequestHandler):
         def setup(self):
@@ -220,7 +233,9 @@ def make_server(voice, port=PORT, allow_preview=False, library=None):
             try:
                 if path == '/health':
                     self.send_json(200, {'ready': True, 'engine': 'Kokoro', 'version': 3,
-                        'wordTimings': True, 'voices': [{'id': key, 'name': value[0], 'language': value[1], 'available': not key.startswith('kitten:') or __import__('kitten').ready()} for key, value in VOICES.items()]})
+                        'wordTimings': True, 'voices': [{'id': key, 'name': value[0], 'language': value[1], 'available': qwen.ready() if key.startswith('qwen:') else not key.startswith('kitten:') or __import__('kitten').ready()} for key, value in VOICES.items()] + qwen.profiles()})
+                elif path == '/qwen/profiles':
+                    self.send_json(200, {'profiles': qwen.profiles()})
                 elif path == '/capabilities':
                     self.send_json(200, features.capabilities())
                 elif path == '/library':
@@ -239,7 +254,7 @@ def make_server(voice, port=PORT, allow_preview=False, library=None):
         def do_POST(self):
             if not self.authorized():
                 return
-            routes = ('/synthesize', '/library/save', '/library/delete', '/import', '/ai', '/transcribe', '/export', '/jobs/cancel')
+            routes = ('/synthesize', '/library/save', '/library/delete', '/import', '/ai', '/transcribe', '/export', '/jobs/cancel', '/qwen/clone', '/qwen/delete', '/qwen/setup')
             if self.path not in routes:
                 self.send_json(404, {'error': 'Not found.'})
                 return
@@ -248,15 +263,47 @@ def make_server(voice, port=PORT, allow_preview=False, library=None):
                 return
             try:
                 length = int(self.headers.get('Content-Length', '0'))
-                maximum = 28 * 1024 * 1024 if self.path in ('/import', '/transcribe') else 2 * 1024 * 1024
+                maximum = 140 * 1024 * 1024 if self.path in ('/import', '/transcribe') else 125 * 1024 * 1024 if self.path == '/library/save' else 30 * 1024 * 1024 if self.path == '/qwen/clone' else 2 * 1024 * 1024
                 if self.path == '/synthesize':
                     maximum = MAX_BODY
                 if not 0 < length <= maximum:
-                    raise features.ToolError('This request is too large. Files must be under 20 MB.')
+                    raise features.ToolError('This request is too large. Files must be under 100 MB.')
                 payload = json.loads(self.rfile.read(length))
                 if not isinstance(payload, dict):
                     raise features.ToolError('Expected a JSON object.')
-                if self.path == '/library/save':
+                if self.path == '/qwen/setup':
+                    pack = payload.get('pack')
+                    if pack not in ('expressive', 'clone'): raise features.ToolError('Choose a Qwen voice pack.')
+                    def setup_pack(cancel, progress):
+                        import setup_qwen
+                        cancel(); progress('Preparing the local Qwen engine…')
+                        with pack_setup:
+                            cancel()
+                            if not qwen.library_path().is_file(): setup_qwen.build_runtime()
+                            setup_qwen.download(pack, cancel=cancel, progress=progress)
+                        return {'ready': True, 'pack': pack}
+                    self.send_json(202, jobs.start(setup_pack))
+                elif self.path == '/qwen/clone':
+                    if not qwen.ready('clone'): raise features.ToolError('Install the Qwen cloning pack with setup/Set Up Qwen Voices.command first.')
+                    _, data = features.decode_file(payload)
+                    def clone_voice(cancel, progress):
+                        cancel()
+                        with inference:
+                            if hasattr(voice, 'model'): voice.model = None
+                            if hasattr(voice, 'kitten'): voice.kitten = None
+                            engine = getattr(voice, 'qwen', None) or qwen.QwenVoice()
+                            voice.qwen = engine
+                            return engine.clone(payload.get('title'), payload.get('transcript', ''), data, payload.get('permission'))
+                    self.send_json(202, jobs.start(clone_voice))
+                elif self.path == '/qwen/delete':
+                    profile = payload.get('id', '')
+                    if profile not in {p['id'] for p in qwen.profiles()}: raise features.ToolError('Choose a saved personal voice.')
+                    key = profile.removeprefix('qwen:clone-')
+                    with inference:
+                        for suffix in ['json', 'icl', 'speaker.json']:
+                            (ROOT / '.local/qwen-models/profiles' / (key + '.' + suffix)).unlink(missing_ok=True)
+                    self.send_json(200, {'deleted': True})
+                elif self.path == '/library/save':
                     self.send_json(200, library.save(payload))
                 elif self.path == '/library/delete':
                     self.send_json(200, library.delete(str(payload.get('id', ''))))
@@ -276,9 +323,11 @@ def make_server(voice, port=PORT, allow_preview=False, library=None):
                         self.send_json(429, {'error': 'Voice is busy. Try again shortly.'})
                         return
                     try:
-                        self.send_json(200, synthesize(text, payload.get('voice', 'af_heart')))
+                        self.send_json(200, synthesize(text, payload.get('voice', 'af_heart'), payload.get('instruction', '')))
                     finally:
                         slots.release()
+            except qwen.VoiceError as error:
+                self.send_json(422, {'error': str(error), 'code': 'qwen_voice_failed'})
             except kitten.VoiceError as error:
                 self.send_json(422, {'error': str(error), 'code': error.code})
             except (features.ToolError, ValueError, UnicodeError) as error:

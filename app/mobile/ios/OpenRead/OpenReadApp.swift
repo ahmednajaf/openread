@@ -74,13 +74,13 @@ struct LibraryView: View {
                             Spacer(); Text("\(filtered.count) saved").font(.caption).foregroundStyle(.secondary)
                         }
                         ForEach(filtered) { reading in
-                            Button { playback.open(reading); readerOpen = true } label: {
+                            Button { do { playback.open(try library.load(reading.id)); readerOpen = true } catch { self.error = error.localizedDescription } } label: {
                                 HStack(spacing: 18) {
                                     BookCover(reading: reading)
                                     VStack(alignment: .leading, spacing: 7) {
                                         Text(reading.title).font(.system(.headline, design: .serif)).foregroundStyle(.primary).multilineTextAlignment(.leading).lineLimit(2)
                                         Text("\(reading.wordCount) words · \(max(1, reading.wordCount / 165)) min").font(.caption).foregroundStyle(.secondary)
-                                        if reading.position > 0 { ProgressView(value: Double(reading.position) / Double(max(1, reading.text.utf16.count))).frame(maxWidth: 100).tint(ReaderStyle.accent) }
+                                        if reading.position > 0 { ProgressView(value: Double(reading.position) / Double(max(1, reading.textLength))).frame(maxWidth: 100).tint(ReaderStyle.accent) }
                                     }
                                     Spacer(minLength: 0); Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
                                 }.padding(.vertical, 8)
@@ -116,10 +116,10 @@ struct LibraryView: View {
             .sheet(isPresented: $pasteOpen) { PasteReadingView { reading in playback.open(reading); pasteOpen = false; readerOpen = true } }
             .sheet(isPresented: $settingsOpen) { NativeSettingsView() }
             .sheet(isPresented: $cameraOpen) { CameraCapture { data in cameraOpen = false; if let data { run { try await importer.image(data) } } } }
-            .fileImporter(isPresented: $importOpen, allowedContentTypes: restoring ? [.json] : allowed, allowsMultipleSelection: false) { result in
+            .fileImporter(isPresented: $importOpen, allowedContentTypes: restoring ? [.json, .zip] : allowed, allowsMultipleSelection: false) { result in
                 switch result {
                 case .success(let urls): if let url = urls.first {
-                    if restoring { do { let granted = url.startAccessingSecurityScopedResource(); defer { if granted { url.stopAccessingSecurityScopedResource() } }; try library.restore(Data(contentsOf: url)) } catch { self.error = error.localizedDescription } }
+                    if restoring { do { let granted = url.startAccessingSecurityScopedResource(); defer { if granted { url.stopAccessingSecurityScopedResource() } }; try library.restore(url) } catch { self.error = error.localizedDescription } }
                     else { run { try await importer.file(url) } }
                 }
                 case .failure(let error): self.error = error.localizedDescription
@@ -128,7 +128,7 @@ struct LibraryView: View {
             .onOpenURL { url in if url.scheme == "openread" { readerOpen = false; Task { await receiveInbox() } } else { run { try await importer.file(url) } } }
             .onAppear {
                 playback.onPosition = { id, offset in
-                    if var reading = library.readings.first(where: { $0.id == id }) { reading.position = offset; do { try library.save(reading) } catch { self.error = error.localizedDescription } }
+                    do { try library.position(id, offset) } catch { self.error = error.localizedDescription }
                 }
                 Task { await receiveInbox() }
             }
@@ -174,7 +174,7 @@ struct PasteReadingView: View {
                 TextEditor(text: $text).frame(minHeight: 300).accessibilityLabel("Text to read")
                 Text("Your text stays on this device. Choose Save in the reader to keep it.").font(.footnote).foregroundStyle(.secondary)
             }.navigationTitle("Bring your own words").navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }; ToolbarItem(placement: .confirmationAction) { Button("Read") { complete(Reading(title: title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Your reading" : String(title.prefix(240)), text: text.trimmingCharacters(in: .whitespacesAndNewlines))) }.disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || text.utf16.count > 250_000) } }
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }; ToolbarItem(placement: .confirmationAction) { Button("Read") { complete(Reading(title: title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Your reading" : String(title.prefix(240)), text: text.trimmingCharacters(in: .whitespacesAndNewlines))) }.disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || text.utf16.count > 20_000_000) } }
         }
     }
 }

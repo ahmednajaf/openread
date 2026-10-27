@@ -5,6 +5,8 @@ options:
     iOS: "17.0"
   groupSortPosition: top
 packages:
+  OpenReadQwen:
+    path: ../shared/qwen
   OpenReadInference:
     path: ../shared/inference
   OpenReadSpeech:
@@ -22,8 +24,8 @@ settings:
   base:
     SWIFT_VERSION: "5.0"
     SWIFT_STRICT_CONCURRENCY: targeted
-    CURRENT_PROJECT_VERSION: 6
-    MARKETING_VERSION: 0.5.1
+    CURRENT_PROJECT_VERSION: 7
+    MARKETING_VERSION: 0.6.0
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: ""
     OPENREAD_BUNDLE_ID: dev.openread.mobile
@@ -42,6 +44,8 @@ targets:
       - path: ../shared/speech/espeak-ng-data
         type: folder
         buildPhase: resources
+      - path: ../shared/qwen-models.json
+        buildPhase: resources
       - path: ../shared/models.json
         buildPhase: resources
       - path: ../shared/NOTICES.txt
@@ -49,6 +53,7 @@ targets:
       - path: ../shared/odyssey.json
         buildPhase: resources
     dependencies:
+      - package: OpenReadQwen
       - package: OpenReadInference
       - package: OpenReadSpeech
       - package: ONNXRuntime
@@ -72,9 +77,11 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         TARGETED_DEVICE_FAMILY: "1,2"
         SUPPORTS_MACCATALYST: NO
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) OPENREAD_QWEN"
   OpenReadPersonal:
     <<: *ReaderTarget
     dependencies:
+      - package: OpenReadQwen
       - package: OpenReadInference
       - package: OpenReadSpeech
       - package: ONNXRuntime
@@ -86,7 +93,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: "$(OPENREAD_BUNDLE_ID).personal"
         INFOPLIST_FILE: OpenRead/Info.plist
         CODE_SIGN_ENTITLEMENTS: ""
-        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) OPENREAD_PERSONAL"
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) OPENREAD_PERSONAL OPENREAD_QWEN"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         TARGETED_DEVICE_FAMILY: "1,2"
         SUPPORTS_MACCATALYST: NO

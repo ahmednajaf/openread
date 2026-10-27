@@ -19,7 +19,24 @@ struct SpokenWord: Sendable { let range: NSRange; let start: Double; let end: Do
 struct SpokenClip: Sendable { let wav: Data; let words: [SpokenWord]; let duration: Double }
 
 actor VoiceEngine {
-    static let voices = ["kiki", "rosie", "jasper", "luna", "bruno", "hugo", "leo", "bella"]
+    static let kittenVoices = ["kiki", "rosie", "jasper", "luna", "bruno", "hugo", "leo", "bella"]
+    static var voices: [String] {
+        #if OPENREAD_QWEN
+        return kittenVoices + QwenFiles.speakers.map { "qwen:" + $0 } + QwenFiles.profiles.map { "qwen:clone:" + $0.id }
+        #else
+        return kittenVoices
+        #endif
+    }
+    static func name(_ voice: String) -> String {
+        #if OPENREAD_QWEN
+        return QwenFiles.label(voice)
+        #else
+        return voice.capitalized
+        #endif
+    }
+    #if OPENREAD_QWEN
+    let qwen = QwenEngine()
+    #endif
     private var engine: KittenInference?
     private var cache: [String: SpokenClip] = [:]
     private var cacheOrder: [String] = []
@@ -29,11 +46,23 @@ actor VoiceEngine {
     private var manifest: VoiceManifest {
         get throws { try JSONDecoder().decode(VoiceManifest.self, from: Data(contentsOf: Bundle.main.url(forResource: "models", withExtension: "json")!)) }
     }
-    func isInstalled() -> Bool {
+    func isInstalled(voice: String = "kiki") -> Bool {
+        #if OPENREAD_QWEN
+        if voice.hasPrefix("qwen:") { return QwenFiles.installed(voice.hasPrefix("qwen:clone:") ? "clone" : "expressive") }
+        #endif
         guard let assets = try? manifest.assets else { return false }
         return assets.allSatisfy { FileManager.default.fileExists(atPath: root.appendingPathComponent($0.name).path) }
     }
-    func prepare(download: Bool, progress: @escaping @Sendable (Double) -> Void) async throws {
+    func prepare(voice: String = "kiki", download: Bool, progress: @escaping @Sendable (Double) -> Void) async throws {
+        #if OPENREAD_QWEN
+        if voice.hasPrefix("qwen:") {
+            if engine != nil { engine = nil; ready = false; cache.removeAll(); cacheOrder.removeAll() }
+            let pack = voice.hasPrefix("qwen:clone:") ? "clone" : "expressive"
+            if download { try await qwen.download(pack, progress: progress) }
+            guard QwenFiles.installed(pack) else { throw ReadingError.missingModels }; return
+        }
+        await qwen.unload()
+        #endif
         if ready { return }
         guard !preparing else { throw ReadingError.missingModels }
         preparing = true; defer { preparing = false }
@@ -54,11 +83,16 @@ actor VoiceEngine {
         engine = try KittenInference(root: root)
         ready = true; progress(1)
     }
-    func generate(_ text: String, voice: String) async throws -> SpokenClip {
-        guard let engine else { throw ReadingError.missingModels }
-        let key = voice + "\n" + text
+    func generate(_ text: String, voice: String, instruction: String = "") async throws -> SpokenClip {
+        let key = voice + "\n" + instruction + "\n" + text
         if let clip = cache[key] { return clip }
-        let clip = try engine.generate(text, voice: voice)
+        let clip: SpokenClip
+        #if OPENREAD_QWEN
+        if voice.hasPrefix("qwen:") { clip = try await qwen.generate(text, voice: voice, instruction: instruction) }
+        else { guard let engine else { throw ReadingError.missingModels }; clip = try engine.generate(text, voice: voice) }
+        #else
+        guard let engine else { throw ReadingError.missingModels }; clip = try engine.generate(text, voice: voice)
+        #endif
         try Task.checkCancellation()
         cache[key] = clip; cacheOrder.removeAll { $0 == key }; cacheOrder.append(key)
         while cacheOrder.count > 3 { cache.removeValue(forKey: cacheOrder.removeFirst()) }

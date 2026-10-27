@@ -64,6 +64,7 @@ class KittenEngine(val models: ModelStore) {
     private var session: OrtSession? = null
     private val embeddings = mutableMapOf<String, Embedding>()
     private val cache = LinkedHashMap<String, SpokenClip>()
+    suspend fun release() = mutex.withLock { session?.close(); session = null; embeddings.clear(); cache.clear() }
     suspend fun prepare(download: Boolean, progress: (Float) -> Unit = {}) = mutex.withLock { withContext(Dispatchers.IO) {
         if (session != null) return@withContext
         models.prepare(download = download, progress = progress)
