@@ -237,7 +237,7 @@ def epub_document(data, cancelled):
             if local(entry) != 'itemref' or entry.attrib.get('linear', 'yes') == 'no':
                 continue
             item = manifest.get(entry.attrib.get('idref'))
-            if item is None or 'nav' in item.attrib.get('properties', '').split():
+            if item is None:
                 continue
             target = epub_target(rootfile, item.attrib.get('href', ''))
             if not target:

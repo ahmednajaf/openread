@@ -77,6 +77,16 @@ class ImportTests(unittest.TestCase):
         result = f.import_document(file_payload('book.epub', data))
         self.assertEqual([(c['title'], c['paragraph']) for c in result['chapters']], [('Opening', 0), ('Next part', 2)])
 
+    def test_epub_contents_can_share_a_spine_document_with_chapters(self):
+        data = archive({
+            'META-INF/container.xml': '<container><rootfile full-path="book.opf"/></container>',
+            'book.opf': '<package><manifest><item id="book" href="book.xhtml" properties="nav"/></manifest><spine><itemref idref="book"/></spine></package>',
+            'book.xhtml': '<nav epub:type="toc"><a href="#one">First chapter</a><a href="#two">Second chapter</a></nav><h1 id="one">One</h1><p>First text.</p><h1 id="two">Two</h1><p>Second text.</p>',
+        })
+        result = f.import_document(file_payload('book.epub', data))
+        self.assertEqual(result['text'], 'One\n\nFirst text.\n\nTwo\n\nSecond text.')
+        self.assertEqual([(c['title'], c['paragraph']) for c in result['chapters']], [('First chapter', 0), ('Second chapter', 2)])
+
     def test_epub_without_contents_uses_headings_and_skips_empty_documents(self):
         data = archive({
             'META-INF/container.xml': '<container><rootfile full-path="book.opf"/></container>',
