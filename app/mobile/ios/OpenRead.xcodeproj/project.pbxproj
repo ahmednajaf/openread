@@ -435,6 +435,7 @@
 				85D9304A82104BBC1F0595BC /* Sources */,
 				300ED5BE9B0F2A9ED73F3E21 /* Resources */,
 				122CAB5DAD6E224B849A034A /* Frameworks */,
+				9561188A957ED8CEC89465B6 /* Align embedded ONNX framework minimum iOS version */,
 			);
 			buildRules = (
 			);
@@ -460,6 +461,7 @@
 				0E7DEC001A4A3748E6A9A5C9 /* Resources */,
 				8DC61F521F942B04D2128068 /* Frameworks */,
 				D677D60131551DF86F3F4262 /* Embed Foundation Extensions */,
+				755025B54CB9BBE8DBFDE96F /* Align embedded ONNX framework minimum iOS version */,
 			);
 			buildRules = (
 			);
@@ -615,6 +617,51 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		755025B54CB9BBE8DBFDE96F /* Align embedded ONNX framework minimum iOS version */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(TARGET_BUILD_DIR)/$(FRAMEWORKS_FOLDER_PATH)/onnxruntime.framework/Info.plist",
+				"$(TARGET_BUILD_DIR)/$(FRAMEWORKS_FOLDER_PATH)/onnxruntime.framework/_CodeSignature/CodeResources",
+			);
+			name = "Align embedded ONNX framework minimum iOS version";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "sh \"$SRCROOT/../../../dev/scripts/fix-apple-framework.sh\"";
+		};
+		9561188A957ED8CEC89465B6 /* Align embedded ONNX framework minimum iOS version */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(TARGET_BUILD_DIR)/$(FRAMEWORKS_FOLDER_PATH)/onnxruntime.framework/Info.plist",
+				"$(TARGET_BUILD_DIR)/$(FRAMEWORKS_FOLDER_PATH)/onnxruntime.framework/_CodeSignature/CodeResources",
+			);
+			name = "Align embedded ONNX framework minimum iOS version";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "sh \"$SRCROOT/../../../dev/scripts/fix-apple-framework.sh\"";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		5406376CE945C47A604A4EFF /* Sources */ = {
@@ -901,7 +948,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_NS_ASSERTIONS = NO;
@@ -964,7 +1011,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
