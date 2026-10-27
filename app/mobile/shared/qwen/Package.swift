@@ -2,7 +2,7 @@
 import PackageDescription
 let package = Package(name: "OpenReadQwen", platforms: [.iOS(.v17), .macOS(.v14)],
     products: [.library(name: "OpenReadQwen", targets: ["OpenReadQwen"])],
-    targets: [.target(name: "OpenReadQwen", path: ".", sources: [
+    targets: [.target(name: "OpenReadQwen", path: ".", exclude: ["vendor/ggml/src/ggml-metal/ggml-metal.metal", "vendor/ggml/src/ggml-metal/CMakeLists.txt"], sources: [
                 "vendor/ggml/src/ggml.c",
                 "vendor/ggml/src/ggml.cpp",
                 "vendor/ggml/src/ggml-alloc.c",
@@ -13,7 +13,7 @@ let package = Package(name: "OpenReadQwen", platforms: [.iOS(.v17), .macOS(.v14)
                 "vendor/ggml/src/ggml-quants.c",
                 "vendor/ggml/src/gguf.cpp",
                 "vendor/ggml/src/ggml-backend-dl.cpp",
-                "vendor/ggml/src/ggml-backend-reg.cpp",
+                "apple_backend_registry.cpp",
                 "vendor/ggml/src/ggml-cpu/ggml-cpu.c",
                 "vendor/ggml/src/ggml-cpu/ggml-cpu.cpp",
                 "vendor/ggml/src/ggml-cpu/repack.cpp",
@@ -63,15 +63,23 @@ let package = Package(name: "OpenReadQwen", platforms: [.iOS(.v17), .macOS(.v14)
                 "vendor/src/common/icl_prompt_io.cpp",
                 "vendor/src/common/audio_io.cpp",
                 "arch.c",
-                "arch.cpp"
-            ], publicHeadersPath: "include", cSettings: [
+                "arch.cpp",
+                "apple_backend.m",
+                "vendor/ggml/src/ggml-metal/ggml-metal.cpp",
+                "vendor/ggml/src/ggml-metal/ggml-metal-device.m",
+                "vendor/ggml/src/ggml-metal/ggml-metal-device.cpp",
+                "vendor/ggml/src/ggml-metal/ggml-metal-common.cpp",
+                "vendor/ggml/src/ggml-metal/ggml-metal-context.m",
+                "vendor/ggml/src/ggml-metal/ggml-metal-ops.cpp"
+            ], resources: [.process("metal-shaders")], publicHeadersPath: "include", cSettings: [
+                .unsafeFlags(["-fno-objc-arc"]),
                 .unsafeFlags(["-O3"], .when(configuration: .debug)),
                 .headerSearchPath("vendor/ggml/include"), .headerSearchPath("vendor/ggml/src"),
                 .headerSearchPath("vendor/ggml/src/ggml-cpu"), .headerSearchPath("vendor/src"),
-                .define("GGML_VERSION", to: "\"0.16.0\""), .define("GGML_COMMIT", to: "\"af97976c\""), .define("GGML_USE_CPU"), .define("GGML_SCHED_MAX_COPIES", to: "4")
+                .define("GGML_VERSION", to: "\"0.16.0\""), .define("GGML_COMMIT", to: "\"af97976c\""), .define("GGML_USE_CPU"), .define("GGML_METAL_NDEBUG"), .define("GGML_SCHED_MAX_COPIES", to: "4")
             ], cxxSettings: [
                 .unsafeFlags(["-O3"], .when(configuration: .debug)),
                 .headerSearchPath("vendor/ggml/include"), .headerSearchPath("vendor/ggml/src"),
                 .headerSearchPath("vendor/ggml/src/ggml-cpu"), .headerSearchPath("vendor/src"),
-                .define("GGML_VERSION", to: "\"0.16.0\""), .define("GGML_COMMIT", to: "\"af97976c\""), .define("GGML_USE_CPU"), .define("GGML_SCHED_MAX_COPIES", to: "4")
-            ], linkerSettings: [.linkedLibrary("c++")])], cxxLanguageStandard: .cxx17)
+                .define("GGML_VERSION", to: "\"0.16.0\""), .define("GGML_COMMIT", to: "\"af97976c\""), .define("GGML_USE_CPU"), .define("GGML_METAL_NDEBUG"), .define("GGML_SCHED_MAX_COPIES", to: "4")
+            ], linkerSettings: [.linkedLibrary("c++"), .linkedFramework("Foundation"), .linkedFramework("Metal"), .linkedFramework("MetalKit")])], cxxLanguageStandard: .cxx17)

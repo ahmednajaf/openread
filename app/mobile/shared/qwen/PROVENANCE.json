@@ -9,5 +9,5 @@
     "revision": "af97976c7810cdabb1863172f31c432dab767de7",
     "license": "MIT"
   },
-  "selection": "CPU inference sources, unchanged. Build adapters live outside vendor."
+  "selection": "CPU and Apple Metal inference sources, unchanged. Build adapters live outside vendor. The expanded Metal shader is generated from the same pinned GGML revision."
 }

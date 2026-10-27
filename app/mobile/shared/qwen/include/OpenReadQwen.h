@@ -223,6 +223,9 @@ QWEN3_TTS_API void qwen3_tts_set_progress_callback(
     void* user_data
 );
 
+// Apple packaging adapter; does not alter the upstream inference ABI.
+void openread_qwen_configure_apple_backend(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -88,14 +88,15 @@ final class BookTests: XCTestCase {
         guard QwenFiles.installed("expressive") else { throw XCTSkip("Install Qwen to exercise real incremental inference.") }
         let engine = QwenEngine(); let text = "A natural voice makes room for a sentence. Then the next thought can follow."
         let start = Date(); var first: TimeInterval?; var pcm = Data(); var chunks = 0
-        for try await chunk in engine.stream(text, voice: "qwen:ryan", instruction: "") {
+        for try await chunk in engine.stream(text, voice: "qwen:sohee", instruction: "") {
             if first == nil { first = Date().timeIntervalSince(start) }
             XCTAssertGreaterThan(chunk.wav.count, 44); XCTAssertGreaterThan(chunk.duration, 0)
+            XCTAssertLessThanOrEqual(chunk.duration, 0.4, "Incremental decoding must not wait for one-second batches")
             pcm.append(chunk.wav.dropFirst(44)); chunks += 1
         }
         let elapsed = Date().timeIntervalSince(start)
         XCTAssertGreaterThan(chunks, 1); XCTAssertLessThan(try XCTUnwrap(first), elapsed)
-        let complete = try await engine.generate(text, voice: "qwen:ryan", instruction: "")
+        let complete = try await engine.generate(text, voice: "qwen:sohee", instruction: "")
         XCTAssertEqual(pcm, complete.wav.dropFirst(44), "Streaming must not repeat or lose any generated samples")
     }
     func testQwenClonesALocalSyntheticReferenceWithoutAHostedService() async throws {
