@@ -102,7 +102,7 @@ const headers = { 'X-OpenRead': '1', 'Content-Type': 'application/json' };
     if (process.env.SCREENSHOT) {
       await page.emulateMedia({ colorScheme: 'light' });
       await page.evaluate(() => window.scrollTo(0, 0));
-      await button('Open chapters').click(); await page.screenshot({ path: process.env.SCREENSHOT });
+      await button('Open chapters').click(); await page.screenshot({ path: process.env.SCREENSHOT, animations: 'disabled' });
     }
     assert.deepEqual(errors, []);
     console.log('EPUB chapters: import, contents keyboard selection, paused/playing jumps, natural advancement, boundaries, saved resume, backup/restore and responsive light/dark UI.');
