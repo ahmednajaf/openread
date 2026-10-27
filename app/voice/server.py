@@ -90,14 +90,9 @@ def align_words(text, phonemes, timings, duration):
 
 class KokoroVoice:
     def __init__(self):
-        import numpy as np
-        import onnxruntime as runtime
-        from kokoro_onnx import Kokoro
-        runtime.disable_telemetry_events()
-        models = ROOT / ".local" / "models"
-        self.Kokoro = Kokoro
+        self.Kokoro = None
         self.model = None
-        self.np = np
+        self.np = None
         self.kitten = None
         self.qwen = None
 
@@ -114,6 +109,11 @@ class KokoroVoice:
                 self.kitten = KittenVoice()
             return self.kitten.synthesize(text, voice)
         import phonemizer
+        if self.Kokoro is None:
+            import numpy as np
+            import onnxruntime as runtime
+            from kokoro_onnx import Kokoro
+            runtime.disable_telemetry_events(); self.Kokoro = Kokoro; self.np = np
         self.kitten = None
         if self.model is None: self.model = self.Kokoro(str(ROOT / ".local/models/kokoro-v1.0.onnx"), str(ROOT / ".local/models/voices-v1.0.bin"))
         language = VOICES[voice][1]

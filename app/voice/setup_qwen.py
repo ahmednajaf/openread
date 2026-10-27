@@ -20,6 +20,7 @@ def build_runtime(root=ROOT):
     common = ['-O3', '-fPIC', '-pthread', '-DGGML_USE_CPU', '-DGGML_SCHED_MAX_COPIES=4', '-DGGML_VERSION="0.16.0"', '-DGGML_COMMIT="af97976c"']
     common += ['-I' + str(source / name) for name in ['include', 'vendor/src', 'vendor/ggml/include', 'vendor/ggml/src', 'vendor/ggml/src/ggml-cpu']]
     if sys.platform == 'darwin': common += ['-mmacosx-version-min=14.0']
+    elif sys.platform.startswith('linux'): common += ['-D_GNU_SOURCE']
     def compile(name):
         src = source / name; target = objects / (hashlib.sha256(name.encode()).hexdigest()[:20] + '.o')
         subprocess.run([cc if src.suffix == '.c' else cxx, '-std=c11' if src.suffix == '.c' else '-std=c++17', *common, '-c', str(src), '-o', str(target)], check=True, stdout=subprocess.DEVNULL)

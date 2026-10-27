@@ -49,7 +49,7 @@ class BookTest {
         }
         val books = File(root, "Books"); val library = LibraryStore(context, file.path, books)
         try {
-            assertNull(library.recoveryError); assertEquals(original, library.load(original.id))
+            assertNull(library.recoveryError); assertEquals(original.copy(cachedWordCount = original.wordCount, cachedTextLength = original.text.length), library.load(original.id))
             val backup = File(root, "invalid.zip")
             java.util.zip.ZipOutputStream(backup.outputStream()).use { zip ->
                 for ((name, text) in listOf("readings/0.json" to Reading(title = "Incoming", text = "New text.").json().toString(), "readings/1.json" to "{}")) {
@@ -57,7 +57,7 @@ class BookTest {
                 }
             }
             assertTrue(runCatching { library.restore(backup) }.isFailure)
-            assertEquals(original, library.load(original.id)); assertEquals(1, library.readings.value.size)
+            assertEquals(original.copy(cachedWordCount = original.wordCount, cachedTextLength = original.text.length), library.load(original.id)); assertEquals(1, library.readings.value.size)
             assertEquals(1, books.listFiles()?.size)
         } finally { library.close(); root.deleteRecursively() }
     }

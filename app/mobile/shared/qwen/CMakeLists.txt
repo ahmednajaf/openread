@@ -74,3 +74,7 @@ if(ANDROID)
  target_sources(openread_qwen PRIVATE android.cpp)
  target_link_libraries(openread_qwen PRIVATE log)
 endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+ target_compile_definitions(openread_qwen PRIVATE _GNU_SOURCE)
+endif()
