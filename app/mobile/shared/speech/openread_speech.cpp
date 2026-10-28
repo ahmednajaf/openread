@@ -13,7 +13,7 @@ extern "C" char *openread_speech_phonemize_language(const char *data_parent, con
     std::lock_guard<std::mutex> lock(speech_mutex);
     if (!data_parent || !text || !language || std::strlen(text) > 16000) return nullptr;
     const std::string lang(language);
-    if (lang != "en-us" && lang != "en-gb" && lang != "fr-fr" && lang != "es" && lang != "it" && lang != "pt-br" && lang != "hi" && lang != "ar") return nullptr;
+    if (lang != "en-us" && lang != "en-gb" && lang != "fr-fr" && lang != "es" && lang != "it" && lang != "pt-br" && lang != "hi") return nullptr;
     if (!initialized) {
         if (espeak_Initialize(AUDIO_OUTPUT_SYNCHRONOUS, 0, data_parent, espeakINITIALIZE_DONT_EXIT) <= 0) return nullptr;
         initialized = true;

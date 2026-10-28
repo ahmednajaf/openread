@@ -7,8 +7,7 @@ These are beta builds. The latest timing and continuous-playback changes are tes
 ## What you can use
 
 - Eight English Kitten voices, with a one-time download of about 83 MB.
-- On Apple platforms, 28 additional American/British Kokoro voices: an optional download of about 192 MB. Preparing Safari also creates a local runtime cache; allow about 360 MB of storage for this pack.
-- Qwen narration and voice cloning are **experimental**, off by default under Settings → Experimental voices. They may stall or fail on some devices. Existing downloads and personal voices are retained when disabled. See [voice pack setup](VOICE_PACKS.md).
+- On Apple platforms, 41 additional Kokoro voices across English, Spanish, French, Hindi, Italian and Brazilian Portuguese: an optional download of about 192 MB. Preparing Safari also creates a local runtime cache; allow about 360 MB of storage for this pack.
 - A reader with word highlighting, follow-along scrolling, passage controls and 0.5–2× speed.
 - A saved library, reading positions, bookmarks and a sleep timer.
 - PDF, EPUB, DOCX, HTML, text and image imports. Scanned PDFs and photos use on-device OCR. Android's English scanner is a separate, optional 4 MB download.

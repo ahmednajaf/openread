@@ -26,11 +26,15 @@ git -C "$openread_source" diff --exit-code HEAD -- . >/dev/null || {
     -DUSE_KLATT=OFF -DUSE_SPEECHPLAYER=OFF
 "$openread_cmake" --build "$openread_build" --target data --parallel 2
 openread_destination="$openread_root/app/mobile/shared/speech/espeak-ng-data"
-mkdir -p "$openread_destination/lang/gmw"
-for openread_file in en_dict phontab phonindex phondata intonations; do
+mkdir -p "$openread_destination/lang/gmw" "$openread_destination/lang/roa" "$openread_destination/lang/inc"
+for openread_file in en_dict es_dict fr_dict hi_dict it_dict pt_dict phontab phonindex phondata intonations; do
     cp "$openread_build/espeak-ng-data/$openread_file" "$openread_destination/$openread_file"
 done
 for openread_voice in en en-US; do
     cp "$openread_source/espeak-ng-data/lang/gmw/$openread_voice" "$openread_destination/lang/gmw/$openread_voice"
 done
-echo 'English pronunciation data rebuilt. Review the asset diff before committing.'
+for openread_voice in es fr it pt pt-BR; do
+    cp "$openread_source/espeak-ng-data/lang/roa/$openread_voice" "$openread_destination/lang/roa/$openread_voice"
+done
+cp "$openread_source/espeak-ng-data/lang/inc/hi" "$openread_destination/lang/inc/hi"
+echo 'Pronunciation data rebuilt for English, Spanish, French, Hindi, Italian and Portuguese.'

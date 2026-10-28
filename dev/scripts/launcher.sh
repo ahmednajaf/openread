@@ -16,8 +16,8 @@ if [[ -z "$python_bin" ]]; then
   read -r "?Press Return to close."
   exit 1
 fi
-if [[ "$mode" == setup || ! -x .venv/bin/python || ! -f .local/models/kokoro-v1.0.onnx || ! -f .local/models/voices-v1.0.bin || ! -f .local/kitten-mini/sources.json || ! -f .local/whisper-base/model.bin || ! -f .local/setup-version ]]; then
-  print "Setting up OpenRead. The voices and word-alignment models download about 586 MB once, plus packages."
+if [[ "$mode" == setup || ! -x .venv/bin/python || ! -f .local/models/kokoro-v1.0.onnx || ! -f .local/models/voices-v1.0.bin || ! -f .local/kitten-mini/sources.json || ! -f .local/setup-version ]]; then
+  print "Setting up OpenRead. The voices download about 436 MB once, plus packages."
   "$python_bin" app/voice/setup.py
 fi
 case "$mode" in
@@ -25,18 +25,6 @@ case "$mode" in
   ai) .venv/bin/python app/voice/setup_optional.py ai ;;
   dictation) .venv/bin/python app/voice/setup_optional.py dictation ;;
   voices) .venv/bin/python app/voice/setup_voices.py ;;
-  qwen)
-    print "Optional Qwen packs run locally. No subscription or API key."
-    print "1: Expressive voices (up to 1.44 GB)"
-    print "2: Voice cloning (up to 884 MB)"
-    print "3: Both (about 2.07 GB total; shared files download once)"
-    read -r "qwen_choice?Choose 1, 2 or 3; anything else cancels: "
-    case "$qwen_choice" in
-      1) .venv/bin/python app/voice/setup_qwen.py expressive ;;
-      2) .venv/bin/python app/voice/setup_qwen.py clone ;;
-      3) .venv/bin/python app/voice/setup_qwen.py both ;;
-    esac ;;
-
   start)
     if .venv/bin/python -c 'import urllib.request,json; r=urllib.request.Request("http://127.0.0.1:8765/health",headers={"X-OpenRead":"1"}); assert json.load(urllib.request.urlopen(r,timeout=2)).get("engine")=="Kokoro"' 2>/dev/null; then
       print "OpenRead is already running. Opening your library. Restart the existing helper after an update."

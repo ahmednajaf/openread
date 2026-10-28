@@ -29,11 +29,14 @@ test('Safari saves with the browser-provided page source, without a localhost re
   assert.equal(h.requests.length,1);
 });
 
-test('Safari forwards English Kokoro voices and keeps Qwen app-only', async () => {
+test('Safari forwards supported Kokoro languages and rejects retired packs', async () => {
   const h = host();
   await h.send({type:'synthesize',text:'Read this.',voice:'af_heart'});
   await h.send({type:'synthesize',text:'Read this.',voice:'bf_emma'});
-  assert.deepEqual(h.requests.map(r => r.voice), ['af_heart','bf_emma']);
+  for (const voice of ['ef_dora','ff_siwis','hf_alpha','hm_omega','if_sara','pm_alex']) {
+    await h.send({type:'synthesize',text:'A test passage.',voice});
+  }
+  assert.deepEqual(h.requests.map(r => r.voice), ['af_heart','bf_emma','ef_dora','ff_siwis','hf_alpha','hm_omega','if_sara','pm_alex']);
   await h.send({type:'synthesize',text:'Read this.',voice:'qwen:ryan'});
-  assert.equal(h.requests.length, 2);
+  assert.equal(h.requests.length, 8);
 });

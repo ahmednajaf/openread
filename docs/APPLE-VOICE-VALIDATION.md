@@ -1,3 +1,30 @@
+# Voice catalog cleanup — follow-up validation
+
+The follow-up source update uses one catalog across Apple apps, Safari, Chrome
+and the desktop helper: eight Kitten Mini voices and 41 Kokoro voices across
+six languages. It removes active Qwen speech controls and Apple adapters,
+retaining Android source and existing user model/profile files. Desktop Kitten
+now uses model durations; Whisper is optional for dictation only.
+
+Checks on 28 October 2026:
+
+- Full simulator suite: 40 passed, no skips or failures. All 49 voices generated
+  matching-language audio with complete, ordered source ranges.
+- An additional mapped Safari inference test passed for US/British English,
+  Spanish, French, Hindi, Italian and Brazilian Portuguese.
+- Desktop real inference checked all eight Kitten voices and one Kokoro voice
+  per additional language. Shared regressions: 45 Python and 39 JavaScript tests.
+- iOS device Release build, Mac app/Safari build, TypeScript, reader/site builds
+  and generated Safari resources passed.
+- The separate [Kitten TTS 2 decoder proof](KITTEN2-EVALUATION.md) passed in
+  iOS Simulator; no evaluation runtime or weights are included in the app.
+
+These are simulator and local inference checks. Physical-device playback,
+extension memory limits and subjective multilingual pronunciation still need
+TestFlight/listener validation. This source update has not yet been released.
+
+---
+
 # Apple voice playback — 0.6.2 (13)
 
 The Apple apps now use one continuous audio queue for Kitten and Kokoro. Source

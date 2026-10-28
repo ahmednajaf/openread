@@ -67,9 +67,9 @@ Checked-in Xcode projects, dependency lockfiles and generated Safari resources
 allow builds without Node or XcodeGen. Local SDKs, neural weights, build outputs
 and signing material are ignored. Platform SDKs retain their own terms.
 
-## Optional Qwen voices
+## Retained Android Qwen sources
 
-The apps and local helper share the vendored CPU runtime from
+The paused Android source retains the vendored CPU runtime from
 [Danmoreng/qwen3-tts.cpp](https://github.com/Danmoreng/qwen3-tts.cpp) (MIT),
 with [GGML](https://github.com/ggml-org/ggml) (MIT). Revisions and the source
 selection are recorded in `app/mobile/shared/qwen/PROVENANCE.json`; upstream
@@ -78,7 +78,7 @@ sources remain unchanged. Platform adapters live outside `vendor`.
 Qwen3-TTS weights (Qwen team, Alibaba Cloud, Apache-2.0) are opt-in downloads
 from [Serveurperso's GGUF conversion](https://huggingface.co/Serveurperso/Qwen3-TTS-GGUF).
 `app/mobile/shared/qwen-models.json` pins its revision, sizes and SHA-256.
-No weights or personal voice profiles are committed. The bundled native notices
+The active Apple apps and desktop helper do not load this runtime. No weights or personal voice profiles are committed. The retained native notices
 include the runtime and GGML licences alongside the Apache-2.0 text.
 
 

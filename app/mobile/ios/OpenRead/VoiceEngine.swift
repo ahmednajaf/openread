@@ -19,10 +19,16 @@ struct SpokenWord: Codable, Sendable { let range: NSRange; let start: Double; le
 struct SpokenClip: Codable, Sendable { let wav: Data; let words: [SpokenWord]; let duration: Double }
 
 actor VoiceEngine {
-    static let kittenVoices = ["kiki", "rosie", "jasper", "luna", "bruno", "hugo", "leo", "bella"]
-    struct Choice: Decodable { let id: String; let name: String; let detail: String; let lang: String }
+    struct Choice: Decodable {
+        let id: String
+        let name: String
+        let detail: String
+        let lang: String
+        let embedding: String?
+    }
+    static var kittenVoices: [String] { choices.filter { $0.embedding != nil }.map { canonical($0.id) } }
     static let choices: [Choice] = {
-        guard let url = Bundle.main.url(forResource: "native-voices", withExtension: "json"),
+        guard let url = Bundle.main.url(forResource: "voices", withExtension: "json"),
               let data = try? Data(contentsOf: url), let values = try? JSONDecoder().decode([Choice].self, from: data) else { return [] }
         return values
     }()
@@ -30,27 +36,15 @@ actor VoiceEngine {
     static func canonical(_ voice: String) -> String { voice.hasPrefix("kitten:") ? String(voice.dropFirst(7)) : voice }
     static func isKokoro(_ voice: String) -> Bool { kokoroVoices.contains(voice) }
     static func language(_ voice: String) -> String { choices.first { canonical($0.id) == canonical(voice) }?.lang ?? "en-us" }
-    static var betaEnabled: Bool { UserDefaults.standard.bool(forKey: "qwen-beta-enabled") }
     static var voices: [String] {
-        #if OPENREAD_QWEN
-        return kittenVoices + kokoroVoices + (betaEnabled ? QwenFiles.speakers.map { "qwen:" + $0 } + QwenFiles.profiles.map { "qwen:clone:" + $0.id } : [])
-        #else
         return kittenVoices + kokoroVoices
-        #endif
     }
     static func name(_ voice: String) -> String {
         if let choice = choices.first(where: { canonical($0.id) == canonical(voice) }) {
             return choice.name + " · " + (isKokoro(voice) ? choice.detail : "Kitten")
         }
-        #if OPENREAD_QWEN
-        return QwenFiles.label(voice) + " · Beta"
-        #else
         return voice.capitalized
-        #endif
     }
-    #if OPENREAD_QWEN
-    let qwen = QwenEngine()
-    #endif
     private var engine: LocalVoiceInference?
     private var activePack: String?
     private var cache: [String: SpokenClip] = [:]
@@ -66,22 +60,10 @@ actor VoiceEngine {
         return try Self.isKokoro(voice) ? manifest.kokoroAssets ?? [] : manifest.assets
     }
     func isInstalled(voice: String = "kiki") -> Bool {
-        #if OPENREAD_QWEN
-        if voice.hasPrefix("qwen:") { return QwenFiles.installed(voice.hasPrefix("qwen:clone:") ? "clone" : "expressive") }
-        #endif
         guard let assets = try? assets(for: voice), !assets.isEmpty else { return false }
         return assets.allSatisfy { FileManager.default.fileExists(atPath: root.appendingPathComponent($0.name).path) }
     }
     func prepare(voice: String = "kiki", download: Bool, progress: @escaping @Sendable (Double) -> Void) async throws {
-        #if OPENREAD_QWEN
-        if voice.hasPrefix("qwen:") {
-            if engine != nil { engine = nil; ready = false; cache.removeAll(); cacheOrder.removeAll() }
-            let pack = voice.hasPrefix("qwen:clone:") ? "clone" : "expressive"
-            if download { try await qwen.download(pack, progress: progress) }
-            guard QwenFiles.installed(pack) else { throw ReadingError.missingModels }; return
-        }
-        await qwen.unload()
-        #endif
         let pack = Self.isKokoro(voice) ? "kokoro" : "kitten"
         if ready && activePack == pack { return }
         guard !preparing else { throw ReadingError.missingModels }
@@ -105,26 +87,21 @@ actor VoiceEngine {
         engine = try LocalVoiceInference(root: root, kokoro: pack == "kokoro")
         activePack = pack; ready = true; progress(1)
     }
-    func generate(_ text: String, voice: String, instruction: String = "", onChunk: ((SpokenClip) -> Void)? = nil) async throws -> SpokenClip {
-        let key = voice + "\n" + instruction + "\n" + text
+    func generate(_ text: String, voice: String, onChunk: ((SpokenClip) -> Void)? = nil) async throws -> SpokenClip {
+        let key = voice + "\n" + text
         if let clip = cache[key] { onChunk?(clip); return clip }
-        let clip: SpokenClip
-        #if OPENREAD_QWEN
-        if voice.hasPrefix("qwen:") { clip = try await qwen.generate(text, voice: voice, instruction: instruction) }
-        else { guard let engine else { throw ReadingError.missingModels }; clip = try engine.generate(text, voice: Self.canonical(voice), onChunk: onChunk) }
-        #else
-        guard let engine else { throw ReadingError.missingModels }; clip = try engine.generate(text, voice: Self.canonical(voice), onChunk: onChunk)
-        #endif
+        guard let engine else { throw ReadingError.missingModels }
+        let clip = try engine.generate(text, voice: Self.canonical(voice), onChunk: onChunk)
         try Task.checkCancellation()
         cache[key] = clip; cacheOrder.removeAll { $0 == key }; cacheOrder.append(key)
         while cacheOrder.count > 3 { cache.removeValue(forKey: cacheOrder.removeFirst()) }
         return clip
     }
-    func stream(_ text: String, voice: String, instruction: String = "") -> AsyncThrowingStream<SpokenClip, Error> {
+    func stream(_ text: String, voice: String) -> AsyncThrowingStream<SpokenClip, Error> {
         AsyncThrowingStream { continuation in
             let producer = Task {
                 do {
-                    _ = try await generate(text, voice: voice, instruction: instruction) { continuation.yield($0) }
+                    _ = try await generate(text, voice: voice) { continuation.yield($0) }
                     continuation.finish()
                 } catch { continuation.finish(throwing: error) }
             }

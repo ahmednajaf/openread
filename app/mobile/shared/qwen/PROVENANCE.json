@@ -9,5 +9,5 @@
     "revision": "af97976c7810cdabb1863172f31c432dab767de7",
     "license": "MIT"
   },
-  "selection": "CPU and Apple Metal inference sources, unchanged. Build adapters live outside vendor. The expanded Metal shader is generated from the same pinned GGML revision."
+  "selection": "CPU inference sources retained for paused Android development. Upstream sources are unchanged. Unused upstream Metal sources retain their original provenance; Apple build adapters and generated shaders were removed."
 }

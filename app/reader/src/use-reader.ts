@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from './api';
 import { readingLayout, chapterLayout, validChapters, type Chapter } from './layout';
 export type Reading = { id?: string; title: string; text: string; source?: string; position?: number; author?: string; book?: string; chapter?: string; chapters?: Chapter[]; sample?: boolean; bookmarks?: { position: number; label: string }[] };
-export function useReader(reading: Reading, voice: string, rate: number, follow: boolean, highlight: boolean, instruction = "") {
+export function useReader(reading: Reading, voice: string, rate: number, follow: boolean, highlight: boolean) {
   const player = useRef<LocalPlayer | null>(null);
   const layout = useMemo(() => readingLayout(reading.text, OpenReadCore.passages(reading.text)), [reading.text]);
   const chapters = useMemo(() => chapterLayout(validChapters(reading.chapters || [], reading.text) ? reading.chapters || [] : [], layout.items), [reading.chapters, layout]);
@@ -18,7 +18,7 @@ export function useReader(reading: Reading, voice: string, rate: number, follow:
     let alive = true;
     const clear = () => { range.current = null; if (alive) setRects([]); };
     player.current = new OpenReadPlayer({ AudioClass: Audio,
-      request: async message => ({ ok: true, ...await api<Omit<Speech, 'ok'>>('/synthesize', { text: message.text, voice: message.voice, instruction: message.instruction || "" }) }),
+      request: async message => ({ ok: true, ...await api<Omit<Speech, 'ok'>>('/synthesize', { text: message.text, voice: message.voice }) }),
       onChange: state => { if (alive) { setPhase(state); setPhaseReading(owner.current); } if (state.status !== 'playing') clear(); },
       onWordClear: clear, onError: message => { if (alive) setError(message); },
       onWord: (offset, length) => {
@@ -39,7 +39,7 @@ export function useReader(reading: Reading, voice: string, rate: number, follow:
     return () => { alive = false; player.current?.destroy(); window.removeEventListener('scroll', reposition); window.removeEventListener('resize', reposition); };
   }, []);
   useEffect(() => { owner.current = reading; setError(''); player.current?.load(layout.items); if (reading.position) player.current?.seek(Math.min(reading.position, layout.items.length - 1), false); setProgress(0); }, [layout, reading.id]);
-  useEffect(() => { player.current?.configure({ voice, rate, instruction }); }, [voice, rate, instruction]);
+  useEffect(() => { player.current?.configure({ voice, rate }); }, [voice, rate]);
   useEffect(() => { paint(); }, [highlight]);
   useEffect(() => {
     const interval = setInterval(() => {

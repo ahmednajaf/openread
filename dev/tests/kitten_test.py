@@ -1,12 +1,10 @@
 from pathlib import Path
-from types import SimpleNamespace
 import sys
 import unittest
-from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'app/voice'))
 import kitten
-import features
+from alignment import align_words
 
 
 class AlignmentTests(unittest.TestCase):
@@ -20,49 +18,47 @@ class AlignmentTests(unittest.TestCase):
         self.assertGreaterEqual(len(trimmed), len(padded) - 4800)
         self.assertEqual(kitten.trim_silence([.2] * 500), [.2] * 500)
 
-    def test_short_speech_without_whisper_words_keeps_estimated_timings(self):
-        words, source = kitten.speech_alignment('I', [], .75)
-        self.assertEqual(source, 'estimated-duration')
-        self.assertEqual(words, [{'offset': 0, 'length': 1, 'start': 0, 'end': .75, 'estimated': True}])
-        words, _ = kitten.speech_alignment('🌊 Yes, see you there.', [], 2)
-        self.assertEqual(words[0]['offset'], 3)
-        self.assertTrue(all(word['end'] > word['start'] for word in words))
+    def test_model_durations_include_special_and_separator_tokens(self):
+        # [BOS, a, separator, punctuation, EOS-1, EOS-2]. Speech starts
+        # after BOS; separators still consume time, without becoming words.
+        timing = kitten.model_timings('a!', {c:i for i,c in enumerate(kitten.SYMBOLS)}, [1, 2, 1, 3, 1, 2], 24000, 24000)
+        self.assertEqual([t.phoneme for t in timing], ['a', ' ', '!'])
+        self.assertAlmostEqual(timing[0].start, .1)
+        self.assertAlmostEqual(timing[0].end, .3)
+        self.assertAlmostEqual(timing[2].start, .4)
+        self.assertAlmostEqual(timing[2].end, .7)
 
-    def test_long_unrecognized_or_unreadable_speech_still_reports_alignment_failure(self):
-        for text, duration in [('one two three four five six', 3), ('Hi', 9), ('…', 1)]:
-            with self.assertRaises(kitten.VoiceError) as failure:
-                kitten.speech_alignment(text, [], duration)
-            self.assertEqual(failure.exception.code, 'voice_alignment_failed')
+    def test_invalid_durations_fail_instead_of_guessing_highlights(self):
+        vocab = {c:i for i,c in enumerate(kitten.SYMBOLS)}
+        for frames in ([1], [0]*6, [1,2,-1,3,1,2], [100000]*6):
+            with self.assertRaises(kitten.VoiceError):
+                kitten.model_timings('a!', vocab, frames, 24000, 24000)
 
-    def test_recognized_short_speech_keeps_whisper_timing_source(self):
-        words, source = kitten.speech_alignment('Yes.', [SimpleNamespace(word='Yes.', start=.2, end=.7)], 1)
-        self.assertEqual(source, 'whisper-word-alignment')
-        self.assertEqual(words[0]['start'], .2)
+    def test_chunks_keep_global_times_and_original_utf16_offsets(self):
+        vocab = {c:i for i,c in enumerate(kitten.SYMBOLS)}
+        first = kitten.model_timings('haɪ', vocab, [1,2,1,2,1,1], 24000, 24000)
+        second = kitten.model_timings('haɪ', vocab, [1,2,1,2,1,1], 24000, 24000, offset=1)
+        words = align_words('🌊 Hi hi', ['', 'haɪ', 'haɪ'], first + second, 2)
+        self.assertEqual([w['offset'] for w in words], [3,6])
+        self.assertEqual([w['length'] for w in words], [2,2])
+        self.assertTrue(all(not w['estimated'] and w['end'] > w['start'] for w in words))
+        self.assertLessEqual(words[0]['end'], words[1]['start'])
 
-    def test_unrecognized_run_does_not_freeze_first_word(self):
-        words = kitten.align_transcript('One small missed phrase ends.', [
-            SimpleNamespace(word='One', start=0, end=.4),
-            SimpleNamespace(word='ends.', start=2, end=2.5)], 2.5)
-        self.assertEqual(words[0]['end'], .4)
-        self.assertEqual(words[-1]['start'], 2)
+    def test_unmatched_run_shares_a_gap_without_overlapping_or_freezing(self):
+        from types import SimpleNamespace
+        timing = [SimpleNamespace(phoneme=c,start=1+i*.1,end=1+(i+1)*.1) for i,c in enumerate('end')]
+        words = align_words('🌊 two missed end', ['', '', '', 'end'], timing, 2)
+        self.assertEqual([w['offset'] for w in words], [3,7,14])
         self.assertTrue(all(w['end'] > w['start'] for w in words))
-        self.assertTrue(all(a['end'] <= b['start'] for a, b in zip(words, words[1:])))
+        self.assertTrue(all(a['end'] <= b['start'] for a,b in zip(words,words[1:])))
+        self.assertTrue(words[0]['estimated']); self.assertFalse(words[-1]['estimated'])
 
-    def test_leading_and_trailing_gaps_keep_utf16_offsets(self):
-        words = kitten.align_transcript('🌊 First two anchor last words', [
-            SimpleNamespace(word='anchor', start=1, end=1.5)], 3)
-        self.assertEqual(words[0]['offset'], 3)
-        self.assertEqual(words[2]['start'], 1)
-        self.assertTrue(all(w['end'] > w['start'] for w in words))
-        self.assertEqual(words[-1]['end'], 3)
-
-    def test_whisper_does_not_use_source_as_previous_transcript(self):
-        model = SimpleNamespace(transcribe=lambda *a, **kw: ([], None))
-        with patch.object(features, 'whisper_model', return_value=model):
-            with patch.object(model, 'transcribe', return_value=([], None)) as call:
-                features.whisper_word_timings([], 'A long source ending in repeated words.')
-        self.assertNotIn('initial_prompt', call.call_args.kwargs)
-        self.assertTrue(call.call_args.kwargs['word_timestamps'])
+    def test_trimmed_audio_does_not_rescale_earlier_word_times(self):
+        vocab = {c:i for i,c in enumerate(kitten.SYMBOLS)}
+        full = kitten.model_timings('a!', vocab, [1,2,1,3,1,2], 24000, 24000)
+        trimmed = kitten.model_timings('a!', vocab, [1,2,1,3,1,2], 24000, 12000)
+        self.assertEqual(full[0].end, trimmed[0].end)
+        self.assertEqual(trimmed[-1].end, .5)
 
 
 if __name__ == '__main__':

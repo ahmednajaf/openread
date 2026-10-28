@@ -114,12 +114,7 @@ struct ReadingOptionsView: View {
                             }
                         }.disabled(!player.installed)
                     }
-                    if player.voice.hasPrefix("qwen:") {
-                        Button(player.preparingAhead ? "Cancel audio preparation" : "Prepare 10 minutes ahead", systemImage: "arrow.down.circle") {
-                            if player.preparingAhead { player.pause() } else { player.prepareAudioAhead(); dismiss() }
-                        }.disabled(!player.installed)
-                        Text("For smooth Qwen listening at higher speeds. Audio stays on this device; preparation pauses reading. Keep OpenRead open until it is ready.").font(.footnote).foregroundStyle(.secondary)
-                    }
+
                     Button("Stop reading", systemImage: "stop") { player.stop(); dismiss() }
                 }
                 Section {
@@ -169,11 +164,11 @@ struct NativeSettingsView: View {
                 Section("Kitten voices") { ForEach(VoiceEngine.kittenVoices, id: \.self) { voice in
                     Button { player.voice = voice } label: { HStack { Text(VoiceEngine.name(voice)).foregroundStyle(.primary); Spacer(); if player.voice == voice { Image(systemName: "checkmark") } } }
                 } }
-                Section("Kokoro voices · American & British") {
+                Section("Kokoro voices · 6 languages") {
                     if player.downloading { ProgressView(value: player.downloadProgress) }
                     else if !player.kokoroInstalled {
                         Button("Download Kokoro voices · about 192 MB") { player.downloadVoices(voice: "af_heart") }
-                        Text("28 additional voices. Download once; reading and highlighting stay on your device.").font(.footnote).foregroundStyle(.secondary)
+                        Text("41 additional voices. Download once; reading and highlighting stay on your device.").font(.footnote).foregroundStyle(.secondary)
                     }
                     if player.kokoroInstalled {
                         ForEach(VoiceEngine.kokoroVoices, id: \.self) { voice in
@@ -182,7 +177,6 @@ struct NativeSettingsView: View {
                     }
                 }
                 Section("On-device AI") { Text(AppleReadingTools.availability).font(.footnote).foregroundStyle(.secondary) }
-                QwenSettingsSection()
                 Section("Your library") {
                     Button("Export library backup", systemImage: "arrow.down.doc") { do { backup = try library.backup() } catch { self.error = error.localizedDescription } }
                     Text("Readings stay in this app. Export a backup before moving phones or removing OpenRead.").font(.footnote).foregroundStyle(.secondary)
@@ -192,7 +186,7 @@ struct NativeSettingsView: View {
                     NavigationLink("Licences & notices") { MobileNoticesView().navigationTitle("Licences").navigationBarTitleDisplayMode(.inline) }
                     Link("Source & contributions", destination: URL(string: "https://github.com/ahmednajaf/openread")!)
                     Link("Optional support", destination: URL(string: "https://ko-fi.com/pickledjones")!)
-                    Text("GPL-3.0-or-later · © 2026 Ahmed Najaf and contributors. Kitten, Kokoro and ONNX Runtime keep their upstream licences. English voices run on this device.").font(.caption).foregroundStyle(.secondary)
+                    Text("GPL-3.0-or-later · © 2026 Ahmed Najaf and contributors. Kitten, Kokoro and ONNX Runtime keep their upstream licences. Voices run on this device.").font(.caption).foregroundStyle(.secondary)
                 }
             }.navigationTitle("Settings").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }

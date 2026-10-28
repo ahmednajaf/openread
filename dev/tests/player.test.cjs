@@ -139,16 +139,6 @@ test('a cached chat passage is validated again before resuming', async () => {
   assert.deepEqual(errors, ['Conversation changed']); player.destroy();
 });
 
-test('changing Qwen direction invalidates prefetched audio and includes the new instruction', async () => {
-  const requests = []; const { player } = fixture({ request: async m => { requests.push(m); return result; } });
-  player.configure({voice:'qwen:ryan', instruction:'Warm storytelling'});
-  await player.play();
-  player.configure({instruction:'Quiet and reflective'}); await new Promise(setImmediate);
-  assert.deepEqual(requests.map(m => m.instruction), ['Warm storytelling', 'Warm storytelling', 'Quiet and reflective', 'Quiet and reflective']);
-  player.destroy();
-});
-
-
 test('preloaded passages alternate authorized elements without resetting their source', async () => {
   let word = null;
   const { player, audio, tick } = fixture({ preloadAudio: true, onWord: o => { word = o; }, onWordClear: () => { word = null; } });

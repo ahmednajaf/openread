@@ -36,5 +36,3 @@
 .chapter-picker>span{font-size:10px;color:var(--secondary)}.chapter-picker>strong{grid-column:1;font-size:13px;font-weight:550;overflow-wrap:anywhere}.chapter-picker>svg{grid-column:2;grid-row:1 / 3;align-self:center;color:var(--secondary)}
 .chapter-list{display:flex;flex-direction:column;gap:5px}.chapter-list>button{display:flex;align-items:center;gap:14px;width:100%;padding:14px 12px;border:1px solid transparent;border-radius:12px;text-align:left;background:none;color:var(--ink)}
 .chapter-list>button:hover{background:var(--hover)}.chapter-list>button[aria-current]{background:var(--hover);border-color:var(--glass-line)}.chapter-list>button>span{min-width:20px;font-size:11px;color:var(--secondary)}.chapter-list strong{flex:1;min-width:0;font-size:13px;line-height:1.5;font-weight:500;overflow-wrap:anywhere}.chapter-list svg{color:var(--accent)}
-
-.qwen-tools{margin-top:28px;padding-top:24px;border-top:1px solid var(--glass-line)}.qwen-tools h3{font-size:16px;margin:22px 0 12px}.qwen-tools form{display:grid;gap:12px}.qwen-tools .library-actions{margin:14px 0}.qwen-tools .setting-note{line-height:1.6}

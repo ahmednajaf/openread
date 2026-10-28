@@ -10,7 +10,7 @@ You do **not** need Node, Homebrew, Xcode, an API key, or an account for the fol
 
 ## 2. Set up the voices once
 
-Double-click **Set Up OpenRead.command** in the folder. A Terminal window will show progress. It installs OpenRead's private packages and downloads about **586 MB** of app/voice/alignment models. Kitten’s Kiki is the default voice; Kokoro is included as an alternative. Optional Qwen voices and local cloning can be added later from the voice panel; see [voice packs](docs/VOICE_PACKS.md). It leaves your other Python projects alone.
+Double-click **Set Up OpenRead.command** in the folder. A Terminal window will show progress. It installs OpenRead's private packages and downloads about **436 MB** of voice models. Kitten’s Kiki is the default voice; Kokoro is included as an alternative. It leaves your other Python projects alone.
 
 If it says Python is missing, install **Python 3.13** using the macOS installer from [python.org](https://www.python.org/downloads/macos/). Choose a 3.13 release, not a newer Python series. Open the installer’s **Install Certificates.command** once, then double-click Set Up OpenRead.command again. OpenRead also accepts Python 3.11 and 3.12.
 
@@ -74,9 +74,9 @@ Chat text is processed by the same local voice helper. It is not saved to your l
 
 The main setup includes **Kitten TTS Mini 0.8**. Its eight voices are Bella, Jasper, Luna, Bruno, Rosie, Hugo, Kiki and Leo. Kiki, Rosie and Jasper appear first under **Featured · Kitten**; Kiki is the default. For an older OpenRead install, double-click **setup/Set Up More Voices.command**, then restart OpenRead and reload the extension.
 
-The pack downloads about **82 MB**, plus **Whisper Base (~150 MB)** and its packages if not already installed. Kitten's code/weights are Apache-2.0 licensed. It runs on CPU and needs no account or API key.
+The pack downloads about **82 MB**. Kitten's code/weights are Apache-2.0 licensed. It runs on CPU and needs no account or API key.
 
-Kokoro remains available as an alternative with direct model timing outputs and faster preparation. Kitten uses local Whisper to estimate word boundaries from its actual audio, which adds preparation time and can make highlighting less precise. Voice quality is subjective; try a preview before choosing one for a long reading. These are different voices from the similarly named Kokoro voices. This pack uses the Mini 0.8 model, not Kitten TTS 2, whose model license differs.
+Kitten and Kokoro both use their model duration outputs for word highlighting; reading does not require Whisper. Kokoro also offers American and British English, Spanish, French, Hindi, Italian and Brazilian Portuguese. Voice quality is subjective; try a preview before choosing one for a long reading. These are different voices from the similarly named Kokoro voices. This pack uses the Mini 0.8 model, not Kitten TTS 2, whose model license differs.
 
 ## Optional: summaries, questions and audio overviews
 
@@ -93,7 +93,7 @@ Audio overview generates a short two-host script, then **Make the audio** turns 
 
 ## Dictation and meeting notes
 
-1. Whisper Base (~150 MB) is included in the current voice setup for word alignment, so dictation uses that same local model. Older installs can double-click **setup/Set Up Dictation.command**.
+1. For optional dictation, download Whisper Base (~150 MB) by double-clicking **setup/Set Up Dictation.command**.
 2. In **Library & tools → Reading tools → Dictate**, choose **Start recording** or **Import audio**.
 3. Your browser asks for microphone access only when you start recording. Stop recording to transcribe it on this computer.
 4. Use **Copy transcript** to paste into any app, or **Use transcript as reading** to listen to it.
@@ -115,7 +115,7 @@ The models occupy disk space locally: `.local/models` for voices, `.local/whispe
 | --- | --- |
 | Natural voices aren't connected | Start OpenRead.command and leave its window open. Restart the helper after source updates. |
 | New controls missing after an update | Reload the extension in browser settings, then refresh the article. |
-| A voice cannot align or generate a passage | Try another voice. Short headings use approximate timing if Whisper misses them; update OpenRead and restart the helper if an older version reports this as a connection error. |
+| A voice cannot align or generate a passage | Try another voice. Update OpenRead and restart the helper. Model timings need valid speech output; try another voice for an unsupported passage. |
 | AI setup needed | Start Ollama and run setup/Set Up AI.command. Open Setup & privacy in the workspace to check readiness. |
 | Dictation setup needed | Run setup/Set Up Dictation.command. Microphone recording also needs your browser permission. |
 | Scanned PDF won't import | Scan & Listen currently needs macOS. Try a smaller section: 20 scanned pages maximum. |

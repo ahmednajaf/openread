@@ -659,16 +659,6 @@ def whisper_model():
     return _whisper_model
 
 
-def whisper_word_timings(audio, text):
-    with WHISPER_LOCK:
-        # Feeding the full passage as a previous-transcript prompt can make
-        # Whisper resume at its end, collapsing all earlier word boundaries.
-        # Recognize the audio independently, then align it to the source.
-        segments, _info = whisper_model().transcribe(audio, language='en', beam_size=3, word_timestamps=True,
-            condition_on_previous_text=False, vad_filter=False)
-        return [word for segment in segments for word in (segment.words or [])]
-
-
 def transcribe(payload, cancelled=lambda: None, progress=lambda _: None):
     _name, data = decode_file(payload)
     progress('Loading local dictation…')

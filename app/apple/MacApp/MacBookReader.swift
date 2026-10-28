@@ -22,11 +22,7 @@ struct MacBookReader: View {
                 Button { player.next() } label: { Image(systemName: "forward.end.fill") }.disabled(!player.canNext)
                 Picker("Speed", selection: $player.rate) { ForEach([Float(0.5), 0.75, 1, 1.25, 1.5, 2], id: \.self) { Text("\($0.formatted())×").tag($0) } }.frame(width: 100)
             }
-            if player.voice.hasPrefix("qwen:") {
-                Button(player.preparingAhead ? "Cancel audio preparation" : "Prepare 10 minutes ahead") {
-                    if player.preparingAhead { player.pause() } else { player.prepareAudioAhead() }
-                }.disabled(!player.installed)
-            }
+
             Text(player.error ?? player.status).font(.caption).foregroundStyle(.secondary)
         }
     }

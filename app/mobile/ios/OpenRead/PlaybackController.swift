@@ -9,18 +9,12 @@ import MediaPlayer
     @Published var status = "Ready"
     @Published var isPlaying = false
     @Published var isPreparing = false
-    @Published var preparingAhead = false
     @Published var highlighted: NSRange?
     @Published var error: String?
     @Published var installed = false
     @Published var kittenInstalled = false
     @Published var kokoroInstalled = false
-    @Published var qwenBetaEnabled = VoiceEngine.betaEnabled {
-        didSet {
-            UserDefaults.standard.set(qwenBetaEnabled, forKey: "qwen-beta-enabled")
-            if !qwenBetaEnabled && voice.hasPrefix("qwen:") { voice = "kiki" }
-        }
-    }
+
     @Published var downloadProgress = 0.0
     @Published var downloading = false
     @Published var voice: String = VoiceEngine.voices.contains(UserDefaults.standard.string(forKey: "voice") ?? "") ? UserDefaults.standard.string(forKey: "voice")! : "kiki" {
@@ -40,9 +34,7 @@ import MediaPlayer
     @Published var sleepMinutes = 0
     let engine = VoiceEngine()
     let voiceDownloads = VoicePackDownloads()
-    @Published var direction = UserDefaults.standard.string(forKey: "voice-direction") ?? "" { didSet { UserDefaults.standard.set(direction, forKey: "voice-direction") } }
     private var streamAudio: ContinuousSpeechPlayer?
-    private var streaming = false
     private var words: [SpokenWord] = []
     private var streamPassages: [(index: Int, start: Double)] = []
     private var passages: [ReadingPassage] = []
@@ -53,18 +45,23 @@ import MediaPlayer
     private var sleepDeadline: Date?
     private var interruptionObserver: NSObjectProtocol?
     private var routeObserver: NSObjectProtocol?
+    private var downloadObserver: AnyCancellable?
     var onPosition: ((String, Int) -> Void)?
 
     override init() {
         super.init()
+        voiceDownloads.$progress.assign(to: &$downloadProgress)
+        voiceDownloads.$active.map { $0 != nil }.assign(to: &$downloading)
+        voiceDownloads.$error.assign(to: &$error)
+        downloadObserver = voiceDownloads.$revision.dropFirst().sink { [weak self] _ in
+            Task { await self?.refreshVoices() }
+        }
         Task {
-            kittenInstalled = await engine.isInstalled()
-            kokoroInstalled = await engine.isInstalled(voice: "af_heart")
-            installed = await engine.isInstalled(voice: voice)
-            if installed && !voice.hasPrefix("qwen:") {
+            await refreshVoices()
+            if installed {
                 // Prepare the shared Safari cache in the full app, where model
                 // compilation has enough memory. No network request is made.
-                do { try await engine.prepare(voice: voice.hasPrefix("qwen:") ? "kiki" : voice, download: false) { _ in } }
+                do { try await engine.prepare(voice: voice, download: false) { _ in } }
                 catch { self.error = "Your downloaded voices could not be prepared. Try Download voices in Settings." }
             }
         }
@@ -106,21 +103,24 @@ import MediaPlayer
         status = "Ready"; error = nil
     }
     func downloadVoices(voice selectedVoice: String = "kiki") {
-        guard !downloading else { return }
-        downloading = true; downloadProgress = 0; error = nil
-        task = Task {
-            do { try await engine.prepare(voice: selectedVoice, download: true) { value in Task { @MainActor in self.downloadProgress = value } }; kittenInstalled = await engine.isInstalled(); kokoroInstalled = await engine.isInstalled(voice: "af_heart"); installed = await engine.isInstalled(voice: voice) }
-            catch { if !Task.isCancelled { self.error = error.localizedDescription } }
-            downloading = false
+        stop()
+        let pack = VoiceEngine.isKokoro(selectedVoice) ? "kokoro" : "kitten"
+        voiceDownloads.enqueue(pack) { [engine] pack, progress in
+            try await engine.prepare(voice: pack == "kokoro" ? "af_heart" : "kiki", download: true, progress: progress)
         }
     }
-    func cancelDownload() { task?.cancel(); downloading = false }
+    func cancelDownload() { voiceDownloads.cancelCurrent() }
+    private func refreshVoices() async {
+        kittenInstalled = await engine.isInstalled()
+        kokoroInstalled = await engine.isInstalled(voice: "af_heart")
+        installed = await engine.isInstalled(voice: voice)
+    }
     func toggle() { if isPlaying || isPreparing { pause() } else { play() } }
     func play() {
         guard !isPlaying, !isPreparing, !passages.isEmpty, !downloading else { return }
         if let deadline = sleepDeadline, deadline <= Date() { sleepDeadline = nil; sleepMinutes = 0; return }
         if status == "Finished" { stop(); index = 0 }
-        if streaming, let streamAudio {
+        if let streamAudio {
             do { try configureAudio(); try streamAudio.resume() }
             catch { self.error = error.localizedDescription }
             return
@@ -128,16 +128,16 @@ import MediaPlayer
         generateAndPlay()
     }
     func pause() {
-        if streaming, let streamAudio { streamAudio.pause() }
-        else { generation = UUID(); task?.cancel();  }
-        preparingAhead = false; isPreparing = false; isPlaying = false; highlighted = nil
+        if let streamAudio { streamAudio.pause() }
+        else { generation = UUID(); task?.cancel() }
+        isPreparing = false; isPlaying = false; highlighted = nil
         status = "Paused"; persistPosition(); nowPlaying()
     }
     func stop() {
         generation = UUID(); task?.cancel();
-        streamAudio?.stop(); streamAudio = nil; streaming = false
+        streamAudio?.stop(); streamAudio = nil
         words = []; streamPassages = []; highlighted = nil
-        preparingAhead = false; isPlaying = false; isPreparing = false; status = "Ready"; persistPosition(); nowPlaying()
+        isPlaying = false; isPreparing = false; status = "Ready"; persistPosition(); nowPlaying()
     }
     func next() { seek(min(passages.count - 1, index + 1)) }
     func previous() { seek(max(0, index - 1)) }
@@ -148,38 +148,7 @@ import MediaPlayer
         if resume { play() }
     }
     func setSleep(_ minutes: Int) { sleepMinutes = minutes; sleepDeadline = minutes > 0 ? Date().addingTimeInterval(Double(minutes) * 60) : nil }
-    /// Generate a finite listening window before playback for devices/rates that
-    /// cannot sustain realtime Qwen. Normal playback reads the same local cache.
-    func prepareAudioAhead() {
-        #if OPENREAD_QWEN
-        guard voice.hasPrefix("qwen:"), !passages.isEmpty, !downloading else { return }
-        stop(); preparingAhead = true; isPreparing = true; error = nil
-        let token = UUID(); generation = token
-        let selectedVoice = voice, instruction = direction, speed = Double(rate), first = index
-        status = "Preparing audio ahead…"
-        task = Task {
-            do {
-                try await engine.prepare(voice: selectedVoice, download: false) { _ in }
-                var seconds = 0.0
-                for part in passages[first...] {
-                    try Task.checkCancellation()
-                    let clip = try await engine.qwen.generate(part.text, voice: selectedVoice, instruction: instruction)
-                    guard token == generation, !Task.isCancelled else { return }
-                    guard await engine.qwen.isPrepared(part.text, voice: selectedVoice, instruction: instruction) else {
-                        throw ImportFailure(message: "There isn't enough free storage to keep prepared audio. Free some space and try again.")
-                    }
-                    seconds += clip.duration
-                    status = "Preparing audio · \(Int(seconds / speed)) seconds ready"
-                    if seconds >= 600 * speed { break }
-                }
-                guard token == generation else { return }
-                preparingAhead = false; isPreparing = false; status = "Audio ready · tap Play"
-            } catch {
-                if token == generation, !Task.isCancelled { preparingAhead = false; isPreparing = false; status = "Paused"; self.error = error.localizedDescription }
-            }
-        }
-        #endif
-    }
+
     func exportAudio(progress: @escaping @Sendable (Int, Int) -> Void) async throws -> URL {
         guard let reading else { throw ReadingError.noText }
         // Audio is written a passage at a time; the WAV format remains bounded below.
@@ -223,7 +192,7 @@ import MediaPlayer
                 try await engine.prepare(voice: chosenVoice, download: false) { _ in }
                 guard token == generation, !Task.isCancelled else { return }
                 try configureAudio()
-                streaming = true; words = []; streamPassages = []
+                words = []; streamPassages = []
                 let output = ContinuousSpeechPlayer()
                 output.rate = rate
                 output.onStateChange = { [weak self] playing in
@@ -245,7 +214,7 @@ import MediaPlayer
                     self.status = "Finished"; self.persistPosition(); self.nowPlaying()
                 }
                 streamAudio = output
-                let first = index, instruction = direction
+                let first = index
                 // One audio clock for every chunk and passage. Generation runs on
                 // the voice actor while the player consumes its bounded queue.
                 for next in first..<passages.count {
@@ -256,19 +225,6 @@ import MediaPlayer
                     guard token == generation, !Task.isCancelled else { return }
                     let part = passages[next]
                     streamPassages.append((next, output.duration))
-                    #if OPENREAD_QWEN
-                    if chosenVoice.hasPrefix("qwen:") {
-                        let base = output.duration
-                        for try await event in engine.qwen.stream(part.text, voice: chosenVoice, instruction: instruction) {
-                            guard token == generation, !Task.isCancelled else { return }
-                            switch event {
-                            case .audio(let chunk): try output.append(chunk)
-                            case .timing(let timing): appendWords(timing, source: part.range.location, time: base)
-                            }
-                        }
-                        continue
-                    }
-                    #endif
                     for try await chunk in await engine.stream(part.text, voice: chosenVoice) {
                         guard token == generation, !Task.isCancelled else { return }
                         appendWords(chunk.words, source: part.range.location, time: output.duration)
@@ -278,7 +234,7 @@ import MediaPlayer
                 guard token == generation, !Task.isCancelled else { return }
                 try output.finish()
 
-            } catch { if token == generation, !Task.isCancelled { isPreparing = false; isPlaying = false; streaming = false; streamAudio?.stop(); streamAudio = nil; status = "Paused"; self.error = error.localizedDescription } }
+            } catch { if token == generation, !Task.isCancelled { isPreparing = false; isPlaying = false; streamAudio?.stop(); streamAudio = nil; status = "Paused"; self.error = error.localizedDescription } }
         }
     }
     private func appendWords(_ timing: [SpokenWord], source: Int, time: Double) {
@@ -294,19 +250,17 @@ import MediaPlayer
         if let deadline = sleepDeadline, deadline <= Date(), isPlaying || isPreparing { pause(); sleepDeadline = nil; sleepMinutes = 0; status = "Sleep timer finished" }
         guard isPlaying, passages.indices.contains(index) else { return }
         let time = streamAudio?.currentTime ?? 0
-        if streaming {
-            if let marker = streamPassages.last(where: { $0.start <= time }), marker.index != index {
-                index = marker.index; persistPosition(); nowPlaying()
-            }
-            // A book can be arbitrarily long; keep only the active/buffered window.
-            words.removeAll { $0.end < time - 1 }
-            if let current = streamPassages.lastIndex(where: { $0.start <= time }), current > 0 {
-                streamPassages.removeFirst(current)
-            }
+        if let marker = streamPassages.last(where: { $0.start <= time }), marker.index != index {
+            index = marker.index; persistPosition(); nowPlaying()
+        }
+        // A book can be arbitrarily long; keep only the active/buffered window.
+        words.removeAll { $0.end < time - 1 }
+        if let current = streamPassages.lastIndex(where: { $0.start <= time }), current > 0 {
+            streamPassages.removeFirst(current)
         }
         guard highlight else { highlighted = nil; return }
         if let word = words.last(where: { $0.start <= time && time < $0.end }) {
-            highlighted = NSRange(location: (streaming ? 0 : passages[index].range.location) + word.range.location, length: word.range.length)
+            highlighted = NSRange(location: word.range.location, length: word.range.length)
         } else { highlighted = nil }
     }
 
