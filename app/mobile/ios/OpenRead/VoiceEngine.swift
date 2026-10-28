@@ -115,3 +115,33 @@ actor VoiceEngine {
         return hash.finalize().map { String(format: "%02x", $0) }.joined()
     }
 }
+
+extension SpokenClip {
+    /// Synthesize the original sentence for pronunciation/prosody, then seek
+    /// using model word times. Source ranges remain relative to that sentence.
+    func starting(atSourceOffset offset: Int) throws -> SpokenClip? {
+        guard offset > 0 else { return self }
+        let remaining = words.filter { NSMaxRange($0.range) > offset }
+        guard let first = remaining.first else { return nil }
+        // Native speech has a fixed mono 24 kHz PCM16 WAV contract.
+        guard wav.count >= 44, wav.prefix(4) == Data("RIFF".utf8),
+              wav[8..<12] == Data("WAVE".utf8), wav[36..<40] == Data("data".utf8),
+              wav[20..<24] == Data([1, 0, 1, 0]), wav[24..<28] == Data([192, 93, 0, 0]),
+              wav[34..<36] == Data([16, 0]) else { throw ReadingError.noText }
+        let frames = (wav.count - 44) / 2
+        let start = min(frames, max(0, Int((first.start - 0.025) * 24_000)))
+        let skipped = Double(start) / 24_000
+        var data = Data(wav.prefix(44))
+        data.append(wav.dropFirst(44 + start * 2))
+        func littleEndian(_ size: Int) -> Data {
+            var value = UInt32(size).littleEndian
+            return Swift.withUnsafeBytes(of: &value) { Data($0) }
+        }
+        data.replaceSubrange(4..<8, with: littleEndian(data.count - 8))
+        data.replaceSubrange(40..<44, with: littleEndian(data.count - 44))
+        let duration = Double(frames - start) / 24_000
+        return SpokenClip(wav: data, words: remaining.map {
+            SpokenWord(range: $0.range, start: max(0, $0.start - skipped), end: min(duration, max(0, $0.end - skipped)))
+        }, duration: duration)
+    }
+}

@@ -4,79 +4,200 @@ import UIKit
 struct ReaderView: View {
     @EnvironmentObject private var player: PlaybackController
     @EnvironmentObject private var library: LibraryStore
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage("reader-paged") private var paged = true
     @State private var aiPassage: AppleReadingPassage?
     @State private var chaptersOpen = false
     @State private var settings = false
     @State private var options = false
-    @State private var error: String?
+    @State private var hingeFold = 0.0
+    @State private var browsing: Int?
+    @State private var currentPage = 0
+    @State private var pageCount = 1
+    @State private var command = BookPageCommand()
+
     var body: some View {
-        VStack(spacing: 0) {
-            if let reading = player.reading {
-                VStack(spacing: 12) {
-                    Text(reading.author?.uppercased() ?? "YOUR READING").font(.caption2.weight(.semibold)).tracking(2).foregroundStyle(.secondary)
-                    Text(reading.title).font(.system(size: 34, weight: .regular, design: .serif)).tracking(-0.8).multilineTextAlignment(.center)
-                    Text("\(reading.wordCount) words · about \(max(1, Int(Double(reading.wordCount) / (165 * Double(player.rate))))) min").font(.caption).foregroundStyle(.secondary)
-                }.padding(.horizontal, 26).padding(.top, 24).padding(.bottom, 10)
-                if !reading.chapterList.isEmpty {
-                    HStack {
-                        Button { if player.activeChapter > 0 { player.seekOffset(reading.chapterList[player.activeChapter - 1].offset) } } label: { Image(systemName: "chevron.left") }.disabled(player.activeChapter == 0).accessibilityLabel("Previous chapter")
-                        Button { chaptersOpen = true } label: { Text(reading.chapterList[player.activeChapter].title).lineLimit(2).frame(maxWidth: .infinity) }
-                        Button { if player.activeChapter + 1 < reading.chapterList.count { player.seekOffset(reading.chapterList[player.activeChapter + 1].offset) } } label: { Image(systemName: "chevron.right") }.disabled(player.activeChapter + 1 >= reading.chapterList.count).accessibilityLabel("Next chapter")
-                    }.font(.subheadline).padding(.horizontal, 24).padding(.vertical, 10)
+        Group {
+            if #available(iOS 27.1, *) {
+                canvas.onHingeChange { _, context in
+                    let degrees = context.hinge?.angle.degrees ?? 180
+                    // Effects only. Layout uses the actual reserved region below.
+                    hingeFold = reduceMotion ? 0 : min(1, max(0, (180 - degrees) / 110))
                 }
-                if reading.textLength > 64_000 {
-                    HStack {
-                        Button("Earlier text") { player.seekTextWindow(-1) }.disabled(player.textWindow.location == 0)
-                        Spacer()
-                        Button("More text") { player.seekTextWindow(1) }.disabled(NSMaxRange(player.textWindow) >= reading.textLength)
-                    }.font(.caption).padding(.horizontal, 26)
-                }
-                ReadingTextView(text: player.visibleText, highlighted: player.visibleHighlight, follow: player.follow)
-            }
+            } else { canvas }
         }
         .background(ReadingBackdrop()).navigationBarTitleDisplayMode(.inline)
-        .safeAreaInset(edge: .bottom) {
-            VStack(spacing: 15) {
-                ProgressView(value: player.progress).tint(ReaderStyle.accent).accessibilityLabel("Reading progress")
-                HStack(spacing: 16) {
-                    Button { settings = true } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: "waveform").font(.body).frame(width: 36, height: 36).background(.tint.opacity(0.10), in: Circle())
-                            VStack(alignment: .leading, spacing: 3) { Text(VoiceEngine.name(player.voice)).font(.subheadline.weight(.semibold)); Text("On-device voice").font(.system(size: 10)).foregroundStyle(.secondary) }
-                        }
-                    }.buttonStyle(.plain).accessibilityLabel("Choose voice")
-                    Spacer(minLength: 0)
-                    Button { player.previous() } label: { Image(systemName: "backward.end.fill").frame(width: 26, height: 44) }.disabled(player.index == 0).accessibilityLabel("Previous passage")
-                    Button {
-                        if !player.installed { settings = true } else { player.toggle() }
-                    } label: {
-                        Group { if player.isPreparing { ProgressView() } else { Image(systemName: player.isPlaying ? "pause.fill" : "play.fill").contentTransition(.symbolEffect(.replace)) } }.font(.title3).frame(width: 50, height: 50)
-                    }.nativePrimaryButton().clipShape(Circle()).accessibilityLabel(player.isPlaying || player.isPreparing ? "Pause reading" : "Listen to reading")
-                    Button { player.next() } label: { Image(systemName: "forward.end.fill").frame(width: 26, height: 44) }.disabled(!player.canNext).accessibilityLabel("Next passage")
-                }
-                HStack {
-                    Text(player.status).font(.caption).foregroundStyle(.secondary)
-                    Spacer()
-                    Menu { ForEach([0.5, 0.75, 1, 1.25, 1.5, 1.75, 2], id: \.self) { speed in Button("\(speed.formatted())×") { player.rate = Float(speed) } } } label: { Text("\(player.rate.formatted())×").font(.caption.weight(.medium).monospacedDigit()) }.accessibilityLabel("Reading speed")
-                    Text("·").foregroundStyle(.tertiary)
-                    Text("\(min(player.index + 1, player.passageCount)) / \(player.passageCount)").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-                }
-            }.padding(20).readerGlass().padding(.horizontal, 18).padding(.bottom, 6)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                VStack(spacing: 3) {
+                    Text(player.reading?.title ?? "OpenRead").font(.system(.subheadline, design: .serif)).lineLimit(1)
+                    if let author = player.reading?.author { Text(author).font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1) }
+                }.accessibilityElement(children: .combine)
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button("Contents", systemImage: "list.bullet") { chaptersOpen = true }
+                        .disabled(player.reading?.chapterList.isEmpty != false)
+                    Button("Ask about this passage", systemImage: "sparkles") { aiPassage = AppleReadingPassage(text: player.currentPassage) }
+                    Button("Reading options", systemImage: "slider.horizontal.3") { options = true }
+                } label: { Image(systemName: "ellipsis") }.accessibilityLabel("Reading menu")
+            }
         }
+        .onChange(of: player.reading?.id) { _, _ in browsing = nil }
+        .onChange(of: player.textWindow.location) { _, _ in browsing = nil }
         .sheet(item: $aiPassage) { AppleReadingToolsSheet(passage: $0.text) }
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { Button { aiPassage = AppleReadingPassage(text: player.currentPassage) } label: { Image(systemName: "sparkles") }.accessibilityLabel("On-device AI for this passage") }; ToolbarItem(placement: .topBarTrailing) { Button { options = true } label: { Image(systemName: "ellipsis") }.accessibilityLabel("Reading options") } }
-        .sheet(isPresented: $chaptersOpen) {
-            NavigationStack { List(Array((player.reading?.chapterList ?? []).enumerated()), id: \.element.id) { index, chapter in
-                Button { player.seekOffset(chapter.offset); chaptersOpen = false } label: { HStack { Text(chapter.title); Spacer(); if index == player.activeChapter { Image(systemName: "checkmark") } } }
-            }.navigationTitle("Contents").toolbar { Button("Done") { chaptersOpen = false } } }
-        }
         .sheet(isPresented: $settings) { NativeSettingsView() }
         .sheet(isPresented: $options) { ReadingOptionsView() }
-        .alert("OpenRead", isPresented: Binding(get: { player.error != nil }, set: { if !$0 { player.error = nil } })) { Button("OK") { player.error = nil } } message: { Text(player.error ?? "") }
+        .sheet(isPresented: $chaptersOpen) {
+            NavigationStack {
+                List(Array((player.reading?.chapterList ?? []).enumerated()), id: \.element.id) { index, chapter in
+                    Button { browsing = nil; player.seekOffset(chapter.offset); chaptersOpen = false } label: {
+                        HStack { Text(chapter.title); Spacer(); if index == player.activeChapter { Image(systemName: "checkmark") } }
+                    }
+                }.navigationTitle("Contents").navigationBarTitleDisplayMode(.inline)
+                    .toolbar { Button("Done") { chaptersOpen = false } }
+            }
+        }
+        .alert("OpenRead", isPresented: Binding(get: { player.error != nil }, set: { if !$0 { player.error = nil } })) {
+            Button("OK") { player.error = nil }
+        } message: { Text(player.error ?? "") }
+    }
+
+    private var canvas: some View {
+        GeometryReader { geometry in
+            let layout = layout(in: geometry)
+            ZStack(alignment: .topLeading) {
+                book(pages: layout.pages, gutter: layout.gutter)
+                    .frame(width: layout.book.width, height: layout.book.height)
+                    .position(x: layout.book.midX, y: layout.book.midY)
+                playbackDock(tabletop: layout.kind == .tabletop)
+                    .frame(width: layout.controls.width, height: layout.controls.height)
+                    .position(x: layout.controls.midX, y: layout.controls.midY)
+            }
+        }
+    }
+    private func layout(in geometry: GeometryProxy) -> BookLayout {
+        if #available(iOS 27.1, *) {
+            let division = geometry.reservedRegions(kind: .division, options: .includeInactive).first {
+                $0.frame.midX > 0 && $0.frame.midX < geometry.size.width && $0.frame.midY > 0 && $0.frame.midY < geometry.size.height
+            }
+            let reserved = division.map { region in
+                region.isActive ? region.frame.insetBy(dx: -max(region.margins.leading, region.margins.trailing),
+                                                       dy: -max(region.margins.top, region.margins.bottom)) : region.frame
+            }
+            return BookLayout.resolve(size: geometry.size, division: reserved, active: division?.isActive == true)
+        }
+        return BookLayout.resolve(size: geometry.size)
+    }
+    private func book(pages: Int, gutter: CGFloat) -> some View {
+        VStack(spacing: 8) {
+            Group {
+                if paged {
+                    PagedBookView(text: player.visibleText, sourceOffset: player.textWindow.location,
+                                  position: player.position, highlighted: player.highlighted,
+                                  follow: player.follow && browsing == nil, title: player.reading?.title ?? "",
+                                  pages: pages, gutter: gutter, fold: hingeFold, reduceMotion: reduceMotion,
+                                  command: command, onBrowse: didBrowse,
+                                  onPageInfo: { currentPage = $0; pageCount = $1 }, onBoundary: changeSection)
+                } else {
+                    GeometryReader { geometry in
+                        ReadingTextView(text: player.visibleText, highlighted: player.visibleHighlight, follow: player.follow)
+                            .frame(width: pages == 2 ? (geometry.size.width - gutter) / 2 : geometry.size.width)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: pages == 2 ? 18 : 22))
+            .overlay { RoundedRectangle(cornerRadius: pages == 2 ? 18 : 22).strokeBorder(.primary.opacity(0.06), lineWidth: 0.5).allowsHitTesting(false) }
+            .shadow(color: .black.opacity(0.05 + hingeFold * 0.03), radius: 15, y: 7)
+            HStack(spacing: 12) {
+                Button { if paged { command = BookPageCommand(delta: -1) } else { changeSection(-1) } } label: {
+                    Image(systemName: "chevron.backward").frame(width: 44, height: 44)
+                }.disabled(currentPage == 0 && player.textWindow.location == 0).accessibilityLabel("Previous page")
+                Spacer(minLength: 0)
+                if let browsing, player.isPlaying || player.isPreparing {
+                    Menu {
+                        Button("Return to spoken word", systemImage: "waveform") { self.browsing = nil }
+                        Button("Listen from this page", systemImage: "play") { player.seekToPage(browsing); self.browsing = nil; if !player.isPlaying { player.play() } }
+                    } label: { Label("Browsing pages", systemImage: "book") }.font(.caption)
+                } else {
+                    Text(paged ? pageLabel(pages: pages) : "Read at your own pace")
+                        .font(.system(size: 11)).monospacedDigit().foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+                Button { if paged { command = BookPageCommand(delta: 1) } else { changeSection(1) } } label: {
+                    Image(systemName: "chevron.forward").frame(width: 44, height: 44)
+                }.disabled(currentPage + pages >= pageCount && NSMaxRange(player.textWindow) >= (player.reading?.textLength ?? 0))
+                    .accessibilityLabel("Next page")
+            }.buttonStyle(.plain).foregroundStyle(ReaderStyle.accent)
+        }
+    }
+    private func pageLabel(pages: Int) -> String {
+        let range = pages == 2 && currentPage + 1 < pageCount ? "\(currentPage + 1)–\(min(currentPage + pages, pageCount))" : "\(currentPage + 1)"
+        return "\(range) / \(pageCount)" + ((player.reading?.textLength ?? 0) > 64_000 ? " · this section" : "")
+    }
+    private func didBrowse(_ offset: Int) {
+        if player.isPlaying || player.isPreparing { browsing = offset }
+        else { player.seekToPage(offset); browsing = nil }
+    }
+    private func changeSection(_ direction: Int) { browsing = nil; player.seekTextWindow(direction > 0 ? 1 : -1) }
+
+    private func playbackDock(tabletop: Bool) -> some View {
+        VStack(spacing: tabletop ? 22 : 0) {
+            if tabletop {
+                VStack(spacing: 8) {
+                    Image(systemName: "headphones").font(.system(size: 27, weight: .ultraLight)).foregroundStyle(ReaderStyle.accent)
+                    Text("A little space to listen.").font(.system(.title3, design: .serif))
+                }.accessibilityHidden(true)
+            }
+            VStack(spacing: 10) {
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 16) { voiceButton; Spacer(minLength: 0); transport; speedButton }
+                    HStack(spacing: 10) { voiceButton.labelStyle(.iconOnly); Spacer(minLength: 0); transport; Spacer(minLength: 0); speedButton }
+                }
+                ProgressView(value: player.progress).tint(ReaderStyle.accent).accessibilityLabel("Reading progress")
+                HStack {
+                    Text(player.status).lineLimit(1)
+                    Spacer()
+                    Text("\(Int(player.progress * 100))% read").monospacedDigit()
+                }.font(.system(size: 10)).foregroundStyle(.secondary)
+            }.padding(.horizontal, 18).padding(.vertical, 13).readerGlass()
+        }.frame(maxWidth: 560)
+    }
+    private var voiceButton: some View {
+        Button { settings = true } label: {
+            Label {
+                Text(VoiceEngine.name(player.voice)).font(.system(size: 12, weight: .medium)).lineLimit(1)
+            } icon: { Image(systemName: "waveform").foregroundStyle(ReaderStyle.accent).frame(width: 22, height: 36) }
+            .frame(minWidth: 44, minHeight: 44)
+        }.buttonStyle(.plain).accessibilityLabel("Choose voice, \(VoiceEngine.name(player.voice))")
+    }
+    private var transport: some View {
+        HStack(spacing: 8) {
+            Button { browsing = nil; player.previous() } label: { Image(systemName: "backward.end.fill").font(.system(size: 14)).frame(width: 44, height: 44) }
+                .disabled(player.index == 0).accessibilityLabel("Previous passage")
+            Button { if !player.installed { settings = true } else { player.toggle() } } label: {
+                Group {
+                    if player.isPreparing { ProgressView() }
+                    else { Image(systemName: player.isPlaying ? "pause.fill" : "play.fill").contentTransition(.symbolEffect(.replace)) }
+                }.font(.system(size: 17)).frame(width: 46, height: 46)
+            }.nativePrimaryButton().clipShape(Circle()).accessibilityLabel(player.isPlaying || player.isPreparing ? "Pause reading" : "Listen to reading")
+            Button { browsing = nil; player.next() } label: { Image(systemName: "forward.end.fill").font(.system(size: 14)).frame(width: 44, height: 44) }
+                .disabled(!player.canNext).accessibilityLabel("Next passage")
+        }.buttonStyle(.plain)
+    }
+    private var speedButton: some View {
+        Menu {
+            ForEach([0.5, 0.75, 1, 1.25, 1.5, 1.75, 2], id: \.self) { speed in
+                Button("\(speed.formatted())×") { player.rate = Float(speed) }
+            }
+        } label: { Text("\(player.rate.formatted())×").font(.system(size: 12, weight: .medium)).monospacedDigit().frame(minWidth: 44, minHeight: 44) }
+            .accessibilityLabel("Reading speed, \(player.rate.formatted()) times")
     }
 }
 
 struct ReadingOptionsView: View {
+    @AppStorage("reader-paged") private var paged = true
     @EnvironmentObject private var player: PlaybackController
     @EnvironmentObject private var library: LibraryStore
     @Environment(\.dismiss) private var dismiss
@@ -118,6 +239,10 @@ struct ReadingOptionsView: View {
                     Button("Stop reading", systemImage: "stop") { player.stop(); dismiss() }
                 }
                 Section {
+                    Picker("Reading layout", selection: $paged) {
+                        Text("Pages").tag(true)
+                        Text("Scroll").tag(false)
+                    }.pickerStyle(.segmented)
                     Toggle("Highlight words", isOn: $player.highlight)
                     Toggle("Follow the spoken word", isOn: $player.follow)
                     Picker("Sleep timer", selection: Binding(get: { player.sleepMinutes }, set: player.setSleep)) {

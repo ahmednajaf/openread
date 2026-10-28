@@ -36,6 +36,7 @@ import MediaPlayer
     let voiceDownloads = VoicePackDownloads()
     private var streamAudio: ContinuousSpeechPlayer?
     private var words: [SpokenWord] = []
+    private var pageAnchor: Int?
     private var streamPassages: [(index: Int, start: Double)] = []
     private var passages: [ReadingPassage] = []
     private var textWindows: [NSRange] = []
@@ -83,7 +84,13 @@ import MediaPlayer
         commands.nextTrackCommand.addTarget { [weak self] _ in Task { @MainActor in self?.next() }; return .success }
         commands.previousTrackCommand.addTarget { [weak self] _ in Task { @MainActor in self?.previous() }; return .success }
     }
-    var position: Int { passages.indices.contains(index) ? passages[index].range.location : 0 }
+    var position: Int {
+        if status == "Finished" { return reading?.textLength ?? 0 }
+        guard passages.indices.contains(index) else { return 0 }
+        let range = passages[index].range
+        if let pageAnchor, NSLocationInRange(pageAnchor, range) { return pageAnchor }
+        return range.location
+    }
     var progress: Double { guard let reading, !reading.text.isEmpty else { return 0 }; return min(1, Double(position) / Double(reading.text.utf16.count)) }
     var passageCount: Int { passages.count }
     var currentPassage: String { passages.indices.contains(index) ? passages[index].text : "" }
@@ -99,8 +106,10 @@ import MediaPlayer
 
     func open(_ reading: Reading) {
         stop(); var book = reading; book.cachedWordCount = reading.wordCount; book.cachedTextLength = reading.text.utf16.count; self.reading = book; passages = ReadingText.passages(reading); textWindows = ReadingText.windows(reading, passages: passages)
-        index = passages.lastIndex(where: { $0.range.location <= reading.position }) ?? 0
-        status = "Ready"; error = nil
+        let target = pageTarget(reading.position)
+        pageAnchor = target?.offset
+        index = target?.index ?? 0
+        status = reading.position >= reading.textLength ? "Finished" : "Ready"; error = nil
     }
     func downloadVoices(voice selectedVoice: String = "kiki") {
         stop()
@@ -119,7 +128,7 @@ import MediaPlayer
     func play() {
         guard !isPlaying, !isPreparing, !passages.isEmpty, !downloading else { return }
         if let deadline = sleepDeadline, deadline <= Date() { sleepDeadline = nil; sleepMinutes = 0; return }
-        if status == "Finished" { stop(); index = 0 }
+        if status == "Finished" { stop(); pageAnchor = nil; index = 0 }
         if let streamAudio {
             do { try configureAudio(); try streamAudio.resume() }
             catch { self.error = error.localizedDescription }
@@ -134,17 +143,37 @@ import MediaPlayer
         status = "Paused"; persistPosition(); nowPlaying()
     }
     func stop() {
+        let completed = status == "Finished"
         generation = UUID(); task?.cancel();
         streamAudio?.stop(); streamAudio = nil
         words = []; streamPassages = []; highlighted = nil
-        isPlaying = false; isPreparing = false; status = "Ready"; persistPosition(); nowPlaying()
+        isPlaying = false; isPreparing = false; status = "Ready"; if !completed { persistPosition() }; nowPlaying()
     }
     func next() { seek(min(passages.count - 1, index + 1)) }
     func previous() { seek(max(0, index - 1)) }
+    /// Keep the complete source sentence; exact playback starts are trimmed
+    /// from generated audio using model timings, not by removing text context.
+    func seekToPage(_ offset: Int) {
+        guard let target = pageTarget(offset) else { return }
+        seek(target.index, sourceOffset: target.offset)
+    }
+    private func pageTarget(_ requested: Int) -> (index: Int, offset: Int?)? {
+        guard let reading, !passages.isEmpty else { return nil }
+        let source = reading.text as NSString
+        var offset = min(max(0, requested), source.length)
+        if offset < source.length {
+            offset = source.rangeOfComposedCharacterSequence(at: offset).location
+            while offset < source.length, let scalar = UnicodeScalar(source.character(at: offset)), CharacterSet.whitespacesAndNewlines.contains(scalar) { offset += 1 }
+        }
+        let target = passages.lastIndex(where: { $0.range.location <= offset }) ?? 0
+        if offset >= NSMaxRange(passages[target].range) { return (min(target + 1, passages.count - 1), nil) }
+        return (target, offset > passages[target].range.location ? offset : nil)
+    }
     func seekOffset(_ offset: Int) { seek(passages.lastIndex(where: { $0.range.location <= offset }) ?? 0) }
-    func seek(_ target: Int) {
+    func seek(_ target: Int) { seek(target, sourceOffset: nil) }
+    private func seek(_ target: Int, sourceOffset: Int?) {
         guard passages.indices.contains(target) else { return }
-        let resume = isPlaying || isPreparing; stop(); index = target; persistPosition()
+        let resume = isPlaying || isPreparing; stop(); pageAnchor = sourceOffset; index = target; persistPosition()
         if resume { play() }
     }
     func setSleep(_ minutes: Int) { sleepMinutes = minutes; sleepDeadline = minutes > 0 ? Date().addingTimeInterval(Double(minutes) * 60) : nil }
@@ -214,7 +243,7 @@ import MediaPlayer
                     self.status = "Finished"; self.persistPosition(); self.nowPlaying()
                 }
                 streamAudio = output
-                let first = index
+                let first = index, firstOffset = pageAnchor
                 // One audio clock for every chunk and passage. Generation runs on
                 // the voice actor while the player consumes its bounded queue.
                 for next in first..<passages.count {
@@ -225,10 +254,16 @@ import MediaPlayer
                     guard token == generation, !Task.isCancelled else { return }
                     let part = passages[next]
                     streamPassages.append((next, output.duration))
+                    var reachedStart = next != first || firstOffset == nil
                     for try await chunk in await engine.stream(part.text, voice: chosenVoice) {
                         guard token == generation, !Task.isCancelled else { return }
-                        appendWords(chunk.words, source: part.range.location, time: output.duration)
-                        try output.append(chunk)
+                        let audible: SpokenClip
+                        if !reachedStart, let firstOffset {
+                            guard let cropped = try chunk.starting(atSourceOffset: firstOffset - part.range.location) else { continue }
+                            audible = cropped; reachedStart = true
+                        } else { audible = chunk }
+                        appendWords(audible.words, source: part.range.location, time: output.duration)
+                        try output.append(audible)
                     }
                 }
                 guard token == generation, !Task.isCancelled else { return }
@@ -251,7 +286,7 @@ import MediaPlayer
         guard isPlaying, passages.indices.contains(index) else { return }
         let time = streamAudio?.currentTime ?? 0
         if let marker = streamPassages.last(where: { $0.start <= time }), marker.index != index {
-            index = marker.index; persistPosition(); nowPlaying()
+            pageAnchor = nil; index = marker.index; persistPosition(); nowPlaying()
         }
         // A book can be arbitrarily long; keep only the active/buffered window.
         words.removeAll { $0.end < time - 1 }
