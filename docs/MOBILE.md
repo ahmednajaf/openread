@@ -1,13 +1,14 @@
 # OpenRead on your phone
 
-Native previews are in this repository: **SwiftUI for iPhone/iPad** and **Kotlin + Jetpack Compose for Android**. They run Kitten Mini directly on the device, with optional Qwen expressive and personal voice packs. You do not need the Mac helper, an account or a subscription.
+The **SwiftUI iPhone/iPad and Mac apps** run Kitten Mini and optional Kokoro voices directly on the device. You do not need the desktop helper, an account or a subscription. Android source is preserved, but Android development is currently paused.
 
-These are developer previews, not App Store or Play Store releases. The updated voice engine has been tested on a physical iPhone. Store release preparation and wider device testing are ongoing.
+These are beta builds. The latest timing and continuous-playback changes are tested in the iPhone simulator and WebKit; real-device performance and Safari behaviour still need TestFlight verification.
 
 ## What you can use
 
 - Eight English Kitten voices, with a one-time download of about 83 MB.
-- Optional Qwen preset voices, style direction and local voice cloning. See [voice pack setup](VOICE_PACKS.md).
+- On Apple platforms, 28 additional American/British Kokoro voices: an optional download of about 192 MB. Preparing Safari also creates a local runtime cache; allow about 360 MB of storage for this pack.
+- Qwen narration and voice cloning are **experimental**, off by default under Settings → Experimental voices. They may stall or fail on some devices. Existing downloads and personal voices are retained when disabled. See [voice pack setup](VOICE_PACKS.md).
 - A reader with word highlighting, follow-along scrolling, passage controls and 0.5–2× speed.
 - A saved library, reading positions, bookmarks and a sleep timer.
 - PDF, EPUB, DOCX, HTML, text and image imports. Scanned PDFs and photos use on-device OCR. Android's English scanner is a separate, optional 4 MB download.
@@ -17,7 +18,7 @@ These are developer previews, not App Store or Play Store releases. The updated 
 
 Appearance follows your phone. iOS 26 uses SwiftUI's native glass material; iOS 17–25 use Apple's system material. Android uses native Material 3 controls.
 
-Mobile currently focuses on reading. The desktop's optional AI summaries, podcasts, dictation and automatic WhatsApp Web chat extraction have **not** been ported. To listen to a message on a phone, copy or share its text into OpenRead. The apps cannot inspect other apps or read their conversations automatically.
+Apple Intelligence summaries, explanations and passage questions are available on supported Apple devices. The desktop's podcast, dictation and automatic WhatsApp Web chat extraction tools have **not** been ported. To listen to a message on a phone, copy or share its text into OpenRead. The apps cannot inspect other apps or read their conversations automatically.
 
 ## Try it on iPhone or iPad
 

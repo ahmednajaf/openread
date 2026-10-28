@@ -138,7 +138,7 @@ struct ReadingOptionsView: View {
                         }
                     }
                 }
-                Text("Word timings are approximate. Appearance follows your device.").font(.footnote).foregroundStyle(.secondary)
+                Text("Highlights follow the generated speech timing. Appearance follows your device.").font(.footnote).foregroundStyle(.secondary)
             }.onDisappear { exporting?.cancel() }.navigationTitle("Reading options").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
             .sheet(isPresented: Binding(get: { exported != nil }, set: { if !$0 { exported = nil } })) { if let exported { ShareFile(url: exported) } }
@@ -169,6 +169,18 @@ struct NativeSettingsView: View {
                 Section("Kitten voices") { ForEach(VoiceEngine.kittenVoices, id: \.self) { voice in
                     Button { player.voice = voice } label: { HStack { Text(VoiceEngine.name(voice)).foregroundStyle(.primary); Spacer(); if player.voice == voice { Image(systemName: "checkmark") } } }
                 } }
+                Section("Kokoro voices · American & British") {
+                    if player.downloading { ProgressView(value: player.downloadProgress) }
+                    else if !player.kokoroInstalled {
+                        Button("Download Kokoro voices · about 192 MB") { player.downloadVoices(voice: "af_heart") }
+                        Text("28 additional voices. Download once; reading and highlighting stay on your device.").font(.footnote).foregroundStyle(.secondary)
+                    }
+                    if player.kokoroInstalled {
+                        ForEach(VoiceEngine.kokoroVoices, id: \.self) { voice in
+                            Button { player.voice = voice } label: { HStack { Text(VoiceEngine.name(voice)).foregroundStyle(.primary); Spacer(); if player.voice == voice { Image(systemName: "checkmark") } } }
+                        }
+                    }
+                }
                 Section("On-device AI") { Text(AppleReadingTools.availability).font(.footnote).foregroundStyle(.secondary) }
                 QwenSettingsSection()
                 Section("Your library") {
@@ -180,7 +192,7 @@ struct NativeSettingsView: View {
                     NavigationLink("Licences & notices") { MobileNoticesView().navigationTitle("Licences").navigationBarTitleDisplayMode(.inline) }
                     Link("Source & contributions", destination: URL(string: "https://github.com/ahmednajaf/openread")!)
                     Link("Optional support", destination: URL(string: "https://ko-fi.com/pickledjones")!)
-                    Text("GPL-3.0-or-later · © 2026 Ahmed Najaf and contributors. Kitten and ONNX Runtime keep their upstream licences. English voices; timing is approximate.").font(.caption).foregroundStyle(.secondary)
+                    Text("GPL-3.0-or-later · © 2026 Ahmed Najaf and contributors. Kitten, Kokoro and ONNX Runtime keep their upstream licences. English voices run on this device.").font(.caption).foregroundStyle(.secondary)
                 }
             }.navigationTitle("Settings").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }

@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		028BF65945CE60413B9E0DCC /* kokoro-vocab.json in Resources */ = {isa = PBXBuildFile; fileRef = 43849AAB6E053C59DF41893A /* kokoro-vocab.json */; };
+		02CFB48E2EEFC9E160F6B298 /* native-voices.json in Resources */ = {isa = PBXBuildFile; fileRef = 1122E3CC223442007154DA16 /* native-voices.json */; };
 		02ECA7858BB3881252F4A40A /* VoiceEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78781A30B5871BB35CFF924C /* VoiceEngine.swift */; };
 		0943BED8D6D0F46F34120E5C /* LibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BD84E703040B96F80531B7A /* LibraryStore.swift */; };
 		0F8AAD39F817A37B72FCD1AB /* pronunciation in Resources */ = {isa = PBXBuildFile; fileRef = 1FF3BA19A953B9B00B16E913 /* pronunciation */; };
@@ -23,12 +25,14 @@
 		2548F4A2EFF53647364E5446 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 70D3C582545AEDBF3587CF20 /* PrivacyInfo.xcprivacy */; };
 		2B32387EBA1201F66590DFF4 /* AppleReadingTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C613A3213229C7A9B4C2B6 /* AppleReadingTools.swift */; };
 		340DEB803E073B2D55AE7AE3 /* icons in Resources */ = {isa = PBXBuildFile; fileRef = B56E65B9178B025BF7924C7A /* icons */; };
+		37161C9CB78AF1D319DC66BF /* kokoro-vocab.json in Resources */ = {isa = PBXBuildFile; fileRef = 43849AAB6E053C59DF41893A /* kokoro-vocab.json */; };
 		3A0B2143F52F1DE41602F46E /* background.js in Resources */ = {isa = PBXBuildFile; fileRef = 338B03B298E715396A3FD1AC /* background.js */; };
 		47A661C3528B1E57499709A9 /* MacBookReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70CA208A52BE78763C8E2B70 /* MacBookReader.swift */; };
 		4997B2B5D938AB20E39ADE34 /* DocumentImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D9003C3F269748CC26E1FA5 /* DocumentImporter.swift */; };
 		50412D50DC73E82DE41609D0 /* OpenReadInference in Frameworks */ = {isa = PBXBuildFile; productRef = 443C7F2D2D3A01F485AA1212 /* OpenReadInference */; };
 		5A82D4DD0151949057BEBCE1 /* OpenReadMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E220BD30E3786B1581D91B10 /* OpenReadMacApp.swift */; };
 		5A8AB2B0BBD10394487E598C /* content.js in Resources */ = {isa = PBXBuildFile; fileRef = 2B0408478E82EA15F4DD70C4 /* content.js */; };
+		5E51F811D587010E4644C97B /* native-voices.json in Resources */ = {isa = PBXBuildFile; fileRef = 1122E3CC223442007154DA16 /* native-voices.json */; };
 		6686BB4142CAF65FC97A6E6C /* onnxruntime in Frameworks */ = {isa = PBXBuildFile; productRef = DAD5F03FD6187A4ADD3AC221 /* onnxruntime */; };
 		68DC08EBF44C53A84696040C /* extract.js in Resources */ = {isa = PBXBuildFile; fileRef = 4C06774AF888660709F3E2C0 /* extract.js */; };
 		6E8A7E18CF72EA91458CFE51 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 724042937F99E7C875E43A79 /* Assets.xcassets */; };
@@ -92,6 +96,7 @@
 		0A97F42A1E5754E66DB0E450 /* Mac.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Mac.entitlements; sourceTree = "<group>"; };
 		0B0F9FF5EDEE5B61E1C0555C /* PlaybackController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackController.swift; sourceTree = "<group>"; };
 		0F186E6BD541C1FED54AE746 /* popup.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = popup.css; sourceTree = "<group>"; };
+		1122E3CC223442007154DA16 /* native-voices.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "native-voices.json"; sourceTree = "<group>"; };
 		197C6669E2E894A62640A880 /* popup.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = popup.js; sourceTree = "<group>"; };
 		1A99C7E9539B07345717BAF2 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = manifest.json; sourceTree = "<group>"; };
 		1FF3BA19A953B9B00B16E913 /* pronunciation */ = {isa = PBXFileReference; lastKnownFileType = folder; name = pronunciation; path = ../mobile/shared/pronunciation; sourceTree = SOURCE_ROOT; };
@@ -103,6 +108,7 @@
 		380CEB28FB0D6EBDA65C931C /* speech */ = {isa = PBXFileReference; lastKnownFileType = folder; name = speech; path = ../mobile/shared/speech; sourceTree = SOURCE_ROOT; };
 		3BC41B100BDD094C97FCF205 /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
 		3D9003C3F269748CC26E1FA5 /* DocumentImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentImporter.swift; sourceTree = "<group>"; };
+		43849AAB6E053C59DF41893A /* kokoro-vocab.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "kokoro-vocab.json"; sourceTree = "<group>"; };
 		47C613A3213229C7A9B4C2B6 /* AppleReadingTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleReadingTools.swift; sourceTree = "<group>"; };
 		48E261082E29F2EC0A9AD3AA /* KittenInference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KittenInference.swift; sourceTree = "<group>"; };
 		49E26A9F25682395B2E423B9 /* espeak-ng-data */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "espeak-ng-data"; path = "../mobile/shared/speech/espeak-ng-data"; sourceTree = SOURCE_ROOT; };
@@ -253,7 +259,9 @@
 		915A93CE63799762278EC90E /* shared */ = {
 			isa = PBXGroup;
 			children = (
+				43849AAB6E053C59DF41893A /* kokoro-vocab.json */,
 				CC202F003D973B4FC6CAD6A0 /* models.json */,
+				1122E3CC223442007154DA16 /* native-voices.json */,
 				2E232291F6D0F04F4F1F8A5E /* NOTICES.txt */,
 				7D5B561C192AC34282292279 /* qwen-models.json */,
 			);
@@ -388,7 +396,9 @@
 				0FDAB2BF04FC8A84E04B635C /* NOTICES.txt in Resources */,
 				1FF8E31B433FCFDF1A78E4C7 /* PrivacyInfo.xcprivacy in Resources */,
 				21AD304F59AC9FC00FCED86E /* espeak-ng-data in Resources */,
+				028BF65945CE60413B9E0DCC /* kokoro-vocab.json in Resources */,
 				80AA2FCFE1E299D18EEF17F2 /* models.json in Resources */,
+				02CFB48E2EEFC9E160F6B298 /* native-voices.json in Resources */,
 				D9039D4DB3976C4589937B8C /* pronunciation in Resources */,
 				B267A2581F466BD816FCE5E4 /* qwen-models.json in Resources */,
 			);
@@ -407,8 +417,10 @@
 				837F1ED3D84915B48B27A5D5 /* glass.js in Resources */,
 				FD619FBFF32933C9E4910132 /* highlighter.js in Resources */,
 				340DEB803E073B2D55AE7AE3 /* icons in Resources */,
+				37161C9CB78AF1D319DC66BF /* kokoro-vocab.json in Resources */,
 				2426BE57539A018B05775024 /* manifest.json in Resources */,
 				1BF4A4F27B8EF180AC206C71 /* models.json in Resources */,
+				5E51F811D587010E4644C97B /* native-voices.json in Resources */,
 				D73FBC2B8FEC19F32260BFE1 /* player.js in Resources */,
 				B7A50152602354925988CE63 /* popup.css in Resources */,
 				14BB0DE8041B20B8BEB02100 /* popup.html in Resources */,
@@ -571,7 +583,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 13;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -586,7 +598,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.6.1;
+				MARKETING_VERSION = 0.6.2;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				OPENREAD_APP_GROUP = group.app.getopenread.reader;
@@ -635,7 +647,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 13;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -656,7 +668,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.6.1;
+				MARKETING_VERSION = 0.6.2;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

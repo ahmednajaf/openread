@@ -8,7 +8,7 @@ final class ImportTests: XCTestCase {
         let engine = VoiceEngine()
         guard await engine.isInstalled() else { throw XCTSkip("Install the voice pack in the test app first.") }
         try await engine.prepare(download: false) { _ in }
-        let mapped = try KittenInference(root: AppFiles.models, forSafari: true)
+        let mapped = try LocalVoiceInference(root: AppFiles.models, forSafari: true)
         let text = "Tell me, Muse, the story of that resourceful man."
         let clip = try mapped.generate(text, voice: "kiki")
         XCTAssertGreaterThan(clip.duration, 0.1)
@@ -84,6 +84,67 @@ final class ImportTests: XCTestCase {
             XCTAssertGreaterThan(clip.duration, 0.02); XCTAssertGreaterThan(clip.wav.count, 44)
             XCTAssertEqual(clip.words.count, ReadingText.words(in: text).count)
             XCTAssertTrue(clip.words.allSatisfy { $0.start >= 0 && $0.end > $0.start && $0.end <= clip.duration && NSMaxRange($0.range) <= text.utf16.count })
+        }
+    }
+}
+
+
+final class LocalVoiceTimingTests: XCTestCase {
+    private func installedEngine() async throws -> VoiceEngine {
+        let engine = VoiceEngine()
+        guard await engine.isInstalled(), await engine.isInstalled(voice: "af_heart") else {
+            throw XCTSkip("Install both optional voice packs to run real native inference checks.")
+        }
+        return engine
+    }
+    func testEveryStableVoiceProducesOrderedSourceTimings() async throws {
+        let engine = try await installedEngine()
+        let text = "Yesterday I read the book. Today I read it again; don't rush the ending!"
+        for voice in VoiceEngine.kittenVoices + VoiceEngine.kokoroVoices {
+            let installed = await engine.isInstalled(voice: voice)
+            XCTAssertTrue(installed, "Missing fixture: \(voice)")
+            try await engine.prepare(voice: voice, download: false) { _ in }
+            let start = Date()
+            let clip = try await engine.generate(text, voice: voice)
+            if ["kiki", "af_heart", "bf_emma"].contains(voice) {
+                let folder = AppFiles.root.appendingPathComponent("VoiceChecks")
+                try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+                try clip.wav.write(to: folder.appendingPathComponent(voice + ".wav"))
+                try JSONEncoder().encode(clip.words).write(to: folder.appendingPathComponent(voice + ".json"))
+            }
+            print("VOICE_BENCH \(voice) generated=\(Date().timeIntervalSince(start)) audio=\(clip.duration)")
+            XCTAssertEqual(clip.words.map(\.range), ReadingText.words(in: text), voice)
+            XCTAssertTrue(clip.words.allSatisfy { $0.start >= 0 && $0.end > $0.start && $0.end <= clip.duration }, voice)
+            for (a,b) in zip(clip.words, clip.words.dropFirst()) { XCTAssertLessThanOrEqual(a.end, b.start + 0.001, voice) }
+        }
+    }
+    func testLongContextChunksKeepEveryOriginalWordIncludingRepeatedWords() async throws {
+        let engine = try await installedEngine()
+        let text = String(repeating: "The Nymph waited by the sea, and Odysseus read the letter again. ", count: 12)
+        for voice in ["kiki", "af_heart", "bf_emma"] {
+            try await engine.prepare(voice: voice, download: false) { _ in }
+            var chunks: [SpokenClip] = []
+            for try await clip in await engine.stream(text, voice: voice) { chunks.append(clip) }
+            XCTAssertGreaterThan(chunks.count, 1, voice)
+            var words: [SpokenWord] = []; var duration = 0.0
+            for chunk in chunks { SpeechSourceTiming.append(chunk.words, offset: duration, to: &words); duration += chunk.duration }
+            XCTAssertEqual(words.map(\.range), ReadingText.words(in: text), voice)
+            for (a,b) in zip(words, words.dropFirst()) {
+                XCTAssertLessThan(a.range.location, b.range.location, voice)
+                XCTAssertLessThanOrEqual(a.end, b.start + 0.001, voice)
+            }
+            let mapped = try LocalVoiceInference(root: AppFiles.models, kokoro: VoiceEngine.isKokoro(voice), forSafari: true)
+            let safari = try mapped.generate("Don't rush. Read the last word!", voice: voice)
+            XCTAssertEqual(safari.words.map(\.range), ReadingText.words(in: "Don't rush. Read the last word!"), voice)
+        }
+    }
+    func testUnicodeAndSpokenNumbersRetainSourceRanges() async throws {
+        let engine = try await installedEngine()
+        let text = "Café costs £12.50 today. I've read 2024 pages—really! Next, read chapter 3."
+        for voice in ["kiki", "af_heart"] {
+            try await engine.prepare(voice: voice, download: false) { _ in }
+            let clip = try await engine.generate(text, voice: voice)
+            XCTAssertEqual(clip.words.map(\.range), ReadingText.words(in: text), voice)
         }
     }
 }

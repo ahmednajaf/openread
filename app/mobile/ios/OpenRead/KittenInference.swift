@@ -26,10 +26,10 @@ private final class MappedInference {
 }
 
 struct EnglishPronunciation {
-    static func phonemes(_ text: String) throws -> String {
+    static func phonemes(_ text: String, language: String = "en-us") throws -> String {
         guard let parent = Bundle.main.resourceURL else { throw ReadingError.missingModels }
         let replacements = (try? ContextPronunciation.shared?.replacements(text)) ?? ""
-        guard let result = replacements.isEmpty ? openread_speech_phonemize(parent.path, text) : openread_speech_phonemize_context(parent.path, text, replacements) else { throw ReadingError.missingModels }
+        guard let result = replacements.isEmpty ? openread_speech_phonemize_language(parent.path, text, language) : openread_speech_phonemize_context_language(parent.path, text, replacements, language) else { throw ReadingError.missingModels }
         defer { openread_speech_free(result) }
         let value = String(cString: result).replacingOccurrences(of: "\n", with: " ")
         guard !value.trimmingCharacters(in: .whitespaces).isEmpty else { throw ReadingError.noText }
@@ -81,21 +81,91 @@ enum SpeechTokens {
     }
 }
 
-final class KittenInference {
+/// Source matching never alters the contextual phonemes sent to the voice.
+/// Duration edges below come from the model, including all generated chunks.
+enum SpeechSourceTiming {
+    struct Span: Decodable { let offset: Int; let length: Int; let begin: Int; let end: Int }
+    static func spans(_ text: String, phonemes: String, language: String = "en-us", spoken: String? = nil) throws -> [Span] {
+        guard let root = Bundle.main.resourceURL,
+              let value = openread_speech_word_spans(root.path, spoken ?? text, phonemes, language) else { throw ReadingError.noText }
+        defer { openread_speech_free(value) }
+        let result = try JSONDecoder().decode([Span].self, from: Data(String(cString: value).utf8))
+        guard let spoken, spoken != text else { return result }
+        let original = ReadingText.words(in: text), expanded = ReadingText.words(in: spoken)
+        guard original.count == expanded.count else { throw ReadingError.noText }
+        return result.compactMap { span in
+            guard let index = expanded.firstIndex(where: { $0.location == span.offset }) else { return nil }
+            return Span(offset: original[index].location, length: original[index].length, begin: span.begin, end: span.end)
+        }
+    }
+    static func indexed(_ text: String, vocabulary: [Unicode.Scalar: Int64], kitten: Bool) -> [(id: Int64, scalar: Int?)] {
+        if !kitten { return text.unicodeScalars.enumerated().compactMap { index, scalar in vocabulary[scalar].map { ($0, index) } } }
+        let regex = try! NSRegularExpression(pattern: "[\\p{L}\\p{N}_]+|[^\\p{L}\\p{N}_\\s]")
+        var result: [(Int64, Int?)] = []
+        for (index, match) in regex.matches(in: text, range: NSRange(location: 0, length: text.utf16.count)).enumerated() {
+            if index > 0, let space = vocabulary[" "] { result.append((space, nil)) }
+            guard let range = Range(match.range, in: text) else { continue }
+            let base = text[..<range.lowerBound].unicodeScalars.count
+            for (offset, scalar) in text[range].unicodeScalars.enumerated() { if let id = vocabulary[scalar] { result.append((id, base + offset)) } }
+        }
+        return result
+    }
+    static func words(_ spans: [Span], tokens: [(id: Int64, scalar: Int?)], scalarBase: Int, frames: [Int64], rawSamples: Int, keptSamples: Int) throws -> [SpokenWord] {
+        guard frames.count >= tokens.count + 2, frames.allSatisfy({ $0 >= 0 && $0 < 100_000 }) else { throw ReadingError.noText }
+        let total = frames.reduce(Int64(0), +)
+        guard total > 0 else { throw ReadingError.noText }
+        // Use actual sample edges, not a hard-coded frame rate or a guessed
+        // word-length distribution. Trailing silence trimming never rescales speech.
+        let scale = Double(rawSamples) / Double(total) / 24_000
+        var edges = [0.0]; for frame in frames { edges.append(edges.last! + Double(frame) * scale) }
+        let duration = Double(keptSamples) / 24_000
+        return spans.compactMap { span in
+            let indices = tokens.indices.filter { index in
+                guard let scalar = tokens[index].scalar else { return false }
+                return scalar + scalarBase >= span.begin && scalar + scalarBase < span.end
+            }
+            guard let first = indices.first, let last = indices.last else { return nil }
+            let start = min(duration, edges[first + 1]), end = min(duration, edges[last + 2])
+            guard end > start else { return nil }
+            return SpokenWord(range: NSRange(location: span.offset, length: span.length), start: start, end: end)
+        }
+    }
+    static func append(_ words: [SpokenWord], offset: Double, to result: inout [SpokenWord]) {
+        for word in words {
+            let next = SpokenWord(range: word.range, start: word.start + offset, end: word.end + offset)
+            if let last = result.last, last.range == next.range {
+                result[result.count - 1] = SpokenWord(range: last.range, start: last.start, end: next.end)
+            } else { result.append(next) }
+        }
+    }
+}
+
+final class LocalVoiceInference {
     private let environment: ORTEnv
     private let session: ORTSession?
     private let mappedSession: MappedInference?
-    private let embeddings: [String: Embedding]
+    private let root: URL
+    private let kokoro: Bool
+    private let vocabulary: [Unicode.Scalar: Int64]
+    private var loadedVoice: (id: String, embedding: Embedding)?
     static let voiceIDs = ["kiki": "expr-voice-5-f", "rosie": "expr-voice-4-f", "jasper": "expr-voice-2-m", "luna": "expr-voice-3-f", "bruno": "expr-voice-3-m", "hugo": "expr-voice-4-m", "leo": "expr-voice-5-m", "bella": "expr-voice-2-f"]
     // The flatbuffer cache avoids reparsing an 80 MB protobuf in Safari's
     // memory-limited native process. Its name pins both weights and ORT ABI.
-    static func preparedModel(in root: URL) -> URL { root.appendingPathComponent("kitten-0f5bbae4-ort-1.24.2.ort") }
-    init(root: URL, forSafari: Bool = Bundle.main.bundleURL.pathExtension == "appex") throws {
+    static func preparedModel(in root: URL, kokoro: Bool = false) -> URL {
+        root.appendingPathComponent(kokoro ? "kokoro-f3a290d3-ort-1.24.2.ort" : "kitten-0f5bbae4-ort-1.24.2.ort")
+    }
+    init(root: URL, kokoro: Bool = false, forSafari: Bool = Bundle.main.bundleURL.pathExtension == "appex") throws {
+        self.root = root; self.kokoro = kokoro
+        if kokoro {
+            guard let url = Bundle.main.url(forResource: "kokoro-vocab", withExtension: "json") else { throw ReadingError.missingModels }
+            let values = try JSONDecoder().decode([String: Int64].self, from: Data(contentsOf: url))
+            vocabulary = Dictionary(uniqueKeysWithValues: values.compactMap { key, value in key.unicodeScalars.count == 1 ? (key.unicodeScalars.first!, value) : nil })
+        } else { vocabulary = SpeechTokens.vocabulary }
         environment = try ORTEnv(loggingLevel: .warning)
         let options = try ORTSessionOptions(); try options.setIntraOpNumThreads(2)
         try options.setGraphOptimizationLevel(.basic)
         try options.addConfigEntry(withKey: "session.disable_prepacking", value: "1")
-        let prepared = Self.preparedModel(in: root)
+        let prepared = Self.preparedModel(in: root, kokoro: kokoro)
         let nativeExtension = forSafari
         if nativeExtension {
             mappedSession = try MappedInference(prepared)
@@ -112,7 +182,7 @@ final class KittenInference {
             defer { try? FileManager.default.removeItem(at: temporary) }
             try options.addConfigEntry(withKey: "session.save_model_format", value: "ORT")
             try options.setOptimizedModelFilePath(temporary.path)
-            session = try ORTSession(env: environment, modelPath: root.appendingPathComponent("kitten_tts_mini_v0_8.onnx").path, sessionOptions: options)
+            session = try ORTSession(env: environment, modelPath: root.appendingPathComponent(kokoro ? "kokoro-v1.0.fp16.onnx" : "kitten_tts_mini_v0_8.onnx").path, sessionOptions: options)
             do { try FileManager.default.moveItem(at: temporary, to: prepared) }
             catch {
                 // Two app scenes may prepare the same pinned cache at once.
@@ -120,27 +190,40 @@ final class KittenInference {
                 guard FileManager.default.fileExists(atPath: prepared.path) else { throw error }
             }
         }
-        embeddings = try Self.load(root.appendingPathComponent("voices.npz"))
     }
-    func generate(_ text: String, voice: String) throws -> SpokenClip {
-        let phonemes = try EnglishPronunciation.phonemes(text)
+    func generate(_ text: String, voice: String, onChunk: ((SpokenClip) -> Void)? = nil) throws -> SpokenClip {
+        let language = VoiceEngine.language(voice)
+        let raw = try EnglishPronunciation.phonemes(text, language: language)
+        let phonemes = raw.split(whereSeparator: \.isWhitespace).joined(separator: " ")
         let chunks = try SpeechTokens.chunks(phonemes)
-        guard let embedding = embeddings[Self.voiceIDs[voice] ?? "expr-voice-5-f"] else { throw ReadingError.missingModels }
-        var samples: [Float] = []; var frames: [Int64] = []
+        let spans = try SpeechSourceTiming.spans(text, phonemes: phonemes, language: language)
+        let key = kokoro ? voice : Self.voiceIDs[voice] ?? "expr-voice-5-f"
+        if loadedVoice?.id != key {
+            let archive = root.appendingPathComponent(kokoro ? "voices-v1.0.bin" : "voices.npz")
+            loadedVoice = (key, try Self.load(archive, key: key))
+        }
+        guard let embedding = loadedVoice?.embedding else { throw ReadingError.missingModels }
+        var samples: [Float] = []; var words: [SpokenWord] = []; var cursor = phonemes.startIndex
         for chunk in chunks {
             try Task.checkCancellation()
-            let tokens = [Int64(0)] + SpeechTokens.body(chunk) + [10, 0]
-            let row = embedding.row(max(1, text.unicodeScalars.count * chunk.unicodeScalars.count / max(1, phonemes.unicodeScalars.count)))
-            let (audio, predictedFrames) = try predict(tokens, style: row)
+            guard let range = phonemes.range(of: chunk, range: cursor..<phonemes.endIndex) else { throw ReadingError.noText }
+            cursor = range.upperBound
+            let indexed = SpeechSourceTiming.indexed(chunk, vocabulary: vocabulary, kitten: !kokoro)
+            guard !indexed.isEmpty else { continue }
+            let tokens = [Int64(0)] + indexed.map(\.id) + (kokoro ? [0] : [10, 0])
+            let rowIndex = kokoro ? indexed.count - 1 : max(1, text.unicodeScalars.count * chunk.unicodeScalars.count / max(1, phonemes.unicodeScalars.count))
+            let (audio, frames) = try predict(tokens, style: embedding.row(rowIndex))
             guard audio.allSatisfy(\.isFinite) else { throw ReadingError.noText }
-            samples += SpeechTokens.trimSilence(audio)
-            if chunks.count == 1 { frames = predictedFrames }
+            let kept = SpeechTokens.trimSilence(audio)
+            let timing = try SpeechSourceTiming.words(spans, tokens: indexed, scalarBase: phonemes[..<range.lowerBound].unicodeScalars.count,
+                                                    frames: frames, rawSamples: audio.count, keptSamples: kept.count)
+            SpeechSourceTiming.append(timing, offset: Double(samples.count) / 24_000, to: &words)
+            samples += kept
+            onChunk?(SpokenClip(wav: SpeechTokens.wav(kept), words: timing, duration: Double(kept.count) / 24_000))
         }
         let duration = Double(samples.count) / 24_000
         guard duration > 0.02, samples.contains(where: { abs($0) > 0.00001 }) else { throw ReadingError.noText }
-        let words = timings(text, phonemes: phonemes, frames: frames, duration: duration)
-            ?? ReadingText.estimatedWords(text, duration: duration).map { SpokenWord(range: $0.range, start: $0.start, end: $0.end) }
-        return SpokenClip(wav: SpeechTokens.wav(samples), words: words, duration: duration)
+        return SpokenClip(wav: SpeechTokens.wav(samples), words: words.map { SpokenWord(range: $0.range, start: min(duration, $0.start), end: min(duration, $0.end)) }, duration: duration)
     }
     private func predict(_ tokens: [Int64], style row: [Float]) throws -> ([Float], [Int64]) {
         if let mappedSession { return try mappedSession.run(tokens, style: row) }
@@ -154,23 +237,6 @@ final class KittenInference {
         let frames = (try duration.tensorData() as Data).withUnsafeBytes { Array($0.bindMemory(to: Int64.self)) }
         return (audio, frames)
     }
-    private func timings(_ text: String, phonemes: String, frames: [Int64], duration: Double) -> [SpokenWord]? {
-        let source = ReadingText.words(in: text); let groups = phonemes.split(whereSeparator: \.isWhitespace)
-        guard source.count == groups.count, frames.count == SpeechTokens.body(phonemes).count + 3, frames.allSatisfy({ $0 >= 0 }) else { return nil }
-        var left = Double(max(0, frames[0] - 3)) * 2; var right = left; var token = 1
-        var result: [SpokenWord] = []
-        for (i, group) in groups.enumerated() {
-            let length = SpeechTokens.body(String(group)).count
-            guard token + length < frames.count else { return nil }
-            let start = max(0, min(duration, left / 80))
-            let space = i < groups.count - 1 ? frames[token + length] : 0
-            left = right + 2 * Double(frames[token..<(token + length)].reduce(0, +)) + Double(space)
-            let end = max(start, min(duration, left / 80)); right = left + Double(space)
-            guard end > start else { return nil }
-            result.append(.init(range: source[i], start: start, end: end)); token += length + (i < groups.count - 1 ? 1 : 0)
-        }
-        return result
-    }
     private func tensor<T>(_ values: [T], type: ORTTensorElementDataType, shape: [NSNumber]) throws -> ORTValue {
         try values.withUnsafeBytes { try ORTValue(tensorData: NSMutableData(bytes: $0.baseAddress!, length: $0.count), elementType: type, shape: shape) }
     }
@@ -178,10 +244,9 @@ final class KittenInference {
         let values: [Float]; let rows: Int; let width: Int
         func row(_ length: Int) -> [Float] { let start = min(rows - 1, max(0, length)) * width; return Array(values[start..<(start + width)]) }
     }
-    private static func load(_ url: URL) throws -> [String: Embedding] {
+    private static func load(_ url: URL, key: String) throws -> Embedding {
         let archive = try Archive(url: url, accessMode: .read)
-        var result: [String: Embedding] = [:]
-        for key in Set(voiceIDs.values) {
+        do {
             guard let entry = archive[key + ".npy"], entry.uncompressedSize <= 20_000_000 else { throw ReadingError.missingModels }
             var data = Data(); _ = try archive.extract(entry) { data.append($0) }
             guard data.count >= 12, Array(data.prefix(6)) == [0x93, 78, 85, 77, 80, 89] else { throw ReadingError.missingModels }
@@ -195,8 +260,7 @@ final class KittenInference {
             let width = shape.dropFirst().reduce(1, *); let count = shape[0] * width
             guard count <= 5_000_000, data.count - base - length == count * 4 else { throw ReadingError.missingModels }
             let values = data.dropFirst(base + length).withUnsafeBytes { bytes in (0..<count).map { Float(bitPattern: bytes.loadUnaligned(fromByteOffset: $0 * 4, as: UInt32.self).littleEndian) } }
-            result[key] = Embedding(values: values, rows: shape[0], width: width)
+            return Embedding(values: values, rows: shape[0], width: width)
         }
-        return result
     }
 }

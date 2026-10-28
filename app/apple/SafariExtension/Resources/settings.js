@@ -28,8 +28,8 @@
         <label class="option"><span>Follow along as I scroll</span><input id="follow" type="checkbox" role="switch" checked></label>
         <div class="option"><label for="sleep">Sleep timer</label><select id="sleep"><option value="0">Off</option><option value="5">5 minutes</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option></select></div>
         <button class="workspace secondary">OpenRead library<span aria-hidden="true">↗</span></button>
-        <button class="save-document secondary">Save this reading<span aria-hidden="true">＋</span></button>
-        <div class="option"><label for="source">Read from</label><select id="source"><option value="page">This page</option><option value="selection">Selected text</option><option value="chat" hidden>WhatsApp chat</option></select></div>
+        <button class="save-document secondary">Open page in OpenRead<span aria-hidden="true">＋</span></button>
+        <p class="reader-help">Download Kitten or Kokoro voices in the OpenRead app first. Qwen remains an experimental app-only feature.</p><div class="option"><label for="source">Read from</label><select id="source"><option value="page">This page</option><option value="selection">Selected text</option><option value="chat" hidden>WhatsApp chat</option></select></div>
         <label class="option chat-option" hidden><span>Announce senders</span><input id="announceSenders" type="checkbox" role="switch" checked></label>
         <button class="refresh-chat secondary" hidden>Refresh loaded messages<span aria-hidden="true">↻</span></button>
         <p class="reader-help chat-help" hidden></p>
@@ -58,7 +58,7 @@
       for (const group of OpenReadCore.voiceGroups()) {
         const optgroup = document.createElement('optgroup'); optgroup.label = group.label;
         for (const voice of group.voices) { const option = document.createElement('option'); option.value = voice.id;
-          option.textContent = `${voice.name} · ${voice.pack ? 'English' : voice.detail.split(' · ')[0]}`; optgroup.append(option); }
+          option.textContent = `${voice.name} · ${voice.pack === 'kitten' ? 'Kitten' : voice.detail.split(' · ')[0]}`; optgroup.append(option); }
         this.$('#voice').append(optgroup);
       }
       const send = (action, value) => {
@@ -127,7 +127,7 @@
       for (const selector of ['.chat-option', '.refresh-chat', '.chat-help']) this.$(selector).hidden = !chat;
       this.$('.chat-help').textContent = `${state.messageCount || 0} loaded text messages · oldest first. Scroll up in the chat and refresh to include older messages. New messages need a refresh too. Photos, stickers and voice notes are skipped.`;
       this.$('#source option[value=selection]').disabled = !state.hasSelection;
-      for (const option of this.$('#voice').options) { const voice = OpenReadCore.voices.find(v => v.id === option.value); option.disabled = !!voice?.pack && !(state.availableVoices || []).includes(option.value); option.textContent = `${voice.name} · ${voice.pack ? 'English' : voice.detail.split(' · ')[0]}${option.disabled ? ' (setup needed)' : ''}`; }
+      for (const option of this.$('#voice').options) { const voice = OpenReadCore.voices.find(v => v.id === option.value); option.disabled = !!voice?.pack && !(state.availableVoices || []).includes(option.value); option.textContent = `${voice.name} · ${voice.pack === 'kitten' ? 'Kitten' : voice.detail.split(' · ')[0]}${option.disabled ? ' (setup needed)' : ''}`; }
       this.$('#voice').value = preferences.voice; this.speed(preferences.rate);
       for (const key of ['highlight', 'follow']) this.$(`#${key}`).checked = preferences[key];
       this.$('#announceSenders').checked = preferences.announceSenders !== false;
