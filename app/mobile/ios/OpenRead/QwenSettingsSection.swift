@@ -3,7 +3,13 @@ import UniformTypeIdentifiers
 
 struct QwenSettingsSection: View {
     @EnvironmentObject private var player: PlaybackController
-    var body: some View { QwenSettingsContent(downloads: player.voiceDownloads) }
+    var body: some View {
+        Section("Experimental voices") {
+            Toggle("Enable Qwen beta", isOn: $player.qwenBetaEnabled)
+            Text("Qwen narration and voice cloning are experimental. They can be slow or fail on some devices. Use Kitten or Kokoro for everyday reading. Existing downloads and personal voices are kept when disabled.").font(.footnote).foregroundStyle(.secondary)
+        }
+        if player.qwenBetaEnabled { QwenSettingsContent(downloads: player.voiceDownloads) }
+    }
 }
 
 private struct QwenSettingsContent: View {
@@ -22,7 +28,7 @@ private struct QwenSettingsContent: View {
     @State private var permission = false
     var body: some View {
         Group {
-        Section("Qwen · optional voice packs") {
+        Section("Qwen · beta voice packs") {
             Text("Richer narration, generated on this device. These larger packs use more storage, memory and battery. Kitten stays available for quick reading.").font(.footnote).foregroundStyle(.secondary)
             if let busy {
                 ProgressView(busy, value: progress)
@@ -47,7 +53,7 @@ private struct QwenSettingsContent: View {
             }
         }
         if cloning {
-            Section("Your voices") {
+            Section("Voice cloning · beta") {
                 ForEach(profiles) { profile in
                     HStack {
                         Button { player.voice = "qwen:clone:" + profile.id } label: { Label(profile.name, systemImage: player.voice == "qwen:clone:" + profile.id ? "checkmark.circle.fill" : "person.wave.2") }
@@ -61,7 +67,7 @@ private struct QwenSettingsContent: View {
                     .onChange(of: transcript) { _, value in transcript = String(value.prefix(2000)) }
                 Toggle("This is my voice, or I have permission to clone it", isOn: $permission)
                 Text("A clear sample without music works best. Leave the transcript blank for faster reading. Add the exact words for closer reference delivery, which takes longer to prepare. The sample and voice profile stay on this device; the original sample is discarded after preparation.").font(.caption).foregroundStyle(.secondary)
-                Button("Create personal voice") { createVoice() }.disabled(busy != nil || downloads.isBusy || sample == nil || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !permission)
+                Button("Create personal voice · beta") { createVoice() }.disabled(busy != nil || downloads.isBusy || sample == nil || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !permission)
             }
         }
         }.fileImporter(isPresented: $importing, allowedContentTypes: [.audio]) { result in

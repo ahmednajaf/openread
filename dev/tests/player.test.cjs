@@ -147,3 +147,30 @@ test('changing Qwen direction invalidates prefetched audio and includes the new 
   assert.deepEqual(requests.map(m => m.instruction), ['Warm storytelling', 'Warm storytelling', 'Quiet and reflective', 'Quiet and reflective']);
   player.destroy();
 });
+
+
+test('preloaded passages alternate authorized elements without resetting their source', async () => {
+  let word = null;
+  const { player, audio, tick } = fixture({ preloadAudio: true, onWord: o => { word = o; }, onWordClear: () => { word = null; } });
+  await player.play(); await new Promise(setImmediate);
+  assert.equal(audio.length, 2); assert.equal(player.queued.audio, audio[1]);
+  const preparedSource = audio[1].src;
+  player.configure({rate: 2}); assert.equal(audio[1].playbackRate, 2);
+  audio[0].currentTime = 1; tick(); assert.equal(word, 6);
+  audio[0].onended(); await new Promise(setImmediate);
+  assert.equal(player.audio, audio[1]); assert.equal(player.audio.src, preparedSource);
+  assert.equal(player.index, 1); assert.equal(player.audio.preservesPitch, true);
+  player.audio.currentTime = 1; tick(); assert.equal(word, 6);
+  player.pause(); assert.equal(word, null);
+  await player.play(); assert.equal(player.audio.currentTime, 1);
+  player.audio.onended(); assert.equal(player.status, 'ended'); assert.equal(word, null);
+  player.destroy();
+});
+test('a stale preloaded passage cannot cross a document or voice change', async () => {
+  const { player } = fixture({preloadAudio: true}); await player.play(); await new Promise(setImmediate);
+  const stale = player.queued.audio;
+  player.configure({voice: 'kitten:kiki'}); await new Promise(setImmediate);
+  assert.equal(player.voice, 'kitten:kiki'); assert.notEqual(player.audio, stale);
+  player.load([{text:'Another document.'}]); await player.play();
+  assert.equal(player.index, 0); assert.equal(player.status, 'playing'); player.destroy();
+});

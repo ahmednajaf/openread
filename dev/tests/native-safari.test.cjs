@@ -28,3 +28,12 @@ test('Safari saves with the browser-provided page source, without a localhost re
   await h.send({type:'unsupported',text:'private text'});
   assert.equal(h.requests.length,1);
 });
+
+test('Safari forwards English Kokoro voices and keeps Qwen app-only', async () => {
+  const h = host();
+  await h.send({type:'synthesize',text:'Read this.',voice:'af_heart'});
+  await h.send({type:'synthesize',text:'Read this.',voice:'bf_emma'});
+  assert.deepEqual(h.requests.map(r => r.voice), ['af_heart','bf_emma']);
+  await h.send({type:'synthesize',text:'Read this.',voice:'qwen:ryan'});
+  assert.equal(h.requests.length, 2);
+});

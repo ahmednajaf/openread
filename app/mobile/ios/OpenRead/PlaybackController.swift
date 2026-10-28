@@ -3,7 +3,7 @@ import Combine
 import AVFoundation
 import MediaPlayer
 
-@MainActor final class PlaybackController: NSObject, ObservableObject, AVAudioPlayerDelegate {
+@MainActor final class PlaybackController: NSObject, ObservableObject {
     @Published var reading: Reading?
     @Published var index = 0
     @Published var status = "Ready"
@@ -14,6 +14,13 @@ import MediaPlayer
     @Published var error: String?
     @Published var installed = false
     @Published var kittenInstalled = false
+    @Published var kokoroInstalled = false
+    @Published var qwenBetaEnabled = VoiceEngine.betaEnabled {
+        didSet {
+            UserDefaults.standard.set(qwenBetaEnabled, forKey: "qwen-beta-enabled")
+            if !qwenBetaEnabled && voice.hasPrefix("qwen:") { voice = "kiki" }
+        }
+    }
     @Published var downloadProgress = 0.0
     @Published var downloading = false
     @Published var voice: String = VoiceEngine.voices.contains(UserDefaults.standard.string(forKey: "voice") ?? "") ? UserDefaults.standard.string(forKey: "voice")! : "kiki" {
@@ -25,7 +32,7 @@ import MediaPlayer
             // @Published re-enters this observer when assigned. Only correct an
             // out-of-range value; assigning every time overflows the stack.
             if bounded != rate { rate = bounded; return }
-            UserDefaults.standard.set(rate, forKey: "rate"); audio?.rate = rate; streamAudio?.rate = rate; nowPlaying()
+            UserDefaults.standard.set(rate, forKey: "rate"); streamAudio?.rate = rate; nowPlaying()
         }
     }
     @Published var follow = true
@@ -34,7 +41,6 @@ import MediaPlayer
     let engine = VoiceEngine()
     let voiceDownloads = VoicePackDownloads()
     @Published var direction = UserDefaults.standard.string(forKey: "voice-direction") ?? "" { didSet { UserDefaults.standard.set(direction, forKey: "voice-direction") } }
-    private var audio: AVAudioPlayer?
     private var streamAudio: ContinuousSpeechPlayer?
     private var streaming = false
     private var words: [SpokenWord] = []
@@ -43,7 +49,6 @@ import MediaPlayer
     private var textWindows: [NSRange] = []
     private var generation = UUID()
     private var task: Task<Void, Never>?
-    private var prefetch: Task<Void, Never>?
     private var tick: Timer?
     private var sleepDeadline: Date?
     private var interruptionObserver: NSObjectProtocol?
@@ -54,11 +59,12 @@ import MediaPlayer
         super.init()
         Task {
             kittenInstalled = await engine.isInstalled()
+            kokoroInstalled = await engine.isInstalled(voice: "af_heart")
             installed = await engine.isInstalled(voice: voice)
-            if kittenInstalled {
+            if installed && !voice.hasPrefix("qwen:") {
                 // Prepare the shared Safari cache in the full app, where model
                 // compilation has enough memory. No network request is made.
-                do { try await engine.prepare(download: false) { _ in } }
+                do { try await engine.prepare(voice: voice.hasPrefix("qwen:") ? "kiki" : voice, download: false) { _ in } }
                 catch { self.error = "Your downloaded voices could not be prepared. Try Download voices in Settings." }
             }
         }
@@ -99,11 +105,11 @@ import MediaPlayer
         index = passages.lastIndex(where: { $0.range.location <= reading.position }) ?? 0
         status = "Ready"; error = nil
     }
-    func downloadVoices() {
+    func downloadVoices(voice selectedVoice: String = "kiki") {
         guard !downloading else { return }
         downloading = true; downloadProgress = 0; error = nil
         task = Task {
-            do { try await engine.prepare(download: true) { value in Task { @MainActor in self.downloadProgress = value } }; kittenInstalled = true; installed = await engine.isInstalled(voice: voice) }
+            do { try await engine.prepare(voice: selectedVoice, download: true) { value in Task { @MainActor in self.downloadProgress = value } }; kittenInstalled = await engine.isInstalled(); kokoroInstalled = await engine.isInstalled(voice: "af_heart"); installed = await engine.isInstalled(voice: voice) }
             catch { if !Task.isCancelled { self.error = error.localizedDescription } }
             downloading = false
         }
@@ -113,25 +119,24 @@ import MediaPlayer
     func play() {
         guard !isPlaying, !isPreparing, !passages.isEmpty, !downloading else { return }
         if let deadline = sleepDeadline, deadline <= Date() { sleepDeadline = nil; sleepMinutes = 0; return }
+        if status == "Finished" { stop(); index = 0 }
         if streaming, let streamAudio {
             do { try configureAudio(); try streamAudio.resume() }
             catch { self.error = error.localizedDescription }
             return
         }
-        if let audio, audio.currentTime < audio.duration - 0.01 {
-            do { try configureAudio(); audio.rate = rate; audio.play(); isPlaying = true; status = "Listening"; nowPlaying() } catch { self.error = error.localizedDescription }
-        } else { generateAndPlay() }
+        generateAndPlay()
     }
     func pause() {
         if streaming, let streamAudio { streamAudio.pause() }
-        else { generation = UUID(); task?.cancel(); prefetch?.cancel(); prefetch = nil; audio?.pause() }
+        else { generation = UUID(); task?.cancel();  }
         preparingAhead = false; isPreparing = false; isPlaying = false; highlighted = nil
         status = "Paused"; persistPosition(); nowPlaying()
     }
     func stop() {
-        generation = UUID(); task?.cancel(); prefetch?.cancel(); prefetch = nil
+        generation = UUID(); task?.cancel();
         streamAudio?.stop(); streamAudio = nil; streaming = false
-        audio?.stop(); audio = nil; words = []; streamPassages = []; highlighted = nil
+        words = []; streamPassages = []; highlighted = nil
         preparingAhead = false; isPlaying = false; isPreparing = false; status = "Ready"; persistPosition(); nowPlaying()
     }
     func next() { seek(min(passages.count - 1, index + 1)) }
@@ -212,92 +217,83 @@ import MediaPlayer
     }
     private func generateAndPlay() {
         let token = UUID(); generation = token; error = nil; isPreparing = true; status = "Preparing on your device…"
-        let passage = passages[index]; let chosenVoice = voice
+        let chosenVoice = voice
         task = Task {
             do {
                 try await engine.prepare(voice: chosenVoice, download: false) { _ in }
                 guard token == generation, !Task.isCancelled else { return }
-                #if OPENREAD_QWEN
-                if chosenVoice.hasPrefix("qwen:") {
-                    try configureAudio()
-                    streaming = true; words = []; streamPassages = []
-                    let output = ContinuousSpeechPlayer()
-                    output.rate = rate
-                    output.onStateChange = { [weak self] playing in
-                        guard let self, token == self.generation else { return }
-                        self.isPlaying = playing
-                        let paused = self.streamAudio?.isPaused == true
-                        self.isPreparing = !playing && !paused
-                        self.status = paused ? "Paused" : playing ? "Listening · Qwen timing is approximate" :
-                            (self.streamAudio?.underruns ?? 0) > 0 ? "Buffering at \(self.rate.formatted())× · use Prepare audio ahead in reading options" : "Buffering Qwen audio on this device…"
-                        if !playing { self.highlighted = nil }
-                        self.nowPlaying()
+                try configureAudio()
+                streaming = true; words = []; streamPassages = []
+                let output = ContinuousSpeechPlayer()
+                output.rate = rate
+                output.onStateChange = { [weak self] playing in
+                    guard let self, token == self.generation else { return }
+                    self.isPlaying = playing
+                    let paused = self.streamAudio?.isPaused == true
+                    self.isPreparing = !playing && !paused
+                    self.status = paused ? "Paused" : playing ? "Listening" : "Buffering audio…"
+                    if !playing { self.highlighted = nil }
+                    self.nowPlaying()
+                }
+                output.onFailure = { [weak self] error in
+                    guard let self, token == self.generation else { return }
+                    self.stop(); self.error = error.localizedDescription
+                }
+                output.onFinished = { [weak self] in
+                    guard let self, token == self.generation else { return }
+                    self.isPlaying = false; self.isPreparing = false; self.highlighted = nil
+                    self.status = "Finished"; self.persistPosition(); self.nowPlaying()
+                }
+                streamAudio = output
+                let first = index, instruction = direction
+                // One audio clock for every chunk and passage. Generation runs on
+                // the voice actor while the player consumes its bounded queue.
+                for next in first..<passages.count {
+                    while output.bufferedSeconds > 20 * Double(rate) || output.isPaused {
+                        try await Task.sleep(nanoseconds: 100_000_000)
+                        try Task.checkCancellation()
                     }
-                    output.onFailure = { [weak self] error in
-                        guard let self, token == self.generation else { return }
-                        self.stop(); self.error = error.localizedDescription
-                    }
-                    output.onFinished = { [weak self] in
-                        guard let self, token == self.generation else { return }
-                        self.index = self.passages.count - 1
-                        self.finishPassage()
-                    }
-                    streamAudio = output
-                    let first = index
-                    let instruction = direction
-                    // Keep generating the next passage as soon as the current one
-                    // finishes synthesis, while both use the SAME audio timeline.
-                    // Bound memory to a modest lead plus one in-flight passage.
-                    for next in first..<passages.count {
-                        while output.bufferedSeconds > 20 * Double(rate) || output.isPaused {
-                            try await Task.sleep(nanoseconds: 100_000_000)
-                            try Task.checkCancellation()
-                        }
-                        guard token == generation, !Task.isCancelled else { return }
-                        let part = passages[next]
+                    guard token == generation, !Task.isCancelled else { return }
+                    let part = passages[next]
+                    streamPassages.append((next, output.duration))
+                    #if OPENREAD_QWEN
+                    if chosenVoice.hasPrefix("qwen:") {
                         let base = output.duration
-                        streamPassages.append((next, base))
                         for try await event in engine.qwen.stream(part.text, voice: chosenVoice, instruction: instruction) {
                             guard token == generation, !Task.isCancelled else { return }
                             switch event {
                             case .audio(let chunk): try output.append(chunk)
-                            case .timing(let timing):
-                                words.append(contentsOf: timing.map {
-                                    SpokenWord(range: NSRange(location: part.range.location + $0.range.location, length: $0.range.length),
-                                               start: base + $0.start, end: base + $0.end)
-                                })
+                            case .timing(let timing): appendWords(timing, source: part.range.location, time: base)
                             }
                         }
+                        continue
                     }
-                    guard token == generation, !Task.isCancelled else { return }
-                    try output.finish()
-                    return
+                    #endif
+                    for try await chunk in await engine.stream(part.text, voice: chosenVoice) {
+                        guard token == generation, !Task.isCancelled else { return }
+                        appendWords(chunk.words, source: part.range.location, time: output.duration)
+                        try output.append(chunk)
+                    }
                 }
-                #endif
-                let clip = try await engine.generate(passage.text, voice: chosenVoice, instruction: direction)
                 guard token == generation, !Task.isCancelled else { return }
-                try configureAudio()
-                let player = try AVAudioPlayer(data: clip.wav)
-                player.delegate = self; player.enableRate = true; player.rate = rate
-                audio = player; words = clip.words; isPreparing = false
-                guard player.play() else { throw ReadingError.noText }
-                isPlaying = true; status = "Listening"; nowPlaying(); persistPosition()
-                if canNext {
-                    let next = passages[index + 1].text
-                    prefetch = Task { _ = try? await engine.generate(next, voice: chosenVoice, instruction: direction) }
-                }
-            } catch { if token == generation, !Task.isCancelled { isPreparing = false; isPlaying = false; streaming = false; streamAudio?.stop(); streamAudio = nil; audio?.stop(); audio = nil; status = "Paused"; self.error = error.localizedDescription } }
+                try output.finish()
+
+            } catch { if token == generation, !Task.isCancelled { isPreparing = false; isPlaying = false; streaming = false; streamAudio?.stop(); streamAudio = nil; status = "Paused"; self.error = error.localizedDescription } }
         }
     }
-    private func finishPassage() {
-        streaming = false; streamAudio?.stop(); streamAudio = nil; audio = nil; highlighted = nil; isPlaying = false
-        if canNext { index += 1; generateAndPlay() }
-        else { isPreparing = false; status = "Finished"; index = 0; persistPosition(); nowPlaying() }
+    private func appendWords(_ timing: [SpokenWord], source: Int, time: Double) {
+        for word in timing {
+            let next = SpokenWord(range: NSRange(location: source + word.range.location, length: word.range.length),
+                                  start: time + word.start, end: time + word.end)
+            if let last = words.last, last.range == next.range {
+                words[words.count - 1] = SpokenWord(range: last.range, start: last.start, end: next.end)
+            } else { words.append(next) }
+        }
     }
     private func updateClock() {
         if let deadline = sleepDeadline, deadline <= Date(), isPlaying || isPreparing { pause(); sleepDeadline = nil; sleepMinutes = 0; status = "Sleep timer finished" }
         guard isPlaying, passages.indices.contains(index) else { return }
-        let time = streamAudio?.currentTime ?? audio?.currentTime ?? 0
+        let time = streamAudio?.currentTime ?? 0
         if streaming {
             if let marker = streamPassages.last(where: { $0.start <= time }), marker.index != index {
                 index = marker.index; persistPosition(); nowPlaying()
@@ -318,18 +314,11 @@ import MediaPlayer
     private func nowPlaying() {
         guard let reading else { return }
         MPNowPlayingInfoCenter.default().nowPlayingInfo = [MPMediaItemPropertyTitle: reading.title,
-            MPMediaItemPropertyArtist: "OpenRead · \(voice.capitalized)", MPMediaItemPropertyPlaybackDuration: streamAudio?.duration ?? audio?.duration ?? 0,
-            MPNowPlayingInfoPropertyElapsedPlaybackTime: streamAudio?.currentTime ?? audio?.currentTime ?? 0,
+            MPMediaItemPropertyArtist: "OpenRead · \(voice.capitalized)", MPMediaItemPropertyPlaybackDuration: streamAudio?.duration ?? 0,
+            MPNowPlayingInfoPropertyElapsedPlaybackTime: streamAudio?.currentTime ?? 0,
             MPNowPlayingInfoPropertyPlaybackRate: isPlaying ? rate : 0]
     }
-    nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        Task { @MainActor in
-            guard self.audio === player else { return }
-            self.audio = nil; self.highlighted = nil; self.isPlaying = false
-            if flag { self.finishPassage() }
-            else { self.stop(); self.status = "Paused"; self.persistPosition(); self.nowPlaying() }
-        }
-    }
+
 }
 
 

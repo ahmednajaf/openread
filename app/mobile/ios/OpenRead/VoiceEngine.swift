@@ -4,7 +4,7 @@ import CryptoKit
 struct VoiceAsset: Codable, Sendable {
     let name: String; let url: URL; let sha256: String
 }
-struct VoiceManifest: Codable, Sendable { let assets: [VoiceAsset] }
+struct VoiceManifest: Codable, Sendable { let assets: [VoiceAsset]; let kokoroAssets: [VoiceAsset]? }
 
 final class VoiceDownloadProgress: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
     let update: @Sendable (Double) -> Void
@@ -20,16 +20,30 @@ struct SpokenClip: Codable, Sendable { let wav: Data; let words: [SpokenWord]; l
 
 actor VoiceEngine {
     static let kittenVoices = ["kiki", "rosie", "jasper", "luna", "bruno", "hugo", "leo", "bella"]
+    struct Choice: Decodable { let id: String; let name: String; let detail: String; let lang: String }
+    static let choices: [Choice] = {
+        guard let url = Bundle.main.url(forResource: "native-voices", withExtension: "json"),
+              let data = try? Data(contentsOf: url), let values = try? JSONDecoder().decode([Choice].self, from: data) else { return [] }
+        return values
+    }()
+    static var kokoroVoices: [String] { choices.filter { !$0.id.contains(":") }.map(\.id) }
+    static func canonical(_ voice: String) -> String { voice.hasPrefix("kitten:") ? String(voice.dropFirst(7)) : voice }
+    static func isKokoro(_ voice: String) -> Bool { kokoroVoices.contains(voice) }
+    static func language(_ voice: String) -> String { choices.first { canonical($0.id) == canonical(voice) }?.lang ?? "en-us" }
+    static var betaEnabled: Bool { UserDefaults.standard.bool(forKey: "qwen-beta-enabled") }
     static var voices: [String] {
         #if OPENREAD_QWEN
-        return kittenVoices + QwenFiles.speakers.map { "qwen:" + $0 } + QwenFiles.profiles.map { "qwen:clone:" + $0.id }
+        return kittenVoices + kokoroVoices + (betaEnabled ? QwenFiles.speakers.map { "qwen:" + $0 } + QwenFiles.profiles.map { "qwen:clone:" + $0.id } : [])
         #else
-        return kittenVoices
+        return kittenVoices + kokoroVoices
         #endif
     }
     static func name(_ voice: String) -> String {
+        if let choice = choices.first(where: { canonical($0.id) == canonical(voice) }) {
+            return choice.name + " · " + (isKokoro(voice) ? choice.detail : "Kitten")
+        }
         #if OPENREAD_QWEN
-        return QwenFiles.label(voice)
+        return QwenFiles.label(voice) + " · Beta"
         #else
         return voice.capitalized
         #endif
@@ -37,7 +51,8 @@ actor VoiceEngine {
     #if OPENREAD_QWEN
     let qwen = QwenEngine()
     #endif
-    private var engine: KittenInference?
+    private var engine: LocalVoiceInference?
+    private var activePack: String?
     private var cache: [String: SpokenClip] = [:]
     private var cacheOrder: [String] = []
     private var ready = false
@@ -46,11 +61,15 @@ actor VoiceEngine {
     private var manifest: VoiceManifest {
         get throws { try JSONDecoder().decode(VoiceManifest.self, from: Data(contentsOf: Bundle.main.url(forResource: "models", withExtension: "json")!)) }
     }
+    private func assets(for voice: String) throws -> [VoiceAsset] {
+        guard Self.voices.contains(voice) || Self.choices.contains(where: { Self.canonical($0.id) == Self.canonical(voice) }) else { throw ReadingError.missingModels }
+        return try Self.isKokoro(voice) ? manifest.kokoroAssets ?? [] : manifest.assets
+    }
     func isInstalled(voice: String = "kiki") -> Bool {
         #if OPENREAD_QWEN
         if voice.hasPrefix("qwen:") { return QwenFiles.installed(voice.hasPrefix("qwen:clone:") ? "clone" : "expressive") }
         #endif
-        guard let assets = try? manifest.assets else { return false }
+        guard let assets = try? assets(for: voice), !assets.isEmpty else { return false }
         return assets.allSatisfy { FileManager.default.fileExists(atPath: root.appendingPathComponent($0.name).path) }
     }
     func prepare(voice: String = "kiki", download: Bool, progress: @escaping @Sendable (Double) -> Void) async throws {
@@ -63,10 +82,12 @@ actor VoiceEngine {
         }
         await qwen.unload()
         #endif
-        if ready { return }
+        let pack = Self.isKokoro(voice) ? "kokoro" : "kitten"
+        if ready && activePack == pack { return }
         guard !preparing else { throw ReadingError.missingModels }
         preparing = true; defer { preparing = false }
-        let assets = try manifest.assets
+        let assets = try assets(for: voice)
+        guard !assets.isEmpty else { throw ReadingError.missingModels }
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         for (index, asset) in assets.enumerated() {
             try Task.checkCancellation()
@@ -80,23 +101,35 @@ actor VoiceEngine {
             try? FileManager.default.removeItem(at: destination)
             try FileManager.default.moveItem(at: temporary, to: destination)
         }
-        engine = try KittenInference(root: root)
-        ready = true; progress(1)
+        engine = nil; ready = false
+        engine = try LocalVoiceInference(root: root, kokoro: pack == "kokoro")
+        activePack = pack; ready = true; progress(1)
     }
-    func generate(_ text: String, voice: String, instruction: String = "") async throws -> SpokenClip {
+    func generate(_ text: String, voice: String, instruction: String = "", onChunk: ((SpokenClip) -> Void)? = nil) async throws -> SpokenClip {
         let key = voice + "\n" + instruction + "\n" + text
-        if let clip = cache[key] { return clip }
+        if let clip = cache[key] { onChunk?(clip); return clip }
         let clip: SpokenClip
         #if OPENREAD_QWEN
         if voice.hasPrefix("qwen:") { clip = try await qwen.generate(text, voice: voice, instruction: instruction) }
-        else { guard let engine else { throw ReadingError.missingModels }; clip = try engine.generate(text, voice: voice) }
+        else { guard let engine else { throw ReadingError.missingModels }; clip = try engine.generate(text, voice: Self.canonical(voice), onChunk: onChunk) }
         #else
-        guard let engine else { throw ReadingError.missingModels }; clip = try engine.generate(text, voice: voice)
+        guard let engine else { throw ReadingError.missingModels }; clip = try engine.generate(text, voice: Self.canonical(voice), onChunk: onChunk)
         #endif
         try Task.checkCancellation()
         cache[key] = clip; cacheOrder.removeAll { $0 == key }; cacheOrder.append(key)
         while cacheOrder.count > 3 { cache.removeValue(forKey: cacheOrder.removeFirst()) }
         return clip
+    }
+    func stream(_ text: String, voice: String, instruction: String = "") -> AsyncThrowingStream<SpokenClip, Error> {
+        AsyncThrowingStream { continuation in
+            let producer = Task {
+                do {
+                    _ = try await generate(text, voice: voice, instruction: instruction) { continuation.yield($0) }
+                    continuation.finish()
+                } catch { continuation.finish(throwing: error) }
+            }
+            continuation.onTermination = { _ in producer.cancel() }
+        }
     }
     private func digest(_ url: URL) throws -> String {
         let handle = try FileHandle(forReadingFrom: url); defer { try? handle.close() }

@@ -70,9 +70,19 @@ import UniformTypeIdentifiers
         }
         Settings { TabView {
             Form {
+                Section("Reading voice") {
+                    Picker("Voice", selection: $player.voice) {
+                        ForEach(VoiceEngine.voices.filter { !VoiceEngine.isKokoro($0) || player.kokoroInstalled }, id: \.self) { Text(VoiceEngine.name($0)).tag($0) }
+                    }
+                }
                 Section("Kitten voices") {
                     if !installed { Button("Download Kitten voices · 83 MB") { setup() } }
-                    Picker("Voice", selection: $player.voice) { ForEach(VoiceEngine.kittenVoices, id: \.self) { Text(VoiceEngine.name($0)).tag($0) } }
+                    Text("Eight voices for everyday reading.").font(.footnote).foregroundStyle(.secondary)
+                }
+                Section("Kokoro voices · American & British") {
+                    if player.downloading { ProgressView(value: player.downloadProgress) }
+                    else if !player.kokoroInstalled { Button("Download Kokoro voices · about 192 MB") { player.downloadVoices(voice: "af_heart") } }
+                    if player.kokoroInstalled { Text("28 voices ready to use.").font(.footnote).foregroundStyle(.secondary) }
                 }
                 Section("On-device AI") { Text(AppleReadingTools.availability).font(.footnote).foregroundStyle(.secondary) }
                 QwenSettingsSection()

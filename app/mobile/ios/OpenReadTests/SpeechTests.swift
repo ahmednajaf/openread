@@ -13,6 +13,12 @@ final class SpeechTests: XCTestCase {
         player.rate = -.infinity
         XCTAssertEqual(player.rate, 1)
     }
+    func testBritishVoicesAlsoUseTheContextualPronunciationModel() throws {
+        let past = try EnglishPronunciation.phonemes("Yesterday I read the book.", language: "en-gb")
+        let present = try EnglishPronunciation.phonemes("I read the book every morning.", language: "en-gb")
+        XCTAssertTrue(past.contains("ɹɛd"), past)
+        XCTAssertTrue(present.contains("iːd"), present)
+    }
     func testClausePunctuationReachesTheVoice() throws {
         let ipa = try EnglishPronunciation.phonemes("Hello, world! Are you ready? Yes; let's begin.")
         XCTAssertEqual(ipa.filter { ",!?;.".contains($0) }, ",!?;.")
@@ -42,5 +48,43 @@ final class SpeechTests: XCTestCase {
         XCTAssertEqual(Array(trimmed.prefix(audible.count)), audible)
         XCTAssertGreaterThanOrEqual(trimmed.count, audible.count + 2400)
         XCTAssertGreaterThanOrEqual(trimmed.count, padded.count - 4800)
+    }
+}
+
+
+final class StableReadingPlaybackTests: XCTestCase {
+    @MainActor func testKittenAndKokoroCrossPassagesAtDoubleSpeedWithoutHighlightResets() async throws {
+        let player = PlaybackController()
+        let originalVoice = player.voice, originalRate = player.rate
+        defer { player.stop(); player.voice = originalVoice; player.rate = originalRate }
+        let text = String(repeating: "Tell me the story of that resourceful man who wandered far and wide. He saw many cities and learnt their ways. ", count: 5)
+        for voice in ["kiki", "af_heart"] {
+            player.voice = voice; player.rate = 2
+            player.open(Reading(title: "Streaming test", text: text))
+            XCTAssertGreaterThan(player.passageCount, 1)
+            player.play()
+            var positions: [Int] = [], paused = false
+            let deadline = Date().addingTimeInterval(40)
+            while Date() < deadline, player.status != "Finished", player.error == nil {
+                try await Task.sleep(for: .milliseconds(30))
+                if let range = player.highlighted, positions.last != range.location {
+                    positions.append(range.location)
+                    if positions.count >= 5, !paused {
+                        paused = true; player.pause()
+                        XCTAssertNil(player.highlighted)
+                        try await Task.sleep(for: .milliseconds(150))
+                        XCTAssertNil(player.highlighted)
+                        player.play()
+                    }
+                }
+            }
+            XCTAssertNil(player.error, voice)
+            XCTAssertEqual(player.status, "Finished", voice)
+            XCTAssertNil(player.highlighted, voice)
+            XCTAssertGreaterThan(player.index, 0, voice)
+            XCTAssertGreaterThan(positions.count, 20, voice)
+            XCTAssertEqual(positions, positions.sorted(), "Highlights went backwards for \(voice)")
+            player.stop()
+        }
     }
 }

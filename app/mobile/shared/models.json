@@ -22,5 +22,19 @@
       "sha256": "7d4322bd2a7749724879683fc3912cb542f19906c83bcc1a52132556427170b2",
       "license": "Apache-2.0"
     }
+  ],
+  "kokoroAssets": [
+    {
+      "name": "kokoro-v1.0.fp16.onnx",
+      "sha256": "f3a290d384fbb27966d462905c71a46cef9e5fd00516b40df32a0b4afe77ac96",
+      "url": "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.1/kokoro-v1.0.fp16.onnx",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "voices-v1.0.bin",
+      "sha256": "bca610b8308e8d99f32e6fe4197e7ec01679264efed0cac9140fe9c29f1fbf7d",
+      "url": "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.1/voices-v1.0.bin",
+      "license": "Apache-2.0"
+    }
   ]
 }

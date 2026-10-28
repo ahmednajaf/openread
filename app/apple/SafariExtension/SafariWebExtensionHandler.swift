@@ -24,25 +24,26 @@ final class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
     private static func handle(_ message: [String: Any]) async throws -> [String: Any] {
         switch message["type"] as? String {
         case "health":
-            let installed = await voice.isInstalled()
-            return ["ok": true, "native": true, "voices": VoiceEngine.voices.map { ["id": "kitten:" + $0, "available": installed] },
+            let kitten = await voice.isInstalled(), kokoro = await voice.isInstalled(voice: "af_heart")
+            return ["ok": true, "native": true, "voices": VoiceEngine.choices.map { ["id": $0.id, "available": $0.id.hasPrefix("kitten:") ? kitten : kokoro] },
                     "setupHint": "Open the OpenRead app and download natural voices first."]
         case "synthesize":
             guard let text = message["text"] as? String, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, text.utf16.count <= 1600,
-                  let id = message["voice"] as? String, id.hasPrefix("kitten:"), VoiceEngine.voices.contains(String(id.dropFirst(7))) else {
+                  let id = message["voice"] as? String, VoiceEngine.choices.contains(where: { $0.id == id }) else {
                 return ["ok": false, "error": "Choose an installed OpenRead voice and a shorter passage."]
             }
             #if os(iOS)
             Self.log.notice("Preparing Safari voice. Available memory: \(os_proc_available_memory(), privacy: .public) bytes")
             #endif
-            guard FileManager.default.fileExists(atPath: KittenInference.preparedModel(in: AppFiles.models).path) else {
+            let selected = VoiceEngine.canonical(id)
+            guard FileManager.default.fileExists(atPath: LocalVoiceInference.preparedModel(in: AppFiles.models, kokoro: VoiceEngine.isKokoro(selected)).path) else {
                 return ["ok": false, "error": "Open the OpenRead app once to prepare its Safari voices, then return here."]
             }
-            try await voice.prepare(download: false) { _ in }
+            try await voice.prepare(voice: selected, download: false) { _ in }
             Self.log.notice("Safari voice ready")
-            let clip = try await voice.generate(text, voice: String(id.dropFirst(7)))
+            let clip = try await voice.generate(text, voice: selected)
             Self.log.notice("Safari audio generated")
-            return ["ok": true, "audio": clip.wav.base64EncodedString(), "duration": clip.duration, "voice": id, "timingSource": "model-duration-or-estimated",
+            return ["ok": true, "audio": clip.wav.base64EncodedString(), "duration": clip.duration, "voice": id, "timingSource": "model-phonemes",
                     "words": clip.words.map { ["offset": $0.range.location, "length": $0.range.length, "start": $0.start, "end": $0.end] }]
         case "saveDocument":
             guard let text = message["text"] as? String, !text.isEmpty, text.utf16.count <= 250_000,

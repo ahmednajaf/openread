@@ -8227,3 +8227,10 @@ Dependencies English EWT, copyright 2013-2021 Stanford University, CC BY-SA 4.0.
 The pack was fine-tuned and quantized for OpenRead. Source revisions, full
 licences, attribution and reproduction instructions are retained in
 app/mobile/shared/pronunciation/ and docs/PRONUNCIATION.md.
+
+Kokoro-82M (v1.0): optional English voice model and styles, Apache License 2.0.
+Model: https://huggingface.co/hexgrad/Kokoro-82M
+Duration-capable INT8 export: thewh1teagle/kokoro-onnx model-files-v1.1.
+https://github.com/thewh1teagle/kokoro-onnx/releases/tag/model-files-v1.1
+The native adapter uses the model's embedded vocabulary and duration output;
+weights are downloaded separately and verified against the pinned SHA-256.

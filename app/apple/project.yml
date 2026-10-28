@@ -22,8 +22,8 @@ settings:
   base:
     SWIFT_VERSION: "5.0"
     SWIFT_STRICT_CONCURRENCY: targeted
-    MARKETING_VERSION: 0.6.1
-    CURRENT_PROJECT_VERSION: 12
+    MARKETING_VERSION: 0.6.2
+    CURRENT_PROJECT_VERSION: 13
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: ""
     OPENREAD_BUNDLE_ID: app.getopenread.reader
@@ -49,6 +49,10 @@ targets:
       - path: ../mobile/shared/qwen-models.json
         buildPhase: resources
       - path: ../mobile/shared/models.json
+        buildPhase: resources
+      - path: ../mobile/shared/native-voices.json
+        buildPhase: resources
+      - path: ../mobile/shared/kokoro-vocab.json
         buildPhase: resources
       - path: ../mobile/shared/NOTICES.txt
         buildPhase: resources
@@ -86,6 +90,10 @@ targets:
       - ../mobile/ios/OpenRead/LibraryStore.swift
       - ../mobile/shared/swift
       - path: ../mobile/shared/models.json
+        buildPhase: resources
+      - path: ../mobile/shared/native-voices.json
+        buildPhase: resources
+      - path: ../mobile/shared/kokoro-vocab.json
         buildPhase: resources
       - path: ../mobile/shared/pronunciation
         type: folder

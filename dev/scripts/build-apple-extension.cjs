@@ -9,22 +9,24 @@ for (const name of ['core.js','extract.js','player.js','highlighter.js','content
 }
 fs.copyFileSync(path.join(root, 'app/apple/SafariExtension/background.js'), path.join(destination, 'background.js'));
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'extension/manifest.json')));
-manifest.version = '0.5.1';
+manifest.version = '0.6.2';
 manifest.permissions.push('nativeMessaging');
 delete manifest.host_permissions;
 manifest.background = { scripts: ['background.js'], persistent: false };
 fs.writeFileSync(path.join(destination, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
-const voices = JSON.parse(fs.readFileSync(path.join(root, 'extension/voices.json'))).filter(v => v.id.startsWith('kitten:'));
+const voices = JSON.parse(fs.readFileSync(path.join(root, 'app/mobile/shared/native-voices.json'))).map(v => ({...v, pack: v.id.startsWith('kitten:') ? 'kitten' : 'kokoro'}));
 const core = path.join(destination, 'core.js');
 fs.writeFileSync(core, fs.readFileSync(core, 'utf8').replace(/const voices = \[[^\n]*\];/u, 'const voices = ' + JSON.stringify(voices) + ';'));
 const settings = path.join(destination, 'settings.js');
 fs.writeFileSync(settings, fs.readFileSync(settings, 'utf8').replace('Library &amp; tools', 'OpenRead library').replace('Preparing on your Mac…', 'Preparing on this device…')
-  .replace('Natural voices · On-device', 'Kitten voices · On-device')
+  .replace('Natural voices · On-device', 'Natural voices · On-device')
   .replace('Save this reading<span', 'Open page in OpenRead<span')
-  .replace('<div class="option"><label for="source">', '<p class="reader-help">Qwen and personal voices are available in the OpenRead app. Use “Open page in OpenRead” above to listen there.</p><div class="option"><label for="source">'));
+  .replace('<div class="option"><label for="source">', '<p class="reader-help">Download Kitten or Kokoro voices in the OpenRead app first. Qwen remains an experimental app-only feature.</p><div class="option"><label for="source">'));
 const content = path.join(destination, 'content.js');
 fs.writeFileSync(content, fs.readFileSync(content, 'utf8').replace('Start the local helper, then open http://127.0.0.1:8765.', 'Open the OpenRead app to view your library.').replace('Start the local helper to save this reading.', 'OpenRead could not save this page. Open the app and try again.').replace(/Run Set Up OpenRead\.command[^']*|Run Set Up OpenRead\.command and restart the helper[^']*|The featured Kitten voices need the updated helper\.[^']*/gu, 'Open the OpenRead app and download natural voices first.'));
 console.log('Safari native resources ready: app/apple/SafariExtension/Resources');
 
 const popup = path.join(destination, 'popup.js');
 fs.writeFileSync(popup, fs.readFileSync(popup, 'utf8').replace('http://127.0.0.1:8765/', 'openread://library').replace('Open library & tools', 'OpenRead library'));
+
+fs.writeFileSync(settings, fs.readFileSync(settings, 'utf8').replaceAll("voice.pack ? 'English' : voice.detail.split(' · ')[0]", "voice.pack === 'kitten' ? 'Kitten' : voice.detail.split(' · ')[0]"));

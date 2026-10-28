@@ -9,14 +9,17 @@
 // eSpeak has process-global state, including a reused output buffer.
 static std::mutex speech_mutex;
 static bool initialized = false;
-extern "C" char *openread_speech_phonemize(const char *data_parent, const char *text) {
+extern "C" char *openread_speech_phonemize_language(const char *data_parent, const char *text, const char *language) {
     std::lock_guard<std::mutex> lock(speech_mutex);
-    if (!data_parent || !text) return nullptr;
+    if (!data_parent || !text || !language || std::strlen(text) > 16000) return nullptr;
+    const std::string lang(language);
+    if (lang != "en-us" && lang != "en-gb" && lang != "fr-fr" && lang != "es" && lang != "it" && lang != "pt-br" && lang != "hi" && lang != "ar") return nullptr;
     if (!initialized) {
         if (espeak_Initialize(AUDIO_OUTPUT_SYNCHRONOUS, 0, data_parent, espeakINITIALIZE_DONT_EXIT) <= 0) return nullptr;
-        if (espeak_SetVoiceByName("en-us") != EE_OK) return nullptr;
         initialized = true;
     }
+    const char *voice = lang == "en-gb" ? "en" : lang == "fr-fr" ? "fr" : language;
+    if (espeak_SetVoiceByName(voice) != EE_OK) return nullptr;
     const void *cursor = text;
     std::string output;
     while (cursor && *static_cast<const char *>(cursor)) {
@@ -43,5 +46,8 @@ extern "C" char *openread_speech_phonemize(const char *data_parent, const char *
     char *copy = static_cast<char *>(std::malloc(output.size() + 1));
     if (copy) std::memcpy(copy, output.c_str(), output.size() + 1);
     return copy;
+}
+extern "C" char *openread_speech_phonemize(const char *data_parent, const char *text) {
+    return openread_speech_phonemize_language(data_parent, text, "en-us");
 }
 extern "C" void openread_speech_free(char *value) { std::free(value); }
