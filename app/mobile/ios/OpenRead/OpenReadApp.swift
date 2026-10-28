@@ -34,31 +34,29 @@ struct LibraryView: View {
                         Image(systemName: "book.pages").font(.title3.weight(.light))
                         Text("openread.").font(.system(.title2, design: .rounded, weight: .bold)).tracking(-1)
                         Spacer()
-                        Text("FREE, BY DESIGN").font(.system(size: 9, weight: .semibold)).tracking(2).foregroundStyle(.secondary)
+                        Label("On device", systemImage: "lock").font(.system(size: 10)).foregroundStyle(.secondary)
                     }.padding(.top, 8)
-                    VStack(alignment: .leading, spacing: 18) {
-                        Text("A LITTLE LESS EFFORT").font(.system(size: 10, weight: .semibold)).tracking(2.6).foregroundStyle(.secondary)
-                        (Text("Your words.\n") + Text("Your rhythm.").italic().foregroundColor(ReaderStyle.accent))
-                            .font(.system(size: 48, weight: .regular, design: .serif)).tracking(-2).fixedSize(horizontal: false, vertical: true)
-                        Text("A natural voice. A little more focus.")
-                            .font(.subheadline).foregroundStyle(.secondary)
-                    }.padding(.top, 15)
-                    Button { openSample() } label: {
-                        VStack(alignment: .leading, spacing: 25) {
-                            HStack(alignment: .top) {
+                    ViewThatFits(in: .horizontal) {
+                        HStack(alignment: .center, spacing: 36) {
+                            introduction.frame(width: 300, alignment: .leading)
+                            sampleCard.frame(minWidth: 300, maxWidth: .infinity)
+                        }
+                        VStack(alignment: .leading, spacing: 24) { introduction; sampleCard }
+                    }.padding(.top, 12)
+                    if let reading = inProgress {
+                        Button { open(reading) } label: {
+                            HStack(spacing: 18) {
+                                BookCover(reading: reading)
                                 VStack(alignment: .leading, spacing: 7) {
-                                    Text("PICK UP A CLASSIC").font(.system(size: 9, weight: .semibold)).tracking(2).foregroundStyle(.secondary)
-                                    Text("The Odyssey").font(.system(size: 30, design: .serif)).foregroundStyle(.primary)
-                                    Text("Homer · Book I").font(.caption).foregroundStyle(.secondary)
+                                    Text("CONTINUE READING").font(.system(size: 9, weight: .semibold)).tracking(1.8).foregroundStyle(.secondary)
+                                    Text(reading.title).font(.system(.title3, design: .serif)).foregroundStyle(.primary).lineLimit(2)
+                                    ProgressView(value: Double(reading.position) / Double(max(1, reading.textLength))).tint(ReaderStyle.accent).frame(maxWidth: 200)
                                 }
-                                Spacer(); BookEmblem()
-                            }
-                            HStack {
-                                Label("Let the words come to you", systemImage: "headphones").font(.subheadline.weight(.medium))
-                                Spacer(); Image(systemName: "play.fill").font(.subheadline).padding(14).background(.tint.opacity(0.12), in: Circle())
-                            }
-                        }.padding(24).frame(maxWidth: .infinity, alignment: .leading).readerGlass()
-                    }.buttonStyle(.plain).accessibilityLabel("Try The Odyssey")
+                                Spacer(minLength: 0)
+                                Image(systemName: "arrow.right").font(.body).foregroundStyle(ReaderStyle.accent)
+                            }.padding(20).readerGlass()
+                        }.buttonStyle(.plain).accessibilityLabel("Continue reading \(reading.title)")
+                    }
                     if !playback.installed {
                         Button { settingsOpen = true } label: {
                             HStack(spacing: 13) {
@@ -73,19 +71,21 @@ struct LibraryView: View {
                             Text("Your library").font(.system(.title2, design: .serif))
                             Spacer(); Text("\(filtered.count) saved").font(.caption).foregroundStyle(.secondary)
                         }
-                        ForEach(filtered) { reading in
-                            Button { do { playback.open(try library.load(reading.id)); readerOpen = true } catch { self.error = error.localizedDescription } } label: {
-                                HStack(spacing: 18) {
-                                    BookCover(reading: reading)
-                                    VStack(alignment: .leading, spacing: 7) {
-                                        Text(reading.title).font(.system(.headline, design: .serif)).foregroundStyle(.primary).multilineTextAlignment(.leading).lineLimit(2)
-                                        Text("\(reading.wordCount) words · \(max(1, reading.wordCount / 165)) min").font(.caption).foregroundStyle(.secondary)
-                                        if reading.position > 0 { ProgressView(value: Double(reading.position) / Double(max(1, reading.textLength))).frame(maxWidth: 100).tint(ReaderStyle.accent) }
-                                    }
-                                    Spacer(minLength: 0); Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
-                                }.padding(.vertical, 8)
-                            }.buttonStyle(.plain)
-                            .contextMenu { Button("Delete reading", systemImage: "trash", role: .destructive) { do { try library.remove(reading.id); if playback.reading?.id == reading.id { playback.stop() } } catch { self.error = error.localizedDescription } } }
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 280), spacing: 16)], alignment: .leading, spacing: 16) {
+                            ForEach(filtered) { reading in
+                                Button { open(reading) } label: {
+                                    HStack(spacing: 18) {
+                                        BookCover(reading: reading)
+                                        VStack(alignment: .leading, spacing: 7) {
+                                            Text(reading.title).font(.system(.headline, design: .serif)).foregroundStyle(.primary).multilineTextAlignment(.leading).lineLimit(2)
+                                            Text("\(reading.wordCount) words · \(max(1, reading.wordCount / 165)) min").font(.caption).foregroundStyle(.secondary)
+                                            if reading.position > 0 { ProgressView(value: Double(reading.position) / Double(max(1, reading.textLength))).frame(maxWidth: 100).tint(ReaderStyle.accent) }
+                                        }
+                                        Spacer(minLength: 0); Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+                                    }.padding(16).frame(maxWidth: .infinity, minHeight: 122, alignment: .leading).readerGlass()
+                                }.buttonStyle(.plain)
+                                .contextMenu { Button("Delete reading", systemImage: "trash", role: .destructive) { do { try library.remove(reading.id); if playback.reading?.id == reading.id { playback.stop() } } catch { self.error = error.localizedDescription } } }
+                            }
                         }
                         if filtered.isEmpty {
                             VStack(alignment: .leading, spacing: 10) {
@@ -97,7 +97,7 @@ struct LibraryView: View {
                         }
                     }
                     Label("On your device. Yours to keep.", systemImage: "lock.shield").font(.caption).foregroundStyle(.secondary).frame(maxWidth: .infinity).padding(.vertical, 12)
-                }.padding(.horizontal, 26).padding(.bottom, 25).frame(maxWidth: 650).frame(maxWidth: .infinity)
+                }.padding(.horizontal, 26).padding(.bottom, 25).frame(maxWidth: 1_040).frame(maxWidth: .infinity)
             }
             .background(ReadingBackdrop()).navigationTitle("").navigationBarTitleDisplayMode(.inline)
             .searchable(text: $search, prompt: "Find a reading")
@@ -136,6 +136,39 @@ struct LibraryView: View {
             .overlay { if let busy { ProgressView(busy).padding(24).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20)) } }
             .alert("OpenRead", isPresented: Binding(get: { error != nil || library.error != nil }, set: { if !$0 { error = nil; library.error = nil } })) { Button("OK") { error = nil; library.error = nil } } message: { Text(error ?? library.error ?? "") }
         }
+    }
+    private var inProgress: Reading? {
+        library.readings.first { $0.position > 0 && $0.position < $0.textLength }
+    }
+    private var introduction: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            (Text("Your next\n") + Text("chapter.").italic().foregroundColor(ReaderStyle.accent))
+                .font(.system(size: 48, weight: .regular, design: .serif)).tracking(-1.8)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("Pick a book. Find your rhythm.").font(.subheadline).foregroundStyle(.secondary)
+        }
+    }
+    private var sampleCard: some View {
+        Button { openSample() } label: {
+            VStack(alignment: .leading, spacing: 26) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("A CLASSIC, REOPENED").font(.system(size: 9, weight: .semibold)).tracking(1.8).foregroundStyle(.secondary)
+                        Text("The Odyssey").font(.system(size: 32, design: .serif)).foregroundStyle(.primary)
+                        Text("Homer · Book I").font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 10); BookEmblem(compact: true)
+                }
+                HStack {
+                    Label("Open the book", systemImage: "book.pages").font(.subheadline.weight(.medium))
+                    Spacer(); Image(systemName: "arrow.up.right").font(.subheadline)
+                }
+            }.padding(26).frame(maxWidth: .infinity, alignment: .leading).readerGlass()
+        }.buttonStyle(.plain).accessibilityLabel("Try The Odyssey")
+    }
+    private func open(_ reading: Reading) {
+        do { playback.open(try library.load(reading.id)); readerOpen = true }
+        catch { self.error = error.localizedDescription }
     }
     private func openSample() {
         do {

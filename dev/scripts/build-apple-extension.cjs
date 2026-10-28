@@ -9,7 +9,7 @@ for (const name of ['core.js','extract.js','player.js','highlighter.js','content
 }
 fs.copyFileSync(path.join(root, 'app/apple/SafariExtension/background.js'), path.join(destination, 'background.js'));
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'extension/manifest.json')));
-manifest.version = '0.6.2';
+manifest.version = '0.6.3';
 manifest.permissions.push('nativeMessaging');
 delete manifest.host_permissions;
 manifest.background = { scripts: ['background.js'], persistent: false };

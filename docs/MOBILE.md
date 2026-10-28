@@ -19,9 +19,27 @@ Appearance follows your phone. iOS 26 uses SwiftUI's native glass material; iOS 
 
 Apple Intelligence summaries, explanations and passage questions are available on supported Apple devices. The desktop's podcast, dictation and automatic WhatsApp Web chat extraction tools have **not** been ported. To listen to a message on a phone, copy or share its text into OpenRead. The apps cannot inspect other apps or read their conversations automatically.
 
+## Book mode on iPhone Duo
+
+The native iPhone reader opens as pages, with paper-style typography and page
+curls. Wide displays show a spread; compact displays show one page. Narration
+turns pages with the spoken word. You can browse ahead without interrupting the
+voice, then choose Return to spoken word or Listen from this page.
+
+On iOS 27.1, the public hinge API controls subtle spine lighting. Reserved fold
+regions and their margins determine layout: book posture keeps text clear of
+the crease, while tabletop posture places the reading above and controls below.
+Closing or resizing the display does not itself stop audio. Physical-device
+background behaviour still needs testing.
+
+Pages respect Dynamic Type and Arabic/right-to-left text. Reduce Motion removes
+page-curl animation. Choose Pages or Scroll in Reading options. Appearance
+continues to follow the device. Arabic speech from Kitten TTS 2 remains a separate
+local evaluation, not a voice included in this beta.
+
 ## Try it on iPhone or iPad
 
-You need a Mac with **Xcode 26 or later** and an iPhone/iPad running **iOS 17 or later**. The checked-in Xcode project opens directly; Node, Python and XcodeGen are not needed to build it.
+You need a Mac with **Xcode 27.1 or later** and an iPhone/iPad running **iOS 17 or later**. The checked-in Xcode project opens directly; Node, Python and XcodeGen are not needed to build it.
 
 1. Download this repository and open `app/mobile/ios/OpenRead.xcodeproj` in Xcode. Allow its pinned Swift packages to finish loading.
 2. Select the **OpenReadPersonal** scheme for a free Apple account. This build supports paste, file import, OCR and the reader; it leaves out the share/Safari extensions and App Groups.
