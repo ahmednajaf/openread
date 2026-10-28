@@ -28,6 +28,18 @@ not transcribe the expression tags as words. The Arabic transcription contained
 errors, so Arabic pronunciation needs a fluent listener's assessment. Recognition
 is not an objective test of expressiveness, accent quality or speaker similarity.
 
+## Catalog choice and Arabic follow-up
+
+Retain all 115 voice options, grouped by language with search and favourites.
+Arabic and Arabic Falconer are the first featured Arabic choices. The local
+comparison now includes a new shared Arabic paragraph synthesized in both
+voices, rather than only their original reference recordings: 14.2 and 14.96
+seconds of audio generated in 8.43 and 8.04 seconds respectively on this Mac.
+Both produced playable, non-silent 24 kHz PCM. Pronunciation and dialect quality
+still need listener assessment; this does not add Arabic to the shipped native
+pack. The audition browser supports all 115 references, language filters and
+browser-local favourites.
+
 ## Native iPhone investigation
 
 The current upstream Swift SDK supports Mini/Micro/Nano 0.8, not TTS 2.
