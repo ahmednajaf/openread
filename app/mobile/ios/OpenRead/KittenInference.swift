@@ -28,7 +28,7 @@ private final class MappedInference {
 struct EnglishPronunciation {
     static func phonemes(_ text: String, language: String = "en-us") throws -> String {
         guard let parent = Bundle.main.resourceURL else { throw ReadingError.missingModels }
-        let replacements = (try? ContextPronunciation.shared?.replacements(text)) ?? ""
+        let replacements = language.hasPrefix("en") ? (try? ContextPronunciation.shared?.replacements(text)) ?? "" : ""
         guard let result = replacements.isEmpty ? openread_speech_phonemize_language(parent.path, text, language) : openread_speech_phonemize_context_language(parent.path, text, replacements, language) else { throw ReadingError.missingModels }
         defer { openread_speech_free(result) }
         let value = String(cString: result).replacingOccurrences(of: "\n", with: " ")
@@ -148,7 +148,6 @@ final class LocalVoiceInference {
     private let kokoro: Bool
     private let vocabulary: [Unicode.Scalar: Int64]
     private var loadedVoice: (id: String, embedding: Embedding)?
-    static let voiceIDs = ["kiki": "expr-voice-5-f", "rosie": "expr-voice-4-f", "jasper": "expr-voice-2-m", "luna": "expr-voice-3-f", "bruno": "expr-voice-3-m", "hugo": "expr-voice-4-m", "leo": "expr-voice-5-m", "bella": "expr-voice-2-f"]
     // The flatbuffer cache avoids reparsing an 80 MB protobuf in Safari's
     // memory-limited native process. Its name pins both weights and ORT ABI.
     static func preparedModel(in root: URL, kokoro: Bool = false) -> URL {
@@ -197,7 +196,7 @@ final class LocalVoiceInference {
         let phonemes = raw.split(whereSeparator: \.isWhitespace).joined(separator: " ")
         let chunks = try SpeechTokens.chunks(phonemes)
         let spans = try SpeechSourceTiming.spans(text, phonemes: phonemes, language: language)
-        let key = kokoro ? voice : Self.voiceIDs[voice] ?? "expr-voice-5-f"
+        guard let key = kokoro ? voice : VoiceEngine.choices.first(where: { VoiceEngine.canonical($0.id) == voice })?.embedding else { throw ReadingError.missingModels }
         if loadedVoice?.id != key {
             let archive = root.appendingPathComponent(kokoro ? "voices-v1.0.bin" : "voices.npz")
             loadedVoice = (key, try Self.load(archive, key: key))

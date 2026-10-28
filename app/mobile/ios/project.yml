@@ -5,8 +5,6 @@ options:
     iOS: "17.0"
   groupSortPosition: top
 packages:
-  OpenReadQwen:
-    path: ../shared/qwen
   OpenReadInference:
     path: ../shared/inference
   OpenReadSpeech:
@@ -47,11 +45,9 @@ targets:
       - path: ../shared/speech/espeak-ng-data
         type: folder
         buildPhase: resources
-      - path: ../shared/qwen-models.json
-        buildPhase: resources
       - path: ../shared/models.json
         buildPhase: resources
-      - path: ../shared/native-voices.json
+      - path: ../../../extension/voices.json
         buildPhase: resources
       - path: ../shared/kokoro-vocab.json
         buildPhase: resources
@@ -60,7 +56,6 @@ targets:
       - path: ../shared/odyssey.json
         buildPhase: resources
     dependencies:
-      - package: OpenReadQwen
       - package: OpenReadInference
       - package: OpenReadSpeech
       - package: ONNXRuntime
@@ -84,11 +79,9 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         TARGETED_DEVICE_FAMILY: "1,2"
         SUPPORTS_MACCATALYST: NO
-        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) OPENREAD_QWEN"
   OpenReadPersonal:
     <<: *ReaderTarget
     dependencies:
-      - package: OpenReadQwen
       - package: OpenReadInference
       - package: OpenReadSpeech
       - package: ONNXRuntime
@@ -100,7 +93,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: "$(OPENREAD_BUNDLE_ID).personal"
         INFOPLIST_FILE: OpenRead/Info.plist
         CODE_SIGN_ENTITLEMENTS: ""
-        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) OPENREAD_PERSONAL OPENREAD_QWEN"
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) OPENREAD_PERSONAL"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         TARGETED_DEVICE_FAMILY: "1,2"
         SUPPORTS_MACCATALYST: NO
@@ -138,7 +131,7 @@ targets:
       - ../shared/swift
       - path: ../shared/models.json
         buildPhase: resources
-      - path: ../shared/native-voices.json
+      - path: ../../../extension/voices.json
         buildPhase: resources
       - path: ../shared/kokoro-vocab.json
         buildPhase: resources

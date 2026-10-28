@@ -56,7 +56,7 @@ def main():
             raise SystemExit(f"Checksum mismatch for {name}. Remove .local/models/{name} and retry; don't use this file.")
         records.append({"name": name, "url": RELEASE + name, "sha256": digest})
     (MODELS / "sources.json").write_text(json.dumps(records, indent=2) + "\n")
-    print('Setting up the featured Kitten voices and local word alignment…', flush=True)
+    print('Setting up the featured Kitten voices…', flush=True)
     subprocess.run([str(python), str(ROOT / 'app/voice/setup_voices.py')], check=True)
     (ROOT / '.local/setup-version').write_text(json.loads((ROOT / 'package.json').read_text())['version'])
     print("\nReady. Start the voice with:\n  .venv/bin/python app/voice/server.py\n", flush=True)

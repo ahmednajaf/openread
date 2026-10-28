@@ -29,7 +29,7 @@
         <div class="option"><label for="sleep">Sleep timer</label><select id="sleep"><option value="0">Off</option><option value="5">5 minutes</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option></select></div>
         <button class="workspace secondary">OpenRead library<span aria-hidden="true">↗</span></button>
         <button class="save-document secondary">Open page in OpenRead<span aria-hidden="true">＋</span></button>
-        <p class="reader-help">Download Kitten or Kokoro voices in the OpenRead app first. Qwen remains an experimental app-only feature.</p><div class="option"><label for="source">Read from</label><select id="source"><option value="page">This page</option><option value="selection">Selected text</option><option value="chat" hidden>WhatsApp chat</option></select></div>
+        <p class="reader-help">Download Kitten or Kokoro voices in the OpenRead app first.</p><div class="option"><label for="source">Read from</label><select id="source"><option value="page">This page</option><option value="selection">Selected text</option><option value="chat" hidden>WhatsApp chat</option></select></div>
         <label class="option chat-option" hidden><span>Announce senders</span><input id="announceSenders" type="checkbox" role="switch" checked></label>
         <button class="refresh-chat secondary" hidden>Refresh loaded messages<span aria-hidden="true">↻</span></button>
         <p class="reader-help chat-help" hidden></p>

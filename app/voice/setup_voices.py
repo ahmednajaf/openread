@@ -2,8 +2,6 @@
 import hashlib
 import json
 from pathlib import Path
-import subprocess
-import sys
 import urllib.request
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -38,12 +36,7 @@ def main():
             raise SystemExit(f'Checksum mismatch: remove .local/kitten-mini/{name} and run setup again.')
         records.append({'name': name, 'sha256': actual, 'url': url})
     (destination / 'sources.json').write_text(json.dumps({'repository': REPOSITORY, 'revision': REVISION, 'license': 'Apache-2.0', 'files': records}, indent=2) + '\n')
-    # Kitten has no duration outputs. Local Whisper supplies approximate word
-    # alignment against its actual audio, rather than a made-up progress clock.
-    import importlib.util
-    if not (ROOT / '.local/whisper-base/model.bin').exists() or importlib.util.find_spec('faster_whisper') is None:
-        subprocess.run([sys.executable, str(ROOT / 'app/voice/setup_optional.py'), 'dictation'], check=True)
-    print('Eight Kitten Mini voices are ready. Restart OpenRead and reload the extension. This pack uses local Whisper word alignment, which adds latency and is less precise than Kokoro timings.')
+    print('Eight Kitten Mini voices are ready, including model word timings. Restart OpenRead and reload the extension.')
 
 
 if __name__ == '__main__':

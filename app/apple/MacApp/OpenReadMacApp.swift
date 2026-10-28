@@ -8,13 +8,9 @@ import UniformTypeIdentifiers
     @StateObject private var player = PlaybackController()
     @State private var aiPassage: AppleReadingPassage?
     @State private var importing = false
-    @State private var installed = false
-    @State private var downloading = false
-    @State private var progress = 0.0
     @State private var selected: Reading.ID?
     @State private var error: String?
     @Environment(\.scenePhase) private var scenePhase
-    private var engine: VoiceEngine { player.engine }
     var body: some Scene {
         WindowGroup("OpenRead") {
             NavigationSplitView {
@@ -37,9 +33,9 @@ import UniformTypeIdentifiers
                         Image(systemName: "book.pages").font(.system(size: 52, weight: .ultraLight)).foregroundStyle(.tint)
                         Text("Your words.\nYour rhythm.").font(.system(size: 46, design: .serif)).multilineTextAlignment(.center)
                         Text("Natural reading, right inside Safari.").font(.title3).foregroundStyle(.secondary)
-                        if downloading { ProgressView(value: progress).frame(width: 260); Text("Downloading your voices…").foregroundStyle(.secondary) }
-                        else if !installed {
-                            Button("Download eight natural voices · 83 MB") { setup() }.buttonStyle(.borderedProminent)
+                        if player.downloading { ProgressView(value: player.downloadProgress).frame(width: 260); Text("Downloading your voices…").foregroundStyle(.secondary) }
+                        else if !player.kittenInstalled {
+                            Button("Download eight natural voices · 83 MB") { player.downloadVoices() }.buttonStyle(.borderedProminent)
                             Text("Download once. Then speech stays on your Mac.").font(.caption).foregroundStyle(.secondary)
                         } else { Label("Your voices are ready", systemImage: "checkmark.circle.fill").foregroundStyle(.green) }
                         Button("Enable OpenRead in Safari") {
@@ -60,10 +56,7 @@ import UniformTypeIdentifiers
             .tint(Color(red: 0.47, green: 0.37, blue: 0.65))
             .background(Color(nsColor: .windowBackgroundColor))
             .frame(minWidth: 850, minHeight: 650)
-            .task {
-                installed = await engine.isInstalled(); receiveInbox()
-
-            }
+            .task { receiveInbox() }
             .onChange(of: scenePhase) { _, phase in if phase == .active { receiveInbox() } }
             .onOpenURL { url in if url.scheme == "openread" { receiveInbox(); NSApp.activate(ignoringOtherApps: true) } }
             .alert("OpenRead", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) { Button("OK") { error = nil } } message: { Text(error ?? "") }
@@ -76,30 +69,22 @@ import UniformTypeIdentifiers
                     }
                 }
                 Section("Kitten voices") {
-                    if !installed { Button("Download Kitten voices · 83 MB") { setup() } }
+                    if !player.kittenInstalled { Button("Download Kitten voices · 83 MB") { player.downloadVoices() } }
                     Text("Eight voices for everyday reading.").font(.footnote).foregroundStyle(.secondary)
                 }
-                Section("Kokoro voices · American & British") {
+                Section("Kokoro voices · 6 languages") {
                     if player.downloading { ProgressView(value: player.downloadProgress) }
                     else if !player.kokoroInstalled { Button("Download Kokoro voices · about 192 MB") { player.downloadVoices(voice: "af_heart") } }
-                    if player.kokoroInstalled { Text("28 voices ready to use.").font(.footnote).foregroundStyle(.secondary) }
+                    if player.kokoroInstalled { Text("41 voices ready to use.").font(.footnote).foregroundStyle(.secondary) }
                 }
                 Section("On-device AI") { Text(AppleReadingTools.availability).font(.footnote).foregroundStyle(.secondary) }
-                QwenSettingsSection()
             }.formStyle(.grouped).environmentObject(player).tabItem { Label("Voices", systemImage: "waveform") }
             ScrollView { Text((Bundle.main.url(forResource: "NOTICES", withExtension: "txt").flatMap { try? String(contentsOf: $0, encoding: .utf8) }) ?? "See licences in the source repository.").font(.caption).textSelection(.enabled).padding() }.tabItem { Label("Licences", systemImage: "doc.text") }
         }.frame(width: 650, height: 600)
         .alert("OpenRead", isPresented: Binding(get: { player.error != nil }, set: { if !$0 { player.error = nil } })) { Button("OK") { player.error = nil } } message: { Text(player.error ?? "") } }
 
     }
-    private func setup() {
-        downloading = true
-        Task {
-            do { try await engine.prepare(download: true) { value in Task { @MainActor in progress = value } }; installed = true }
-            catch { self.error = error.localizedDescription }
-            downloading = false
-        }
-    }
+
     private func receiveInbox() {
         guard let urls = try? FileManager.default.contentsOfDirectory(at: AppFiles.inbox, includingPropertiesForKeys: nil) else { return }
         for url in urls where url.pathExtension == "json" {

@@ -15,7 +15,7 @@ import Combine
     var isBusy: Bool { active != nil || !queued.isEmpty }
 
     func enqueue(_ pack: String, download: @escaping Download) {
-        guard ["expressive", "clone"].contains(pack), active != pack, !queued.contains(pack) else { return }
+        guard ["kitten", "kokoro"].contains(pack), active != pack, !queued.contains(pack) else { return }
         self.download = download; error = nil; queued.append(pack); startNext()
     }
     func cancelCurrent() { task?.cancel() }

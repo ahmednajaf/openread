@@ -27,9 +27,9 @@ Compared with the **Speechify Reader Premium** list checked on **25 October 2026
 Weights are **downloaded by explicit setup scripts**, not committed as multi-gigabyte repository files. The source includes the setup instructions, pinned speech hashes, model provenance records and runtime integration. Models run on the user's own hardware; “free” means no OpenRead subscription or hosted inference charge, not zero disk, electricity or hardware use.
 
 - **Kokoro 82M:** approximately 354 MB weights/styles. Apache-2.0. Existing duration-capable ONNX export; 41 exposed voices from its style file. [Upstream voice/language notes](https://huggingface.co/hexgrad/Kokoro-82M/blob/main/VOICES.md) describe quality differences. Japanese and Mandarin require more appropriate text processing and are intentionally not offered yet.
-- **Kitten TTS Mini 0.8 (featured):** about 82 MB, eight English voices, Apache-2.0 weights and upstream inference source. Uses local Whisper for approximate word alignment; slower than Kokoro and not claimed to have model-duration timing. [Model details](https://huggingface.co/KittenML/kitten-tts-mini-0.8).
+- **Kitten TTS Mini 0.8 (featured):** about 82 MB, eight English voices, Apache-2.0 weights and upstream inference source. Uses model token durations for word highlighting, without a recognition pass. [Model details](https://huggingface.co/KittenML/kitten-tts-mini-0.8).
 - **Qwen3 4B:** approximately 2.5 GB through Ollama. Apache-2.0. [Model details](https://ollama.com/library/qwen3:4b). No cloud fallback.
-- **Whisper Base:** approximately 150 MB plus faster-whisper packages; included with featured voices for alignment and reused for dictation. MIT. Setup records the exact Hugging Face repository revision and downloaded checksums. [Runtime implementation](https://github.com/SYSTRAN/faster-whisper).
+- **Whisper Base:** approximately 150 MB plus faster-whisper packages; an optional download for dictation. MIT. Setup records the exact Hugging Face repository revision and downloaded checksums. [Runtime implementation](https://github.com/SYSTRAN/faster-whisper).
 - **Vision OCR:** the installed macOS recognition framework; a small Python bridge is installed through PyPI. No separate hosted OCR account.
 
 ## Release status

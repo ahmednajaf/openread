@@ -15,7 +15,7 @@ python3.11 app/voice/setup.py
 .venv/bin/python app/voice/server.py --allow-preview
 ```
 
-One-time voice setup creates a private `.venv/` and downloads approximately **586 MB** of speech/alignment weights/styles into `.local/models/`, `.local/kitten-mini/` and `.local/whisper-base/`, plus Python packages. Pinned SHA-256 hashes verify the model assets. This includes all 49 voice choices and the local Whisper model used for Kitten word alignment. After setup, inference is local. ONNX Runtime telemetry is disabled.
+One-time voice setup creates a private `.venv/` and downloads approximately **436 MB** of voice weights/styles into `.local/models/` and `.local/kitten-mini/`, plus Python packages. Pinned SHA-256 hashes verify the model assets. This includes all 49 voice choices. Whisper is an optional, separate dictation download. After setup, inference is local. ONNX Runtime telemetry is disabled.
 
 Start the preview in another terminal:
 
@@ -104,7 +104,7 @@ Normalized speech text retains offsets into original text nodes, including words
 
 Article extraction is heuristic and won't be perfect on every site. The extension cannot read inside Safari’s PDF viewer, browser-internal pages, embedded frames, or closed shadow roots. Import PDFs/images into the companion workspace for text extraction or macOS OCR. English is strongest; the additional exposed languages remain experimental. Keep the tab open; multiple tabs can play independently, so use one at a time.
 
-Kitten uses approximate Whisper word alignment. If Whisper omits a short clip of at most five spoken words and eight seconds, usable audio still plays with duration-based word estimates marked `estimated: true` and `timingSource: estimated-duration`. Longer unrecognized clips report an alignment error. Empty, silent or non-finite audio is rejected. The extension distinguishes these voice errors from an offline helper, timeouts, denied access and a busy service.
+Kitten's model also supplies token durations. The helper maps the exact tokenizer sequence (including separators and boundary tokens) onto those durations, then joins chunk times into the source timeline. Empty, silent, non-finite audio or invalid durations are rejected. Kitten and Kokoro share source-to-phoneme alignment; uncertain source matches are explicitly marked `estimated`. Neither requires a Whisper recognition pass for reading.
 
 ## Privacy and permissions
 

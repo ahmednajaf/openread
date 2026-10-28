@@ -1,4 +1,4 @@
-# English pronunciation engine
+# Pronunciation engine
 
 Portable eSpeak NG C sources and Unicode tables from
 https://github.com/espeak-ng/espeak-ng/tree/699e79690f23e2558d990a3a78b0050745b96932
@@ -7,8 +7,8 @@ Sources in `vendor/` are unmodified. OpenRead adds `config.h` for the synchronou
 build and `endian.h` for Apple's byte-order aliases. Only the synchronous library is compiled; eSpeak never produces the
 listening voice. Kitten Mini remains the neural speech model.
 
-`espeak-ng-data/` contains the English dictionary and shared phoneme/intonation
-files compiled from that exact source with CMake's `data` target. English voice
+`espeak-ng-data/` contains English, Spanish, French, Hindi, Italian and Portuguese
+dictionaries and shared phoneme/intonation files compiled from that exact source with CMake's `data` target. Matching voice
 files are copied unchanged. Rebuild with `dev/scripts/mobile-speech-data.sh`
 from the repository root (Git, CMake 3.22+ and a host C/C++ compiler required).
 The script retrieves the exact corresponding upstream source into `.local/`;

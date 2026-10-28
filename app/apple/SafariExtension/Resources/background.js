@@ -15,7 +15,7 @@ api.runtime.onMessage.addListener((message, sender, respond) => {
   if (!['health', 'synthesize', 'saveDocument', 'openWorkspace'].includes(message?.type)) return;
   (async () => {
     if (message.type === 'openWorkspace') { await api.tabs.create({ url: 'openread://library' }); return { ok: true }; }
-    if (message.type === 'synthesize' && (typeof message.text !== 'string' || message.text.length > 1600 || !(/^(kitten:(kiki|rosie|jasper|luna|bruno|hugo|leo|bella)|[ab][fm]_[a-z]+)$/u.test(message.voice)))) return { ok: false, error: 'Choose an OpenRead voice and a shorter passage.' };
+    if (message.type === 'synthesize' && (typeof message.text !== 'string' || message.text.length > 1600 || !(/^(kitten:(kiki|rosie|jasper|luna|bruno|hugo|leo|bella)|[abefhip][fm]_[a-z]+)$/u.test(message.voice)))) return { ok: false, error: 'Choose an OpenRead voice and a shorter passage.' };
     if (message.type === 'saveDocument' && (typeof message.text !== 'string' || !message.text.trim() || message.text.length > 250000)) return { ok: false, error: 'Choose up to 250,000 characters to save.' };
     const request = message.type === 'saveDocument'
       ? { type: 'saveDocument', title: String(message.title || 'Saved reading').slice(0, 240), text: message.text, source: String(sender.tab.url || '').slice(0, 1000) }

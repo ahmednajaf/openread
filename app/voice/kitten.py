@@ -4,15 +4,17 @@ Token alphabet and input preparation adapted from KittenML/KittenTTS 0.8's
 kittentts/onnx_model.py, Apache-2.0. See docs/notices/KittenTTS-LICENSE.txt.
 """
 import base64
-from difflib import SequenceMatcher
+import json
+from types import SimpleNamespace
+from alignment import align_words
 import io
 from pathlib import Path
 import re
 import wave
 
 ROOT = Path(__file__).resolve().parents[2]
-ALIASES = {'bella': 'expr-voice-2-f', 'jasper': 'expr-voice-2-m', 'luna': 'expr-voice-3-f', 'bruno': 'expr-voice-3-m',
-           'rosie': 'expr-voice-4-f', 'hugo': 'expr-voice-4-m', 'kiki': 'expr-voice-5-f', 'leo': 'expr-voice-5-m'}
+ALIASES = {v['id'].split(':', 1)[1]: v['embedding']
+           for v in json.loads((ROOT / 'extension/voices.json').read_text()) if v.get('embedding')}
 SYMBOLS = '$' + ';:,.!?¡¿—…"«»"" ' + 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz' + "ɑɐɒæɓʙβɔɕçɗɖðʤəɘɚɛɜɝɞɟʄɡɠɢʛɦɧħɥʜɨɪʝɭɬɫɮʟɱɯɰŋɳɲɴøɵɸθœɶʘɹɺɾɻʀʁɽʂʃʈʧʉʊʋⱱʌɣɤʍχʎʏʑʐʒʔʡʕʢǀǁǂǃˈˌːˑʼʴʰʱʲʷˠˤ˞↓↑→↗↘'̩'ᵻ"
 
 
@@ -31,60 +33,25 @@ class VoiceError(ValueError):
 
 
 def ready():
-    import importlib.util
-    return importlib.util.find_spec('faster_whisper') is not None and all((ROOT / '.local/kitten-mini' / name).exists() for name in ('kitten_tts_mini_v0_8.onnx', 'voices.npz', 'sources.json')) and (ROOT / '.local/whisper-base/model.bin').exists()
+    return all((ROOT / '.local/kitten-mini' / name).exists()
+               for name in ('kitten_tts_mini_v0_8.onnx', 'voices.npz', 'sources.json'))
 
 
-def align_transcript(text, recognized, duration):
-    tokens = list(re.finditer(r'\S+', text))
-    normalize = lambda value: ''.join(c.lower() for c in value if c.isalnum())
-    source = [normalize(token.group()) for token in tokens]
-    actual = [normalize(word.word) for word in recognized]
-    matches = {}
-    for block in SequenceMatcher(None, source, actual, autojunk=False).get_matching_blocks():
-        for delta in range(block.size):
-            matches[block.a + delta] = recognized[block.b + delta]
-    # Spread each unrecognized run across the gap between real anchors. Giving
-    # that entire gap to its first word leaves every subsequent word at zero.
-    bounds = {}
-    cursor = 0
-    while cursor < len(tokens):
-        if cursor in matches:
-            bounds[cursor] = (float(matches[cursor].start), float(matches[cursor].end))
-            cursor += 1
-            continue
-        end = cursor + 1
-        while end < len(tokens) and end not in matches:
-            end += 1
-        start_time = bounds[cursor - 1][1] if cursor else 0.0
-        end_time = max(start_time, float(matches[end].start) if end in matches else duration)
-        weights = [max(1, len(source[i])) for i in range(cursor, end)]
-        total = sum(weights)
-        elapsed = 0
-        for index, weight in zip(range(cursor, end), weights):
-            bounds[index] = (start_time + (end_time - start_time) * elapsed / total,
-                             start_time + (end_time - start_time) * (elapsed + weight) / total)
-            elapsed += weight
-        cursor = end
-    words = []
-    for index, token in enumerate(tokens):
-        if not source[index]:
-            continue
-        start, end = bounds[index]
-        start = max(words[-1]['start'] if words else 0.0, min(duration, start))
-        words.append({'offset': len(text[:token.start()].encode('utf-16-le')) // 2, 'length': len(token.group().encode('utf-16-le')) // 2,
-            'start': round(start, 4), 'end': round(max(start, min(duration, end)), 4), 'estimated': True})
-    return words
-
-
-def speech_alignment(text, recognized, duration):
-    words = align_transcript(text, recognized, duration)
-    # Whisper often drops isolated headings, initials and one-word replies.
-    # Keep their valid audio; mark duration-based timing explicitly rather than
-    # rejecting the entire reading. Longer clips still require recognized speech.
-    if not words or not recognized and (len(words) > 5 or duration > 8):
+def model_timings(sounds, vocabulary, frames, raw_samples, kept_samples, offset=0):
+    """Use the model's token durations, preserving inserted separator positions."""
+    prepared = ' '.join(re.findall(r'\w+|[^\w\s]', sounds))
+    characters = [c for c in prepared if c in vocabulary]
+    durations = [int(n) for n in frames]
+    if len(durations) < len(characters) + 3 or any(n < 0 or n >= 100000 for n in durations) or not sum(durations):
         raise VoiceError('voice_alignment_failed')
-    return words, 'whisper-word-alignment' if recognized else 'estimated-duration'
+    scale = raw_samples / sum(durations) / 24000
+    edges = [0]
+    for n in durations:
+        edges.append(edges[-1] + n * scale)
+    limit = kept_samples / 24000
+    return [SimpleNamespace(phoneme=c, start=offset + min(limit, edges[i + 1]),
+                            end=offset + min(limit, edges[i + 2]))
+            for i, c in enumerate(characters)]
 
 
 def trim_silence(samples):
@@ -117,6 +84,10 @@ class KittenVoice:
         import numpy as np
         import onnxruntime as ort
         import phonemizer
+        import espeakng_loader
+        from phonemizer.backend.espeak.wrapper import EspeakWrapper
+        EspeakWrapper.set_data_path(espeakng_loader.get_data_path())
+        EspeakWrapper.set_library(espeakng_loader.get_library_path())
         if not ready():
             raise VoiceError('voice_setup_required')
         options = ort.SessionOptions(); options.intra_op_num_threads = 4
@@ -129,10 +100,11 @@ class KittenVoice:
         self.np = np
 
     def synthesize(self, text, voice):
-        import features
         np = self.np
         key = ALIASES[voice.split(':', 1)[1]]
         audio_parts = []
+        timings = []
+        elapsed = 0.0
         # Resolve pronunciation using the complete passage before any acoustic
         # token-window splitting, matching the native apps.
         full_sounds = self.english.phonemize(text)
@@ -144,18 +116,20 @@ class KittenVoice:
             ref = min(max(1, len(text) * len(chunk) // max(1, len(full_sounds))), self.voices[key].shape[0] - 1)
             result = self.session.run(None, {'input_ids': np.array([tokens], dtype=np.int64), 'style': self.voices[key][ref:ref + 1], 'speed': np.array([1.0], dtype=np.float32)})
             samples = np.asarray(result[0]).reshape(-1)
-            audio_parts.append(trim_silence(samples))
+            kept = trim_silence(samples)
+            timings.extend(model_timings(chunk, self.vocab, np.asarray(result[1]).reshape(-1), len(samples), len(kept), elapsed))
+            audio_parts.append(kept)
+            elapsed += len(kept) / 24000
         audio = np.concatenate(audio_parts)
         if not audio.size or not np.all(np.isfinite(audio)) or np.max(np.abs(audio)) < 1e-5:
             raise VoiceError('voice_empty_audio')
         rate = 24000; duration = len(audio) / rate
-        # Whisper receives 16 kHz samples and aligns recognized words back to
-        # exact source offsets. These boundaries are explicitly approximate.
-        resampled = np.interp(np.arange(int(len(audio) * 16000 / rate)) * rate / 16000, np.arange(len(audio)), audio).astype(np.float32)
-        recognized = features.whisper_word_timings(resampled, text)
-        words, timing_source = speech_alignment(text, recognized, duration)
+        sounds = self.phonemizer.phonemize(re.findall(r'\S+', text), strip=True)
+        words = align_words(text, sounds, timings, duration)
+        if not words or not any(w['end'] > w['start'] for w in words):
+            raise VoiceError('voice_alignment_failed')
         output = io.BytesIO()
         with wave.open(output, 'wb') as wav:
             wav.setnchannels(1); wav.setsampwidth(2); wav.setframerate(rate)
             wav.writeframes((np.clip(audio, -1, 1) * 32767).astype('<i2').tobytes())
-        return {'audio': base64.b64encode(output.getvalue()).decode('ascii'), 'words': words, 'duration': round(duration, 4), 'voice': voice, 'timingSource': timing_source}
+        return {'audio': base64.b64encode(output.getvalue()).decode('ascii'), 'words': words, 'duration': round(duration, 4), 'voice': voice, 'timingSource': 'model-phonemes'}

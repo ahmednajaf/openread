@@ -90,6 +90,15 @@ final class ImportTests: XCTestCase {
 
 
 final class LocalVoiceTimingTests: XCTestCase {
+    private let passages = [
+        "en-us": "Yesterday I read the book. Today I read it again; don't rush the ending!",
+        "en-gb": "Yesterday I read the book. Today I read it again; don't rush the ending!",
+        "es": "La lectura nos permite descubrir historias. Escucha con calma y disfruta de cada palabra.",
+        "fr-fr": "La lecture nous permet de découvrir des histoires. Écoutez tranquillement et profitez de chaque mot.",
+        "hi": "पढ़ना हमें नई कहानियाँ खोजने देता है। आराम से सुनिए और हर शब्द का आनंद लीजिए।",
+        "it": "La lettura ci permette di scoprire nuove storie. Ascolta con calma e goditi ogni parola.",
+        "pt-br": "A leitura permite descobrir novas histórias. Escute com calma e aproveite cada palavra."
+    ]
     private func installedEngine() async throws -> VoiceEngine {
         let engine = VoiceEngine()
         guard await engine.isInstalled(), await engine.isInstalled(voice: "af_heart") else {
@@ -99,14 +108,15 @@ final class LocalVoiceTimingTests: XCTestCase {
     }
     func testEveryStableVoiceProducesOrderedSourceTimings() async throws {
         let engine = try await installedEngine()
-        let text = "Yesterday I read the book. Today I read it again; don't rush the ending!"
+
         for voice in VoiceEngine.kittenVoices + VoiceEngine.kokoroVoices {
+            let text = try XCTUnwrap(passages[VoiceEngine.language(voice)])
             let installed = await engine.isInstalled(voice: voice)
             XCTAssertTrue(installed, "Missing fixture: \(voice)")
             try await engine.prepare(voice: voice, download: false) { _ in }
             let start = Date()
             let clip = try await engine.generate(text, voice: voice)
-            if ["kiki", "af_heart", "bf_emma"].contains(voice) {
+            if ["kiki", "af_heart", "bf_emma", "ef_dora", "ff_siwis", "hf_alpha", "if_sara", "pf_dora"].contains(voice) {
                 let folder = AppFiles.root.appendingPathComponent("VoiceChecks")
                 try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
                 try clip.wav.write(to: folder.appendingPathComponent(voice + ".wav"))
@@ -116,6 +126,16 @@ final class LocalVoiceTimingTests: XCTestCase {
             XCTAssertEqual(clip.words.map(\.range), ReadingText.words(in: text), voice)
             XCTAssertTrue(clip.words.allSatisfy { $0.start >= 0 && $0.end > $0.start && $0.end <= clip.duration }, voice)
             for (a,b) in zip(clip.words, clip.words.dropFirst()) { XCTAssertLessThanOrEqual(a.end, b.start + 0.001, voice) }
+        }
+    }
+    func testSafariMappedRuntimeSupportsEveryLanguage() async throws {
+        _ = try await installedEngine()
+        let mapped = try LocalVoiceInference(root: AppFiles.models, kokoro: true, forSafari: true)
+        for voice in ["af_heart", "bf_emma", "ef_dora", "ff_siwis", "hf_alpha", "if_sara", "pf_dora"] {
+            let text = try XCTUnwrap(passages[VoiceEngine.language(voice)])
+            let clip = try mapped.generate(text, voice: voice)
+            XCTAssertEqual(clip.words.map(\.range), ReadingText.words(in: text), voice)
+            XCTAssertTrue(clip.words.allSatisfy { $0.start >= 0 && $0.end > $0.start && $0.end <= clip.duration }, voice)
         }
     }
     func testLongContextChunksKeepEveryOriginalWordIncludingRepeatedWords() async throws {

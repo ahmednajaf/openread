@@ -2,121 +2,66 @@
   {
     "id": "kitten:kiki",
     "name": "Kiki",
-    "detail": "Kitten Mini \u00b7 English",
+    "detail": "Kitten Mini · English",
     "lang": "en-us",
-    "pack": "kitten"
+    "pack": "kitten",
+    "embedding": "expr-voice-5-f"
   },
   {
     "id": "kitten:rosie",
     "name": "Rosie",
-    "detail": "Kitten Mini \u00b7 English",
+    "detail": "Kitten Mini · English",
     "lang": "en-us",
-    "pack": "kitten"
+    "pack": "kitten",
+    "embedding": "expr-voice-4-f"
   },
   {
     "id": "kitten:jasper",
     "name": "Jasper",
-    "detail": "Kitten Mini \u00b7 English",
+    "detail": "Kitten Mini · English",
     "lang": "en-us",
-    "pack": "kitten"
+    "pack": "kitten",
+    "embedding": "expr-voice-2-m"
   },
   {
     "id": "kitten:luna",
     "name": "Luna",
-    "detail": "Kitten Mini \u00b7 English",
+    "detail": "Kitten Mini · English",
     "lang": "en-us",
-    "pack": "kitten"
+    "pack": "kitten",
+    "embedding": "expr-voice-3-f"
   },
   {
     "id": "kitten:bruno",
     "name": "Bruno",
-    "detail": "Kitten Mini \u00b7 English",
+    "detail": "Kitten Mini · English",
     "lang": "en-us",
-    "pack": "kitten"
+    "pack": "kitten",
+    "embedding": "expr-voice-3-m"
   },
   {
     "id": "kitten:hugo",
     "name": "Hugo",
-    "detail": "Kitten Mini \u00b7 English",
+    "detail": "Kitten Mini · English",
     "lang": "en-us",
-    "pack": "kitten"
+    "pack": "kitten",
+    "embedding": "expr-voice-4-m"
   },
   {
     "id": "kitten:leo",
     "name": "Leo",
-    "detail": "Kitten Mini \u00b7 English",
+    "detail": "Kitten Mini · English",
     "lang": "en-us",
-    "pack": "kitten"
+    "pack": "kitten",
+    "embedding": "expr-voice-5-m"
   },
   {
     "id": "kitten:bella",
     "name": "Bella",
-    "detail": "Kitten Mini \u00b7 English",
+    "detail": "Kitten Mini · English",
     "lang": "en-us",
-    "pack": "kitten"
-  },
-  {
-    "id": "qwen:ryan",
-    "name": "Ryan",
-    "detail": "Qwen3 \u00b7 expressive narration",
-    "lang": "en-us",
-    "pack": "qwen"
-  },
-  {
-    "id": "qwen:aiden",
-    "name": "Aiden",
-    "detail": "Qwen3 \u00b7 expressive narration",
-    "lang": "en-us",
-    "pack": "qwen"
-  },
-  {
-    "id": "qwen:vivian",
-    "name": "Vivian",
-    "detail": "Qwen3 \u00b7 expressive narration",
-    "lang": "en-us",
-    "pack": "qwen"
-  },
-  {
-    "id": "qwen:serena",
-    "name": "Serena",
-    "detail": "Qwen3 \u00b7 expressive narration",
-    "lang": "en-us",
-    "pack": "qwen"
-  },
-  {
-    "id": "qwen:dylan",
-    "name": "Dylan",
-    "detail": "Qwen3 \u00b7 expressive narration",
-    "lang": "en-us",
-    "pack": "qwen"
-  },
-  {
-    "id": "qwen:eric",
-    "name": "Eric",
-    "detail": "Qwen3 \u00b7 expressive narration",
-    "lang": "en-us",
-    "pack": "qwen"
-  },
-  {
-    "id": "qwen:uncle_fu",
-    "name": "Uncle Fu",
-    "detail": "Qwen3 \u00b7 expressive narration",
-    "lang": "en-us",
-    "pack": "qwen"
-  },
-  {
-    "id": "qwen:ono_anna",
-    "name": "Ono Anna",
-    "detail": "Qwen3 \u00b7 expressive narration",
-    "lang": "en-us",
-    "pack": "qwen"
-  },
-  {
-    "id": "qwen:sohee",
-    "name": "Sohee",
-    "detail": "Qwen3 \u00b7 expressive narration",
-    "lang": "en-us",
-    "pack": "qwen"
+    "pack": "kitten",
+    "embedding": "expr-voice-2-f"
   },
   {
     "id": "af_heart",

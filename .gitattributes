@@ -1,3 +1,6 @@
 
 # Keep pinned upstream sources byte-for-byte and collapse them in review.
 app/mobile/shared/qwen/vendor/** -whitespace linguist-vendored
+
+# Voice definitions are copied unchanged from the pinned eSpeak revision.
+app/mobile/shared/speech/espeak-ng-data/lang/** -whitespace
