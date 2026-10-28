@@ -54,6 +54,10 @@ final class SpeechTests: XCTestCase {
 
 final class StableReadingPlaybackTests: XCTestCase {
     @MainActor func testKittenAndKokoroCrossPassagesAtDoubleSpeedWithoutHighlightResets() async throws {
+        let voices = VoiceEngine()
+        guard await voices.isInstalled(), await voices.isInstalled(voice: "af_heart") else {
+            throw XCTSkip("Install Kitten and Kokoro to run real streaming playback checks.")
+        }
         let player = PlaybackController()
         let originalVoice = player.voice, originalRate = player.rate
         defer { player.stop(); player.voice = originalVoice; player.rate = originalRate }

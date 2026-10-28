@@ -90,8 +90,15 @@ final class ImportTests: XCTestCase {
 
 
 final class LocalVoiceTimingTests: XCTestCase {
-    func testEveryStableVoiceProducesOrderedSourceTimings() async throws {
+    private func installedEngine() async throws -> VoiceEngine {
         let engine = VoiceEngine()
+        guard await engine.isInstalled(), await engine.isInstalled(voice: "af_heart") else {
+            throw XCTSkip("Install both optional voice packs to run real native inference checks.")
+        }
+        return engine
+    }
+    func testEveryStableVoiceProducesOrderedSourceTimings() async throws {
+        let engine = try await installedEngine()
         let text = "Yesterday I read the book. Today I read it again; don't rush the ending!"
         for voice in VoiceEngine.kittenVoices + VoiceEngine.kokoroVoices {
             let installed = await engine.isInstalled(voice: voice)
@@ -112,7 +119,7 @@ final class LocalVoiceTimingTests: XCTestCase {
         }
     }
     func testLongContextChunksKeepEveryOriginalWordIncludingRepeatedWords() async throws {
-        let engine = VoiceEngine()
+        let engine = try await installedEngine()
         let text = String(repeating: "The Nymph waited by the sea, and Odysseus read the letter again. ", count: 12)
         for voice in ["kiki", "af_heart", "bf_emma"] {
             try await engine.prepare(voice: voice, download: false) { _ in }
@@ -132,7 +139,7 @@ final class LocalVoiceTimingTests: XCTestCase {
         }
     }
     func testUnicodeAndSpokenNumbersRetainSourceRanges() async throws {
-        let engine = VoiceEngine()
+        let engine = try await installedEngine()
         let text = "Café costs £12.50 today. I've read 2024 pages—really! Next, read chapter 3."
         for voice in ["kiki", "af_heart"] {
             try await engine.prepare(voice: voice, download: false) { _ in }
