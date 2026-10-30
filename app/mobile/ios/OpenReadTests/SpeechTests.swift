@@ -40,6 +40,17 @@ final class SpeechTests: XCTestCase {
         XCTAssertEqual(chunks.joined(separator: " ").split(separator: " "), ipa.split(separator: " "))
         XCTAssertThrowsError(try SpeechTokens.chunks(String(repeating: "ɑ", count: 398)))
     }
+    func testRepeatedNamesAndQuotedSoundsKeepTheirSourceWordSpans() throws {
+        let text = "Nora turned the toy’s head and leaned to the right. It banked sharply. Nora fitted a motor that went “Br-r-r” and made sounds like “Powie” and “Sh-sh-shshsh.”"
+        let phonemes = try EnglishPronunciation.phonemes(text).split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        let spans = try SpeechSourceTiming.spans(text, phonemes: phonemes)
+        let expected = ReadingText.words(in: text)
+        let found = Set(spans.map { "\($0.offset):\($0.length)" })
+        for range in expected {
+            XCTAssertTrue(found.contains("\(range.location):\(range.length)"), "Missing timing for \((text as NSString).substring(with: range))")
+        }
+        XCTAssertEqual(spans.map(\.offset), spans.map(\.offset).sorted())
+    }
     func testTailTrimmingCannotCutAnAudibleEnding() {
         let audible = [Float](repeating: 0.2, count: 7200)
         XCTAssertEqual(SpeechTokens.trimSilence(audible), audible)

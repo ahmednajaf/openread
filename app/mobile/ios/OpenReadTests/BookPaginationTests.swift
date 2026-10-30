@@ -175,6 +175,50 @@ final class BookPaginationTests: XCTestCase {
         XCTAssertTrue(NSLocationInRange(anchor, pagination.ranges[controller.currentPage]))
         XCTAssertEqual(browsed.count, 1, "A resize must not seek or restart narration")
     }
+    @MainActor func testPageCurlStaysCoherentWhenPhoneRotatesDuringATurn() {
+        let finished = expectation(description: "Native phone rotations finish")
+        Task { @MainActor in
+            defer { finished.fulfill() }
+            do { try await rotateBookThroughPageTurns() }
+            catch { XCTFail("Rotation scenario failed: \(error)") }
+        }
+        wait(for: [finished], timeout: 30)
+    }
+    @MainActor private func rotateBookThroughPageTurns() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let previousDelegate = scene.delegate
+        let delegate = RotationSceneDelegate()
+        scene.delegate = delegate
+        let host = RotationBookHost()
+        let window = UIWindow(windowScene: scene); window.rootViewController = host
+        previous?.isHidden = true
+        window.makeKeyAndVisible(); host.view.layoutIfNeeded()
+        defer { scene.delegate = previousDelegate; window.isHidden = true; previous?.makeKeyAndVisible() }
+        for orientation: UIInterfaceOrientationMask in [.landscapeRight, .portrait, .landscapeLeft, .portrait] {
+            host.book.turn(1)
+            try await Task.sleep(for: .milliseconds(50))
+            var failure: Error?
+            let deadline = Date().addingTimeInterval(3)
+            while Date() < deadline {
+                host.setNeedsUpdateOfSupportedInterfaceOrientations()
+                failure = nil
+                scene.requestGeometryUpdate(.iOS(interfaceOrientations: orientation)) { failure = $0 }
+                try await Task.sleep(for: .milliseconds(300))
+                let actual = scene.effectiveGeometry.interfaceOrientation
+                if orientation.contains(UIInterfaceOrientationMask(rawValue: 1 << actual.rawValue)) { break }
+            }
+            try await Task.sleep(for: .milliseconds(450))
+            XCTAssertNil(failure)
+            let actual = scene.effectiveGeometry.interfaceOrientation
+            XCTAssertTrue(orientation.contains(UIInterfaceOrientationMask(rawValue: 1 << actual.rawValue)), "The scene must actually reach the requested orientation.")
+            host.view.layoutIfNeeded()
+            XCTAssertNotNil(host.book.pagination)
+            XCTAssertNotNil(host.book.view.window)
+            XCTAssertEqual(host.book.children.count, 1, "Rotation must leave exactly one live pager.")
+            XCTAssertTrue(host.book.pagination!.ranges.indices.contains(host.book.currentPage))
+        }
+    }
     @MainActor func testIntermediateRotationSizesDoNotLoseTheSourceAnchor() throws {
         let text = String(repeating: "Keep the same reading place through every fold and rotation. ", count: 140)
         let offset = 950
@@ -195,4 +239,26 @@ final class BookPaginationTests: XCTestCase {
         }
     }
 
+}
+
+@MainActor private final class RotationBookHost: UIViewController {
+    let book = BookPagerController()
+    private let command = BookPageCommand()
+    override var supportedInterfaceOrientations: UIInterfaceOrientationMask { .all }
+    override func viewDidLoad() {
+        super.viewDidLoad(); addChild(book); view.addSubview(book.view); book.didMove(toParent: self)
+    }
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        book.view.frame = view.bounds
+        let layout = BookLayout.resolve(size: view.bounds.size)
+        book.update(PagedBookView(text: String(repeating: "Each page keeps its place as the reader turns and the phone rotates. ", count: 90),
+            sourceOffset: 0, position: 1200, highlighted: nil, follow: true, title: "Rotation check",
+            pages: layout.pages, gutter: layout.gutter, fold: 0, reduceMotion: false, command: command,
+            onBrowse: { _ in }, onPageInfo: { _,_ in }, onBoundary: { _ in }))
+    }
+}
+
+@MainActor private final class RotationSceneDelegate: NSObject, UIWindowSceneDelegate {
+    func supportedInterfaceOrientations(for scene: UIWindowScene) -> UIInterfaceOrientationMask { .allButUpsideDown }
 }
