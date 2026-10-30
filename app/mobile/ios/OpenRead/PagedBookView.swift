@@ -37,6 +37,7 @@ final class BookPagerController: UIViewController, UIPageViewControllerDataSourc
     private var signature = ""
     private var lastCommand: UUID?
     private var transitioning = false
+    private var rotating = false
     private var pendingFollow = false
     private var followOffset: Int?
     private var lastSpokenOffset: Int?
@@ -48,6 +49,7 @@ final class BookPagerController: UIViewController, UIPageViewControllerDataSourc
     private var step: Int { pageCount }
     private var groupSize: Int { reduced ? 1 : pageCount }
 
+    override var supportedInterfaceOrientations: UIInterfaceOrientationMask { .allButUpsideDown }
     override func loadView() {
         view = UIView()
         view.backgroundColor = .clear
@@ -55,8 +57,18 @@ final class BookPagerController: UIViewController, UIPageViewControllerDataSourc
     }
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        pager?.view.frame = view.bounds
-        reflowIfNeeded()
+        if !rotating { pager?.view.frame = view.bounds; reflowIfNeeded() }
+    }
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        rotating = true
+        super.viewWillTransition(to: size, with: coordinator)
+        coordinator.animate(alongsideTransition: nil) { [weak self] _ in
+            guard let self else { return }
+            self.rotating = false
+            self.signature = ""
+            self.reflowIfNeeded()
+            self.followVoice()
+        }
     }
     func update(_ value: PagedBookView) {
         let previous = configuration
@@ -84,7 +96,7 @@ final class BookPagerController: UIViewController, UIPageViewControllerDataSourc
         followVoice()
     }
     private func reflowIfNeeded() {
-        guard let value = configuration, view.bounds.width > 80, view.bounds.height > 100 else { return }
+        guard !rotating, !transitioning, let value = configuration, view.bounds.width > 80, view.bounds.height > 100 else { return }
         let font = BookPagination.font(for: traitCollection.preferredContentSizeCategory)
         let width = floor(view.bounds.width / CGFloat(value.pages))
         let inset = BookSheetController.insets(spread: value.pages == 2, gutter: value.gutter)
@@ -105,15 +117,19 @@ final class BookPagerController: UIViewController, UIPageViewControllerDataSourc
         next.view.semanticContentAttribute = .forceLeftToRight
         next.isDoubleSided = !reduced && pageCount == 2
         next.dataSource = self; next.delegate = self
+        cache.removeAll()
+        currentPage = (pagination?.page(containing: max(0, anchor)) ?? 0) / step * step
+        // A page-curl controller validates its leaf count as soon as it joins
+        // a visible window. Never attach a transient, empty replacement.
+        next.setViewControllers(visibleControllers(start: currentPage), direction: .forward, animated: false)
         if let pager {
+            pager.dataSource = nil; pager.delegate = nil
             pager.willMove(toParent: nil); pager.view.removeFromSuperview(); pager.removeFromParent()
         }
-        cache.removeAll()
         pager = next
         addChild(next); next.view.frame = view.bounds; next.view.backgroundColor = .clear
         view.addSubview(next.view); next.didMove(toParent: self)
-        currentPage = (pagination?.page(containing: max(0, anchor)) ?? 0) / step * step
-        next.setViewControllers(visibleControllers(start: currentPage), direction: .forward, animated: false)
+        setNeedsUpdateOfSupportedInterfaceOrientations()
         publishPageInfo()
     }
     private func sheet(_ index: Int) -> BookSheetController {
@@ -145,6 +161,7 @@ final class BookPagerController: UIViewController, UIPageViewControllerDataSourc
         guard let value = configuration, value.follow, let pagination else { return }
         guard let absolute = value.highlighted?.location ?? followOffset else { return }
         followOffset = nil
+        if rotating { followOffset = absolute; return }
         let offset = absolute - value.sourceOffset
         guard offset >= 0, offset <= value.text.utf16.count else { return }
         let target = pagination.page(containing: offset) / step * step
@@ -153,7 +170,7 @@ final class BookPagerController: UIViewController, UIPageViewControllerDataSourc
         show(target, animated: abs(target - currentPage) == step, userInitiated: false)
     }
     func turn(_ direction: Int) {
-        guard !transitioning, let pagination, let value = configuration else { return }
+        guard !transitioning, !rotating, let pagination, let value = configuration else { return }
         let target = currentPage + (direction > 0 ? step : -step)
         guard target >= 0, target < pagination.ranges.count else { value.onBoundary(direction); return }
         show(target, animated: true, userInitiated: true)
@@ -172,6 +189,7 @@ final class BookPagerController: UIViewController, UIPageViewControllerDataSourc
                 if userInitiated { self.didBrowse() }
                 self.publishPageInfo()
             }
+            self.reflowIfNeeded()
             if userInitiated { self.pendingFollow = false }
             else if self.pendingFollow { self.pendingFollow = false; self.followVoice() }
         }
@@ -196,16 +214,25 @@ final class BookPagerController: UIViewController, UIPageViewControllerDataSourc
         guard index >= 0, index < paddedCount else { return nil }
         return self.sheet(index)
     }
+    func pageViewControllerSupportedInterfaceOrientations(_ pageViewController: UIPageViewController) -> UIInterfaceOrientationMask { .allButUpsideDown }
+    func pageViewController(_ pageViewController: UIPageViewController, spineLocationFor orientation: UIInterfaceOrientation) -> UIPageViewController.SpineLocation {
+        // Keep the existing leaf count while UIKit rotates this controller.
+        // The completed layout replaces it with the final single page or spread.
+        return pageCount == 2 ? .mid : (isRTL ? .max : .min)
+    }
     func pageViewController(_ pageViewController: UIPageViewController, willTransitionTo pendingViewControllers: [UIViewController]) {
         transitioning = true
     }
     func pageViewController(_ pageViewController: UIPageViewController, didFinishAnimating finished: Bool,
                             previousViewControllers: [UIViewController], transitionCompleted completed: Bool) {
+        guard pageViewController === pager else { return }
         transitioning = false
+        guard !rotating else { return }
         if completed, let page = pageViewController.viewControllers?.compactMap({ ($0 as? BookSheetController)?.index }).min() {
             currentPage = page / step * step
             didBrowse(); publishPageInfo()
         }
+        reflowIfNeeded()
         // A manual turn takes priority over a queued auto-turn.
         pendingFollow = false
     }
