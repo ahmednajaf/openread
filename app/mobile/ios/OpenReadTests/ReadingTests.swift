@@ -2,6 +2,15 @@ import XCTest
 @testable import OpenRead
 
 final class ReadingTests: XCTestCase {
+    func testSpokenUnicodeRestoresPresentationGlyphsWithoutChangingTheBook() {
+        let original = "🌊 ﺷﻜﺮ وﺗﻘﺪﻳﺮ. oﬃce ＡＢＣ ①"
+        XCTAssertEqual(ReadingText.spokenForm(original), "🌊 شكر وتقدير. office ABC 1")
+        XCTAssertTrue(original.contains("ﺷﻜﺮ"))
+        XCTAssertEqual(ReadingText.spokenForm("CAFÉ"), "CAFÉ", "Normalization must preserve casing and vowel marks")
+        XCTAssertEqual(ReadingText.spokenForm("عﲇﱠ"), "عليَّ")
+        XCTAssertEqual(ReadingText.spokenForm("A café, قَرَأَ, हिन्दी and 日本語."), "A café, قَرَأَ, हिन्दी and 日本語.")
+    }
+
     func testChunksKeepExactUnicodeRangesAndRepeatedWords() {
         let text = "🙂 I\n\nA title\n\nOne repeated phrase. One repeated phrase.\n\n" + String(repeating: "🌊 words ", count: 100)
         let chunks = ReadingText.passages(text)

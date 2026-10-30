@@ -16,6 +16,10 @@ namespace {
 using json = kitten::json;
 using Model = std::unique_ptr<llama_model, decltype(&llama_model_free)>;
 using Context = std::unique_ptr<llama_context, decltype(&llama_free)>;
+std::atomic_bool gpu_allowed{true};
+// Held for the lifetime of an active GPU context, including model loading.
+// Deactivation closes the gate before waiting, so workers can hand over to CPU.
+std::mutex gpu_work;
 struct Runtime {
     Model model{nullptr, llama_model_free};
     std::unique_ptr<sqlite3, decltype(&sqlite3_close)> database{nullptr,sqlite3_close};
@@ -24,7 +28,9 @@ struct Runtime {
     std::atomic_bool cancelled{false};
     std::mutex generation;
     int threads;
-    Runtime(const char *path, const char *conditioning, bool gpu, int workers): threads(workers) {
+    std::string model_path;
+    bool prefers_gpu, gpu = false;
+    Runtime(const char *path, const char *conditioning, bool use_gpu, int workers): threads(workers), model_path(path), prefers_gpu(use_gpu) {
         static std::once_flag backend;
         std::call_once(backend, [] { ggml_backend_load_all(); llama_backend_init(); });
         sqlite3 *db=nullptr;
@@ -40,10 +46,31 @@ struct Runtime {
         std::unique_ptr<sqlite3_stmt,decltype(&sqlite3_finalize)> statement(count,sqlite3_finalize);
         if (sqlite3_step(count)!=SQLITE_ROW || sqlite3_column_int(count,0)!=115)
             throw std::runtime_error("Invalid voice conditioning catalog.");
+        std::unique_lock<std::mutex> gate(gpu_work);
+        load_model(prefers_gpu && gpu_allowed.load() && llama_supports_gpu_offload(), gate);
+    }
+    void load_model(bool use_gpu, std::unique_lock<std::mutex> &gate) {
+        model.reset();
         auto params = llama_model_default_params();
+        gpu = use_gpu;
+        // Once Metal buffers are gone, CPU loading must not hold up UIKit's
+        // deactivation callback. The generation mutex still protects the model.
+        if (!gpu && gate.owns_lock()) gate.unlock();
         params.n_gpu_layers = gpu ? 999 : 0;
         params.use_extra_bufts = false;
-        model.reset(llama_model_load_from_file(path, params));
+        params.progress_callback = [](float, void *value) {
+            auto &runtime = *static_cast<Runtime *>(value);
+            return !runtime.gpu || gpu_allowed.load();
+        };
+        params.progress_callback_user_data = this;
+        model.reset(llama_model_load_from_file(model_path.c_str(), params));
+        // A lifecycle change can interrupt a cold GPU load. Complete it on CPU
+        // before allowing the lifecycle callback to return to UIKit.
+        if (!model && gpu && !gpu_allowed.load()) {
+            gpu = false; params.n_gpu_layers = 0;
+            if (gate.owns_lock()) gate.unlock();
+            model.reset(llama_model_load_from_file(model_path.c_str(), params));
+        }
         if (!model || llama_vocab_n_tokens(llama_model_get_vocab(model.get())) != 158241 || llama_model_n_embd(model.get()) != 2048)
             throw std::runtime_error("Kitten TTS 2 could not load its language model.");
     }
@@ -112,13 +139,39 @@ extern "C" int kitten2_generate(void *handle, const char *text, const char *voic
         auto params = llama_context_default_params();
         params.n_ctx = uint32_t(prompt.size() + max_tokens); params.n_batch = 128; params.n_ubatch = 128;
         params.n_threads = runtime.threads; params.n_threads_batch = runtime.threads;
-        params.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_AUTO;
         params.abort_callback = [](void *value) { return static_cast<Runtime *>(value)->cancelled.load(); };
         params.abort_callback_data = &runtime;
-        Context context(llama_init_from_model(runtime.model.get(), params), llama_free);
-        if (!context) throw std::runtime_error("The voice could not allocate a generation context.");
+        const int count=llama_vocab_n_tokens(vocab);
+        std::unique_lock<std::mutex> gpu_lease(gpu_work, std::defer_lock);
+        Context context(nullptr, llama_free);
+        auto ensure_mode = [&] {
+            bool desired = runtime.prefers_gpu && gpu_allowed.load() && llama_supports_gpu_offload();
+            if (context && desired == runtime.gpu) return;
+            if (!gpu_lease.owns_lock()) gpu_lease.lock();
+            desired = runtime.prefers_gpu && gpu_allowed.load() && llama_supports_gpu_offload();
+            std::vector<uint8_t> state;
+            if (context) {
+                llama_synchronize(context.get());
+                state.resize(llama_state_get_size(context.get()));
+                if (llama_state_get_data(context.get(), state.data(), state.size()) != state.size())
+                    throw std::runtime_error("The narration context could not be saved for its compute handoff.");
+                context.reset();
+            }
+            if (desired != runtime.gpu) runtime.load_model(desired, gpu_lease);
+            if (!runtime.gpu && gpu_lease.owns_lock()) gpu_lease.unlock();
+            params.offload_kqv = runtime.gpu; params.op_offload = runtime.gpu;
+            // Keep the KV cache layout identical across CPU and Metal; a
+            // flash/non-flash switch changes V transposition and cannot resume.
+            params.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_ENABLED;
+            context.reset(llama_init_from_model(runtime.model.get(), params));
+            if (!context) throw std::runtime_error("The voice could not allocate a generation context.");
+            if (!state.empty() && llama_state_set_data(context.get(), state.data(), state.size()) != state.size())
+                throw std::runtime_error("The narration context could not continue after its compute handoff.");
+        };
+        ensure_mode();
         auto decode = [&](llama_batch batch) {
             if (runtime.cancelled.load()) return false;
+            ensure_mode();
             if (llama_decode(context.get(), batch)) {
                 if (runtime.cancelled.load()) return false;
                 throw std::runtime_error("Kitten TTS 2 generation failed.");
@@ -137,7 +190,6 @@ extern "C" int kitten2_generate(void *handle, const char *text, const char *voic
         if (expressive & 1) { settings.temperature=0.9f; settings.top_p=0.9f; }
         std::mt19937 random(seed);
         auto history=prompt; std::vector<int32_t> audio;
-        const int count=llama_vocab_n_tokens(vocab);
         for (int step=0;step<max_tokens;++step) {
             if (runtime.cancelled.load()) return -1;
             const float *raw=llama_get_logits_ith(context.get(),-1);
@@ -172,8 +224,16 @@ extern "C" char *kitten2_voice_conditioning(void *handle, const char *voice, cha
 extern "C" int kitten2_token_count(void *handle, const char *text) {
     try {
         if (!handle || !text || strlen(text)>6400) return -1;
-        return int(tokenize(llama_model_get_vocab(static_cast<Runtime *>(handle)->model.get()),text).size());
+        auto &runtime = *static_cast<Runtime *>(handle);
+        std::lock_guard<std::mutex> lock(runtime.generation);
+        return int(tokenize(llama_model_get_vocab(runtime.model.get()),text).size());
     } catch (...) { return -1; }
+}
+extern "C" void kitten2_set_gpu_allowed(int allowed) {
+    gpu_allowed.store(allowed != 0);
+    if (!allowed) {
+        std::lock_guard<std::mutex> drained(gpu_work);
+    }
 }
 extern "C" void kitten2_cancel(void *handle) { if (handle) static_cast<Runtime *>(handle)->cancelled.store(true); }
 extern "C" void kitten2_destroy(void *handle) { delete static_cast<Runtime *>(handle); }

@@ -34,8 +34,8 @@ background behaviour still needs testing.
 
 Pages respect Dynamic Type and Arabic/right-to-left text. Reduce Motion removes
 page-curl animation. Choose Pages or Scroll in Reading options. Appearance
-continues to follow the device. Arabic speech from Kitten TTS 2 remains a separate
-local evaluation, not a voice included in this beta.
+continues to follow the device. Arabic and Arabic Falconer are available in the
+optional [Kitten TTS 2 beta pack](kitten2-native.md).
 
 ## Try it on iPhone or iPad
 

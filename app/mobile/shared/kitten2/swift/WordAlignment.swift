@@ -19,7 +19,7 @@ public enum Kitten2SourceAlignment {
     private struct Source { let range: NSRange; let normalized: String }
     private struct Step { var cost: Int; var source: Int; var recognized: Int; var matched: Bool }
     private static func normalized(_ value: String) -> String {
-        String(value.folding(options: [.caseInsensitive,.diacriticInsensitive,.widthInsensitive], locale: nil)
+        String(value.precomposedStringWithCompatibilityMapping.folding(options: [.caseInsensitive,.diacriticInsensitive,.widthInsensitive], locale: nil)
             .decomposedStringWithCanonicalMapping.unicodeScalars.filter {
                 !CharacterSet.nonBaseCharacters.contains($0) &&
                 (CharacterSet.letters.contains($0) || CharacterSet.decimalDigits.contains($0))

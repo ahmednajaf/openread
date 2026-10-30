@@ -1,6 +1,7 @@
 # Kitten TTS 2 evaluation
 
-Local evaluation on 28 October 2026; not a shipped OpenRead voice pack.
+Historical evaluation from 28 October 2026. The optional pack is now available
+in TestFlight; see the [current native pack guide](kitten2-native.md).
 
 ## What was tested
 

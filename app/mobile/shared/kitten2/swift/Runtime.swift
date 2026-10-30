@@ -20,19 +20,16 @@ public final class Kitten2LanguageModel: @unchecked Sendable {
     private let handle: UnsafeMutableRawPointer
     public init(model: URL, conditioning: URL, useGPU: Bool? = nil) throws {
         var error: UnsafeMutablePointer<CChar>?
-        #if os(iOS)
-        // Only the app's granted continued-processing job may opt into GPU.
-        // Ordinary background audio does not grant Metal compute permission.
-        let gpu: Int32 = useGPU == true ? 1 : 0
-        #else
         let gpu: Int32 = useGPU == false ? 0 : 1
-        #endif
         let value = kitten2_create(model.path, conditioning.path, gpu, 3, &error)
         defer { kitten2_free(error) }
         guard let value else { throw Kitten2RuntimeError(message: error.map { String(cString: $0) } ?? "Kitten TTS 2 could not load.") }
         handle = value
     }
     deinit { kitten2_destroy(handle) }
+    /// Foreground GPU use is independent of a background-task grant. The native
+    /// gate drains GPU work and migrates context to CPU before deactivation ends.
+    public static func setGPUAllowed(_ allowed: Bool) { kitten2_set_gpu_allowed(allowed ? 1 : 0) }
     public func cancel() { kitten2_cancel(handle) }
     public func conditioning(voice: String) throws -> Data {
         var error:UnsafeMutablePointer<CChar>?
