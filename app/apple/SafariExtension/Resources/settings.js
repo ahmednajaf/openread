@@ -29,7 +29,7 @@
         <div class="option"><label for="sleep">Sleep timer</label><select id="sleep"><option value="0">Off</option><option value="5">5 minutes</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option></select></div>
         <button class="workspace secondary">OpenRead library<span aria-hidden="true">↗</span></button>
         <button class="save-document secondary">Open page in OpenRead<span aria-hidden="true">＋</span></button>
-        <p class="reader-help">Download Kitten or Kokoro voices in the OpenRead app first.</p><div class="option"><label for="source">Read from</label><select id="source"><option value="page">This page</option><option value="selection">Selected text</option><option value="chat" hidden>WhatsApp chat</option></select></div>
+        <p class="reader-help">Download voices in OpenRead first. Kitten TTS 2 opens the app for playback; return to Safari to follow the highlighted words.</p><div class="option"><label for="source">Read from</label><select id="source"><option value="page">This page</option><option value="selection">Selected text</option><option value="chat" hidden>WhatsApp chat</option></select></div>
         <label class="option chat-option" hidden><span>Announce senders</span><input id="announceSenders" type="checkbox" role="switch" checked></label>
         <button class="refresh-chat secondary" hidden>Refresh loaded messages<span aria-hidden="true">↻</span></button>
         <p class="reader-help chat-help" hidden></p>
@@ -98,7 +98,7 @@
     }
     speed(rate) {
       this.$('#speed').value = rate;
-      this.$('#speed').style.setProperty('--speed-progress', `${Number(((rate - .5) / 4.5 * 100).toFixed(3))}%`);
+      this.$('#speed').style.setProperty('--speed-progress', `${Number(((rate - .5) / (Number(this.$('#speed').max) - .5) * 100).toFixed(3))}%`);
       this.$('.speed-value').textContent = `${Number(rate.toFixed(2))}×`;
     }
     appearance() {
@@ -128,14 +128,14 @@
       this.$('.chat-help').textContent = `${state.messageCount || 0} loaded text messages · oldest first. Scroll up in the chat and refresh to include older messages. New messages need a refresh too. Photos, stickers and voice notes are skipped.`;
       this.$('#source option[value=selection]').disabled = !state.hasSelection;
       for (const option of this.$('#voice').options) { const voice = OpenReadCore.voices.find(v => v.id === option.value); option.disabled = !!voice?.pack && !(state.availableVoices || []).includes(option.value); option.textContent = `${voice.name} · ${voice.pack === 'kitten' ? 'Kitten' : voice.detail.split(' · ')[0]}${option.disabled ? ' (setup needed)' : ''}`; }
-      this.$('#voice').value = preferences.voice; this.speed(preferences.rate);
+      this.$('#voice').value = preferences.voice; this.$('#speed').max = preferences.voice.startsWith('kitten2:') ? 2 : 5; this.$('.speed-labels span:last-child').textContent = this.$('#speed').max + '×'; this.speed(preferences.rate);
       for (const key of ['highlight', 'follow']) this.$(`#${key}`).checked = preferences[key];
       this.$('#announceSenders').checked = preferences.announceSenders !== false;
       this.appearance();
       const previewing = ['playing', 'loading'].includes(state.previewStatus);
       this.$('.preview').innerHTML = this.icon(previewing ? 'stop' : 'play');
       this.$('.preview').setAttribute('aria-label', previewing ? 'Stop preview' : 'Preview voice');
-      this.$('.notice').textContent = state.error || ''; this.$('.notice').hidden = !state.error;
+      this.$('.notice').textContent = state.error || state.notice || ''; this.$('.notice').hidden = !(state.error || state.notice);
       if (state.error && state.error !== oldError) this.show();
       if (state.needsPageGesture && this.popup && this.gestureAction) { this.gestureAction = false; this.hideWhenPlaying = false; this.hide(); }
       if (status === 'playing' && this.hideWhenPlaying) { this.hideWhenPlaying = false; this.hide(); }

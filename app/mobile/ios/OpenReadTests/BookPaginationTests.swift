@@ -75,6 +75,14 @@ final class BookPaginationTests: XCTestCase {
         XCTAssertNil(try clip.starting(atSourceOffset: 10))
         XCTAssertEqual(try clip.starting(atSourceOffset: 0)?.wav, clip.wav)
     }
+    func testUntimedVoiceResumeRetainsAudioInsteadOfSkippingThePassage() throws {
+        let clip = SpokenClip(wav: SpeechTokens.wav(Array(repeating: Float(0.25), count: 24_000)),
+            words: [], duration: 1, timingWarning: "Word timing is unavailable.")
+        let resumed = try XCTUnwrap(clip.starting(atSourceOffset: 20))
+        XCTAssertEqual(resumed.wav, clip.wav)
+        XCTAssertTrue(resumed.words.isEmpty, "A fallback must not invent source-word timings.")
+        XCTAssertEqual(resumed.timingWarning, clip.timingWarning)
+    }
     @MainActor func testExactPagePlaybackSkipsEarlierWordsButKeepsTheirContext() async throws {
         guard await VoiceEngine().isInstalled() else { throw XCTSkip("Install Kitten for exact page playback checks.") }
         let player = PlaybackController()

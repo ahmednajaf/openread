@@ -157,7 +157,7 @@ struct ReaderView: View {
                 }
                 ProgressView(value: player.progress).tint(ReaderStyle.accent).accessibilityLabel("Reading progress")
                 HStack {
-                    Text(player.status).lineLimit(1)
+                    Text(player.timingWarning ?? player.status).lineLimit(2)
                     Spacer()
                     Text("\(Int(player.progress * 100))% read").monospacedDigit()
                 }.font(.system(size: 10)).foregroundStyle(.secondary)
@@ -286,21 +286,14 @@ struct NativeSettingsView: View {
                         Text("Uses your internet connection for the download. You may prefer Wi-Fi.").font(.footnote).foregroundStyle(.secondary)
                     } else { Label("Natural voices are ready", systemImage: "checkmark.circle.fill").foregroundStyle(.green) }
                 } header: { Text("On-device voices") }
-                Section("Kitten voices") { ForEach(VoiceEngine.kittenVoices, id: \.self) { voice in
-                    Button { player.voice = voice } label: { HStack { Text(VoiceEngine.name(voice)).foregroundStyle(.primary); Spacer(); if player.voice == voice { Image(systemName: "checkmark") } } }
-                } }
-                Section("Kokoro voices · 6 languages") {
-                    if player.downloading { ProgressView(value: player.downloadProgress) }
-                    else if !player.kokoroInstalled {
-                        Button("Download Kokoro voices · about 192 MB") { player.downloadVoices(voice: "af_heart") }
-                        Text("41 additional voices. Download once; reading and highlighting stay on your device.").font(.footnote).foregroundStyle(.secondary)
-                    }
-                    if player.kokoroInstalled {
-                        ForEach(VoiceEngine.kokoroVoices, id: \.self) { voice in
-                            Button { player.voice = voice } label: { HStack { Text(VoiceEngine.name(voice)).foregroundStyle(.primary); Spacer(); if player.voice == voice { Image(systemName: "checkmark") } } }
-                        }
+                Section("Reading voice") {
+                    NavigationLink(VoiceEngine.name(player.voice)) { VoiceLibraryView() }
+                    if !player.kokoroInstalled {
+                        Button("Download Kokoro voices · about 192 MB") { player.downloadVoices(voice: "af_heart") }.disabled(player.downloading)
+                        Text("41 additional voices across six languages.").font(.footnote).foregroundStyle(.secondary)
                     }
                 }
+                if #available(iOS 26, *) { Kitten2PackSection() }
                 Section("On-device AI") { Text(AppleReadingTools.availability).font(.footnote).foregroundStyle(.secondary) }
                 Section("Your library") {
                     Button("Export library backup", systemImage: "arrow.down.doc") { do { backup = try library.backup() } catch { self.error = error.localizedDescription } }

@@ -1,0 +1,4 @@
+module Kitten2Runtime {
+  header "Kitten2Runtime.h"
+  export *
+}

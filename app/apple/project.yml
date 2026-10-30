@@ -3,6 +3,8 @@ options:
   deploymentTarget:
     macOS: "14.0"
 packages:
+  OpenReadKitten2:
+    path: ../mobile/shared/kitten2
   SwiftSoup:
     url: https://github.com/scinfu/SwiftSoup
     exactVersion: 2.7.6
@@ -18,10 +20,11 @@ packages:
     exactVersion: 0.9.19
 settings:
   base:
+    ARCHS: arm64
     SWIFT_VERSION: "5.0"
     SWIFT_STRICT_CONCURRENCY: targeted
-    MARKETING_VERSION: 0.6.3
-    CURRENT_PROJECT_VERSION: 15
+    MARKETING_VERSION: 0.6.4
+    CURRENT_PROJECT_VERSION: 16
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: ""
     OPENREAD_BUNDLE_ID: app.getopenread.reader
@@ -36,13 +39,20 @@ targets:
       - ../mobile/ios/OpenRead/PlaybackController.swift
       - ../mobile/ios/OpenRead/AppleReadingTools.swift
       - ../mobile/ios/OpenRead/VoicePackDownloads.swift
+      - ../mobile/ios/OpenRead/VoiceAssetDownloads.swift
       - ../mobile/ios/OpenRead/DocumentImporter.swift
       - ../mobile/ios/OpenRead/VoiceEngine.swift
+      - ../mobile/ios/OpenRead/SafariListeningSession.swift
+      - ../mobile/ios/OpenRead/Kitten2Inference.swift
+      - ../mobile/ios/OpenRead/VoiceLibraryView.swift
+      - ../mobile/ios/OpenRead/SafariPlaybackBridge.swift
       - ../mobile/ios/OpenRead/ContextPronunciation.swift
       - ../mobile/ios/OpenRead/KittenInference.swift
       - ../mobile/ios/OpenRead/LibraryStore.swift
       - ../mobile/shared/swift
       - path: ../mobile/shared/models.json
+        buildPhase: resources
+      - path: ../mobile/shared/kitten2-voices.json
         buildPhase: resources
       - path: ../../extension/voices.json
         buildPhase: resources
@@ -58,6 +68,7 @@ targets:
         buildPhase: resources
     dependencies:
       - package: SwiftSoup
+      - package: OpenReadKitten2
       - package: OpenReadInference
       - package: OpenReadSpeech
       - package: ONNXRuntime
@@ -77,11 +88,14 @@ targets:
       - SafariExtension/SafariWebExtensionHandler.swift
       - SafariExtension/PrivacyInfo.xcprivacy
       - ../mobile/ios/OpenRead/VoiceEngine.swift
+      - ../mobile/ios/OpenRead/SafariListeningSession.swift
       - ../mobile/ios/OpenRead/ContextPronunciation.swift
       - ../mobile/ios/OpenRead/KittenInference.swift
       - ../mobile/ios/OpenRead/LibraryStore.swift
       - ../mobile/shared/swift
       - path: ../mobile/shared/models.json
+        buildPhase: resources
+      - path: ../mobile/shared/kitten2-voices.json
         buildPhase: resources
       - path: ../../extension/voices.json
         buildPhase: resources
@@ -130,6 +144,7 @@ targets:
       - package: ZIPFoundation
     settings:
       base:
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) OPENREAD_SAFARI"
         PRODUCT_BUNDLE_IDENTIFIER: "$(OPENREAD_BUNDLE_ID).safari"
         INFOPLIST_FILE: SafariExtension/Info.plist
         CODE_SIGN_ENTITLEMENTS: SafariExtension/MacNative.entitlements

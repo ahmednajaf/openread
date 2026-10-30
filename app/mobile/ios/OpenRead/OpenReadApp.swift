@@ -2,6 +2,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 @main struct OpenReadApp: App {
+    @UIApplicationDelegateAdaptor(VoiceDownloadAppDelegate.self) private var appDelegate
     @StateObject private var library = LibraryStore()
     @StateObject private var playback = PlaybackController()
     var body: some Scene {
@@ -125,7 +126,14 @@ struct LibraryView: View {
                 case .failure(let error): self.error = error.localizedDescription
                 }
             }
-            .onOpenURL { url in if url.scheme == "openread" { readerOpen = false; Task { await receiveInbox() } } else { run { try await importer.file(url) } } }
+            .onOpenURL { url in
+                if url.scheme == "openread" {
+                    do {
+                        if try playback.safari.open(url) { readerOpen = true }
+                        else { readerOpen = false; Task { await receiveInbox() } }
+                    } catch { self.error = error.localizedDescription }
+                } else { run { try await importer.file(url) } }
+            }
             .onAppear {
                 playback.onPosition = { id, offset in
                     do { try library.position(id, offset) } catch { self.error = error.localizedDescription }

@@ -10,19 +10,21 @@ import Combine
     @Published private(set) var revision = 0
     @Published private(set) var error: String?
     private var task: Task<Void, Never>?
-    private var download: Download?
+    private var downloads: [String: Download] = [:]
     private var generation = UUID()
     var isBusy: Bool { active != nil || !queued.isEmpty }
 
     func enqueue(_ pack: String, download: @escaping Download) {
-        guard ["kitten", "kokoro"].contains(pack), active != pack, !queued.contains(pack) else { return }
-        self.download = download; error = nil; queued.append(pack); startNext()
+        guard ["kitten", "kokoro", "kitten2"].contains(pack), active != pack, !queued.contains(pack) else { return }
+        downloads[pack] = download; error = nil; queued.append(pack); startNext()
     }
     func cancelCurrent() { task?.cancel() }
-    func cancelAll() { queued.removeAll(); task?.cancel() }
+    func cancelAll() { queued.removeAll(); downloads.removeAll(); task?.cancel() }
     private func startNext() {
-        guard active == nil, !queued.isEmpty, let download else { return }
-        let pack = queued.removeFirst(); active = pack; progress = 0
+        guard active == nil, !queued.isEmpty else { return }
+        let pack = queued.removeFirst()
+        guard let download = downloads.removeValue(forKey: pack) else { return }
+        active = pack; progress = 0
         let token = UUID(); generation = token
         task = Task {
             do {

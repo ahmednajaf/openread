@@ -11,14 +11,17 @@ import MediaPlayer
     @Published var isPreparing = false
     @Published var highlighted: NSRange?
     @Published var error: String?
+    @Published private(set) var timingWarning: String?
     @Published var installed = false
     @Published var kittenInstalled = false
     @Published var kokoroInstalled = false
+    @Published var kitten2Installed = false
+    @Published var kitten2TimingReady = false
 
     @Published var downloadProgress = 0.0
     @Published var downloading = false
     @Published var voice: String = VoiceEngine.voices.contains(UserDefaults.standard.string(forKey: "voice") ?? "") ? UserDefaults.standard.string(forKey: "voice")! : "kiki" {
-        didSet { UserDefaults.standard.set(voice, forKey: "voice"); restartForVoice(); Task { installed = await engine.isInstalled(voice: voice) } }
+        didSet { UserDefaults.standard.set(voice, forKey: "voice"); restartForVoice(); Task { await refreshVoices() } }
     }
     @Published var rate: Float = min(2, max(0.5, UserDefaults.standard.float(forKey: "rate") == 0 ? 1 : UserDefaults.standard.float(forKey: "rate"))) {
         didSet {
@@ -32,6 +35,7 @@ import MediaPlayer
     @Published var follow = true
     @Published var highlight = true { didSet { if !highlight { highlighted = nil } } }
     @Published var sleepMinutes = 0
+    lazy var safari = SafariPlaybackBridge(player: self)
     let engine = VoiceEngine()
     let voiceDownloads = VoicePackDownloads()
     private var streamAudio: ContinuousSpeechPlayer?
@@ -47,6 +51,7 @@ import MediaPlayer
     private var interruptionObserver: NSObjectProtocol?
     private var routeObserver: NSObjectProtocol?
     private var downloadObserver: AnyCancellable?
+    private var assetObserver: AnyCancellable?
     var onPosition: ((String, Int) -> Void)?
 
     override init() {
@@ -57,9 +62,10 @@ import MediaPlayer
         downloadObserver = voiceDownloads.$revision.dropFirst().sink { [weak self] _ in
             Task { await self?.refreshVoices() }
         }
+        assetObserver = NotificationCenter.default.publisher(for: .voiceAssetInstalled).sink { [weak self] _ in Task { @MainActor in await self?.refreshVoices() } }
         Task {
             await refreshVoices()
-            if installed {
+            if installed && !VoiceEngine.isKitten2(voice) {
                 // Prepare the shared Safari cache in the full app, where model
                 // compilation has enough memory. No network request is made.
                 do { try await engine.prepare(voice: voice, download: false) { _ in } }
@@ -109,20 +115,30 @@ import MediaPlayer
         let target = pageTarget(reading.position)
         pageAnchor = target?.offset
         index = target?.index ?? 0
+        Task { await refreshVoices() }
         status = reading.position >= reading.textLength ? "Finished" : "Ready"; error = nil
     }
     func downloadVoices(voice selectedVoice: String = "kiki") {
         stop()
-        let pack = VoiceEngine.isKokoro(selectedVoice) ? "kokoro" : "kitten"
-        voiceDownloads.enqueue(pack) { [engine] pack, progress in
-            try await engine.prepare(voice: pack == "kokoro" ? "af_heart" : "kiki", download: true, progress: progress)
+        let pack = VoiceEngine.isKitten2(selectedVoice) ? "kitten2" : VoiceEngine.isKokoro(selectedVoice) ? "kokoro" : "kitten"
+        let language = timingLanguage(for: selectedVoice)
+        voiceDownloads.enqueue(pack) { [engine] _, progress in
+            try await engine.prepare(voice: selectedVoice, download: true, language: language, progress: progress)
         }
     }
     func cancelDownload() { voiceDownloads.cancelCurrent() }
     private func refreshVoices() async {
         kittenInstalled = await engine.isInstalled()
         kokoroInstalled = await engine.isInstalled(voice: "af_heart")
+        kitten2Installed = await engine.isInstalled(voice: "kitten2:Arabic")
+        kitten2TimingReady = kitten2Installed ? await engine.timingInstalled(language: timingLanguage(for: VoiceEngine.isKitten2(voice) ? voice : "kitten2:Arabic")) : false
         installed = await engine.isInstalled(voice: voice)
+    }
+    func timingLanguage(for voice: String) -> String {
+        if #available(iOS 26, macOS 26, *) {
+            return Kitten2Inference.language(text: currentPassage, fallback: VoiceEngine.language(voice))
+        }
+        return VoiceEngine.language(voice)
     }
     func toggle() { if isPlaying || isPreparing { pause() } else { play() } }
     func play() {
@@ -146,7 +162,7 @@ import MediaPlayer
         let completed = status == "Finished"
         generation = UUID(); task?.cancel();
         streamAudio?.stop(); streamAudio = nil
-        words = []; streamPassages = []; highlighted = nil
+        words = []; streamPassages = []; highlighted = nil; timingWarning = nil
         isPlaying = false; isPreparing = false; status = "Ready"; if !completed { persistPosition() }; nowPlaying()
     }
     func next() { seek(min(passages.count - 1, index + 1)) }
@@ -217,8 +233,25 @@ import MediaPlayer
         let token = UUID(); generation = token; error = nil; isPreparing = true; status = "Preparing on your device…"
         let chosenVoice = voice
         task = Task {
+            #if os(iOS)
+            var compute: Any?
+            if VoiceEngine.isKitten2(chosenVoice), #available(iOS 26, *) {
+                compute = await SpeechComputeJob.start(title: reading?.title ?? "OpenRead", passages: passages.count - index) { [weak self] in
+                    guard let self, token == self.generation else { return }
+                    self.stop(); self.error = "iOS stopped the background narration task. Reopen OpenRead to continue."
+                }
+            }
+            var generated = false
+            defer { if #available(iOS 26, *) { (compute as? SpeechComputeJob)?.finish(success: generated) } }
+            let useGPU = compute != nil
+            let computeNotice: String? = VoiceEngine.isKitten2(chosenVoice) && !useGPU ? "iOS couldn’t enable accelerated narration. This voice may buffer." : nil
+            #else
+            let useGPU = true
+            let computeNotice: String? = nil
+            #endif
             do {
-                try await engine.prepare(voice: chosenVoice, download: false) { _ in }
+                try Task.checkCancellation()
+                try await engine.prepare(voice: chosenVoice, download: false, language: timingLanguage(for: chosenVoice), useGPU: useGPU) { _ in }
                 guard token == generation, !Task.isCancelled else { return }
                 try configureAudio()
                 words = []; streamPassages = []
@@ -257,6 +290,8 @@ import MediaPlayer
                     var reachedStart = next != first || firstOffset == nil
                     for try await chunk in await engine.stream(part.text, voice: chosenVoice) {
                         guard token == generation, !Task.isCancelled else { return }
+                        let notices = [computeNotice, chunk.timingWarning].compactMap { $0 }
+                        timingWarning = notices.isEmpty ? nil : notices.joined(separator: " ")
                         let audible: SpokenClip
                         if !reachedStart, let firstOffset {
                             guard let cropped = try chunk.starting(atSourceOffset: firstOffset - part.range.location) else { continue }
@@ -265,9 +300,15 @@ import MediaPlayer
                         appendWords(audible.words, source: part.range.location, time: output.duration)
                         try output.append(audible)
                     }
+                    #if os(iOS)
+                    if #available(iOS 26, *) { (compute as? SpeechComputeJob)?.completedPassages(next - first + 1) }
+                    #endif
                 }
                 guard token == generation, !Task.isCancelled else { return }
                 try output.finish()
+                #if os(iOS)
+                generated = true
+                #endif
 
             } catch { if token == generation, !Task.isCancelled { isPreparing = false; isPlaying = false; streamAudio?.stop(); streamAudio = nil; status = "Paused"; self.error = error.localizedDescription } }
         }
@@ -299,7 +340,7 @@ import MediaPlayer
         } else { highlighted = nil }
     }
 
-    private func persistPosition() { if let reading { onPosition?(reading.id, position) } }
+    private func persistPosition() { if let reading, !reading.id.hasPrefix("safari:") { onPosition?(reading.id, position) } }
     private func nowPlaying() {
         guard let reading else { return }
         MPNowPlayingInfoCenter.default().nowPlayingInfo = [MPMediaItemPropertyTitle: reading.title,

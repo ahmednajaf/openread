@@ -11,6 +11,7 @@ import UniformTypeIdentifiers
     @State private var selected: Reading.ID?
     @State private var error: String?
     @Environment(\.scenePhase) private var scenePhase
+    init() { VoiceAssetDownloads.shared.reconnect() }
     var body: some Scene {
         WindowGroup("OpenRead") {
             NavigationSplitView {
@@ -51,21 +52,27 @@ import UniformTypeIdentifiers
             .fileImporter(isPresented: $importing, allowedContentTypes: [.pdf, .plainText, .html, UTType(filenameExtension: "epub")!, UTType(filenameExtension: "docx")!]) { result in
                 if case .success(let url) = result { Task { do { let book = try await DocumentImporter().file(url); try library.save(book); player.open(book); selected = book.id } catch { self.error = error.localizedDescription } } }
             }
-            .onChange(of: selected) { _, id in if let id { do { player.open(try library.load(id)) } catch { self.error = error.localizedDescription } } }
+            .onChange(of: selected) { _, id in if let id, player.reading?.id != id { do { player.open(try library.load(id)) } catch { self.error = error.localizedDescription } } }
             .onAppear { player.onPosition = { id, offset in do { try library.position(id, offset) } catch { self.error = error.localizedDescription } } }
             .tint(Color(red: 0.47, green: 0.37, blue: 0.65))
             .background(Color(nsColor: .windowBackgroundColor))
             .frame(minWidth: 850, minHeight: 650)
             .task { receiveInbox() }
             .onChange(of: scenePhase) { _, phase in if phase == .active { receiveInbox() } }
-            .onOpenURL { url in if url.scheme == "openread" { receiveInbox(); NSApp.activate(ignoringOtherApps: true) } }
+            .onOpenURL { url in
+                if url.scheme == "openread" {
+                    do { if try player.safari.open(url) { selected = player.reading?.id } else { receiveInbox() } }
+                    catch { self.error = error.localizedDescription }
+                    NSApp.activate(ignoringOtherApps: true)
+                }
+            }
             .alert("OpenRead", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) { Button("OK") { error = nil } } message: { Text(error ?? "") }
         }
         Settings { TabView {
-            Form {
+            NavigationStack { Form {
                 Section("Reading voice") {
                     Picker("Voice", selection: $player.voice) {
-                        ForEach(VoiceEngine.voices.filter { !VoiceEngine.isKokoro($0) || player.kokoroInstalled }, id: \.self) { Text(VoiceEngine.name($0)).tag($0) }
+                        ForEach(VoiceEngine.voices.filter { VoiceEngine.isKitten2($0) ? player.kitten2Installed : !VoiceEngine.isKokoro($0) || player.kokoroInstalled }, id: \.self) { Text(VoiceEngine.name($0)).tag($0) }
                     }
                 }
                 Section("Kitten voices") {
@@ -77,8 +84,10 @@ import UniformTypeIdentifiers
                     else if !player.kokoroInstalled { Button("Download Kokoro voices · about 192 MB") { player.downloadVoices(voice: "af_heart") } }
                     if player.kokoroInstalled { Text("41 voices ready to use.").font(.footnote).foregroundStyle(.secondary) }
                 }
+                NavigationLink("Browse all voices") { VoiceLibraryView() }
+                if #available(macOS 26, *) { Kitten2PackSection() }
                 Section("On-device AI") { Text(AppleReadingTools.availability).font(.footnote).foregroundStyle(.secondary) }
-            }.formStyle(.grouped).environmentObject(player).tabItem { Label("Voices", systemImage: "waveform") }
+            }.formStyle(.grouped) }.environmentObject(player).tabItem { Label("Voices", systemImage: "waveform") }
             ScrollView { Text((Bundle.main.url(forResource: "NOTICES", withExtension: "txt").flatMap { try? String(contentsOf: $0, encoding: .utf8) }) ?? "See licences in the source repository.").font(.caption).textSelection(.enabled).padding() }.tabItem { Label("Licences", systemImage: "doc.text") }
         }.frame(width: 650, height: 600)
         .alert("OpenRead", isPresented: Binding(get: { player.error != nil }, set: { if !$0 { player.error = nil } })) { Button("OK") { player.error = nil } } message: { Text(player.error ?? "") } }

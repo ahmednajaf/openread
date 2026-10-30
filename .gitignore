@@ -28,3 +28,6 @@ local.properties
 # Local Swift package compilation and editor state
 .build/
 .swiftpm/
+
+# Generated optional native runtime (rebuild with dev/scripts/build-kitten2-runtime.sh)
+app/mobile/shared/kitten2/Kitten2Runtime.xcframework/
