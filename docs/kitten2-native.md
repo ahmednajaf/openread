@@ -83,3 +83,11 @@ return to foreground GPU work. It never downloads weights.
 
 Real-device Arabic alignment, sustained background performance and Safari playback
 remain beta checks. Voice cloning is not part of this preset port yet.
+
+Invalid model scores are rejected before sampling. A failed generation retries
+once on a fresh CPU context using the accepted token prefix; repeated failure
+returns an error rather than crashing. For a local model-backed regression,
+configure the native CMake project with `-DOPENREAD_KITTEN2_TESTS=ON`, build
+`kitten2-recovery-check`, then pass the GGUF path, voice database path and `once`
+or `persistent`. The test injects invalid scores in its own runtime object;
+shipped libraries contain no injection hook.
