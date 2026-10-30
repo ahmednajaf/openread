@@ -151,6 +151,48 @@ final class Kitten2NativeTests: XCTestCase {
         XCTAssertEqual(chunks.reduce(0, { $0 + $1.wav.count - 44 }), result.wav.count - 44)
         XCTAssertEqual(chunks.reduce(0, { $0 + $1.duration }), result.duration, accuracy: 0.0001)
     }
+    @MainActor func testForegroundChangesDoNotCancelKitten2Narration() async throws {
+        guard await VoiceEngine().isInstalled(voice: "kitten2:ArabicFalconer") else { throw XCTSkip("Install the optional voice pack for lifecycle checks.") }
+        let player = PlaybackController()
+        let originalVoice = player.voice, originalRate = player.rate
+        let defaults = UserDefaults.standard
+        let originalEmotion = defaults.object(forKey: "kitten2-emotion"), originalExpression = defaults.object(forKey: "kitten2-expressive")
+        defaults.set("natural", forKey: "kitten2-emotion"); defaults.set(false, forKey: "kitten2-expressive")
+        defer {
+            player.stop(); player.voice = originalVoice; player.rate = originalRate
+            defaults.set(originalEmotion, forKey: "kitten2-emotion"); defaults.set(originalExpression, forKey: "kitten2-expressive")
+        }
+        player.voice = "kitten2:ArabicFalconer"; player.rate = 1
+        let source = "ﺣﻴﻦ ﻧﻘﺮأ، ﻧﺘﻌﻠﻢ ﺷﻴﺌﺎً ﺟﺪﻳﺪاً."
+        player.open(Reading(title: "Unicode lifecycle check", text: source)); player.play()
+        let deadline = Date().addingTimeInterval(90)
+        while !player.isPlaying, player.status != "Finished", player.error == nil, Date() < deadline {
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        XCTAssertNil(player.error)
+        XCTAssertTrue(player.isPlaying, "Narration must start without waiting for a background GPU lease")
+        NotificationCenter.default.post(name: UIApplication.willResignActiveNotification, object: nil)
+        try await Task.sleep(for: .milliseconds(100))
+        NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+        while player.status != "Finished", player.error == nil, Date() < deadline {
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        XCTAssertNil(player.error)
+        XCTAssertEqual(player.status, "Finished", "A lifecycle change must not cancel or restart narration")
+        XCTAssertEqual(player.reading?.text, source, "Keep existing book and source offsets unchanged")
+    }
+    func testPresentationGlyphSpeechKeepsOriginalUTF16HighlightRanges() {
+        let original = "🌊 ﺷﻜﺮ وﺗﻘﺪﻳﺮ. ﺷﻜﺮ ﻣﺮة أﺧﺮى."
+        let heard: [Kitten2RecognizedSpan] = [
+            .init(text: "شكر", start: 0, end: 0.4), .init(text: "وتقدير", start: 0.4, end: 0.8),
+            .init(text: "شكر", start: 1, end: 1.4), .init(text: "مرة", start: 1.4, end: 1.8),
+            .init(text: "أخرى", start: 1.8, end: 2.2)]
+        let words = Kitten2SourceAlignment.words(text: original, recognized: heard)
+        let source = original as NSString
+        XCTAssertEqual(words.map { source.substring(with: $0.range) }, ["ﺷﻜﺮ", "وﺗﻘﺪﻳﺮ", "ﺷﻜﺮ", "ﻣﺮة", "أﺧﺮى"])
+        XCTAssertEqual(words.map(\.start), heard.map(\.start))
+        XCTAssertEqual(ReadingText.spokenForm(original), "🌊 شكر وتقدير. شكر مرة أخرى.")
+    }
     func testSourceMatchingKeepsRepeatedArabicWordsDistinct() {
         let text="🌊 حِينَ نقرأ، نتعلم. نقرأ مرة أخرى."
         let spans:[Kitten2RecognizedSpan]=[

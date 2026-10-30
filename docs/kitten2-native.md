@@ -1,7 +1,6 @@
 # Kitten TTS 2 native pack
 
-This is an optional native integration under development. It is not included in
-an existing TestFlight release. The maintainer completed KittenML registration on 30 October 2026. The optional
+This optional native integration is available in OpenRead’s TestFlight beta. The maintainer completed KittenML registration on 30 October 2026. The optional
 pack remains a beta while device playback and word timing are validated.
 
 Kitten Mini and Kokoro remain the smaller everyday packs. Kitten TTS 2 provides
@@ -29,16 +28,21 @@ not added to the source repository.
 
 ## Native playback
 
-The language model uses Metal on Mac. On compatible iPhones, a user-started
-BGContinuedProcessingTask requests GPU access before loading the model. The app
-opts into Metal only after iOS grants that task, reports actual passage progress,
-and cancels generation if iOS expires the job. Ordinary background audio does
-not grant GPU permission. Unsupported devices, rejected requests and simulators
-use CPU; these can buffer and still need device measurements. The
-S3 decoder runs through ONNX Runtime 1.24.2. Reference conditioning is read for one
+The language model uses Metal on Mac and while the iPhone app is active.
+Foreground preparation runs alongside the request for a user-started background
+GPU lease; it never waits for that lease. When iOS cannot grant background GPU
+access, the native worker drains Metal and transfers its current generation
+context to CPU before app deactivation completes. It can return to GPU on
+reactivation without restarting the passage. Expiring a background lease also
+switches compute rather than cancelling narration. Background CPU performance
+can still be slower than playback on some phones, especially at higher speeds.
+The S3 decoder runs through ONNX Runtime 1.24.2. Reference conditioning is read for one
 speaker at a time instead of loading all 115 speaker records into memory.
 
 Text retains sentence context and is bounded using actual language-model tokens.
+Unicode compatibility glyphs from PDF fonts are normalized in the spoken copy,
+including Arabic presentation forms and Latin ligatures. Stored text, bookmarks
+and highlighting keep their original UTF-16 source positions.
 Audio is decoded in overlapping codec windows and scheduled on the existing
 continuous PCM player. Rate changes use its single audio clock.
 
@@ -72,6 +76,10 @@ The full pack is queued before waiting for transfers; each file is installed onl
 after its SHA-256 check passes. Tests cover real HTTP byte-range resumption and
 corrupt transfers. OS suspension/relaunch still needs a TestFlight check.
 
-Before release: verify actual Arabic alignment and continuous playback through
-Safari on iPhone, validate background GPU grants on hardware, and publish the
-verified pack with its notices. Voice cloning is not part of this preset port yet.
+`dev/tests/kitten2-runtime-handoff.cpp` is an optional Metal hardware regression.
+Link it against the built runtime and pass the pinned GGUF and voice SQLite paths.
+It verifies cumulative tokens, continued generation with GPU access disabled, and
+return to foreground GPU work. It never downloads weights.
+
+Real-device Arabic alignment, sustained background performance and Safari playback
+remain beta checks. Voice cloning is not part of this preset port yet.

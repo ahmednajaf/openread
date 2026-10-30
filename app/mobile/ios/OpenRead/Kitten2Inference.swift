@@ -41,7 +41,8 @@ actor Kitten2Inference {
         cachedVoice=(voice,result);return result
     }
     static func language(text: String, fallback: String) -> String {
-        guard text.count>=20, let language=NLLanguageRecognizer.dominantLanguage(for:text)?.rawValue else { return fallback }
+        let spoken = ReadingText.spokenForm(text)
+        guard spoken.count>=20, let language=NLLanguageRecognizer.dominantLanguage(for:spoken)?.rawValue else { return fallback }
         return language
     }
     private func chunks(_ text: String) throws -> [(String,NSRange)] {
@@ -54,19 +55,19 @@ actor Kitten2Inference {
         var result:[(String,NSRange)]=[], start=0
         for end in ends {
             let candidate=source.substring(with:NSRange(location:start,length:end-start))
-            if try model.tokenCount(candidate)<=128 { continue }
+            if try model.tokenCount(ReadingText.spokenForm(candidate))<=128 { continue }
             let preceding=ends.last { $0>start && $0<end }
             if let preceding {
                 result.append((source.substring(with:NSRange(location:start,length:preceding-start)),NSRange(location:start,length:preceding-start)))
                 start=preceding
             }
-            while try model.tokenCount(source.substring(with:NSRange(location:start,length:end-start)))>128 {
+            while try model.tokenCount(ReadingText.spokenForm(source.substring(with:NSRange(location:start,length:end-start))))>128 {
                 let segment=source.substring(with:NSRange(location:start,length:end-start))
                 let words=NLTokenizer(unit:.word);words.string=segment
                 var split:Int?
                 words.enumerateTokens(in:segment.startIndex..<segment.endIndex) { range,_ in
                     let edge=NSMaxRange(NSRange(range,in:segment))
-                    if let count=try? model.tokenCount(source.substring(with:NSRange(location:start,length:edge))), count<=128 { split=start+edge;return true }
+                    if let count=try? model.tokenCount(ReadingText.spokenForm(source.substring(with:NSRange(location:start,length:edge)))), count<=128 { split=start+edge;return true }
                     return false
                 }
                 guard let split, split>start else { throw ReadingError.speechTooComplex }
@@ -94,7 +95,8 @@ actor Kitten2Inference {
         let emotion=UserDefaults.standard.string(forKey:"kitten2-emotion") ?? "natural"
         let emotions=Set(["mundane","nervous","tender","angry","excited","stern","sad","contemplative","surprised","joyful"])
         for (part,range) in try chunks(text) {
-            let directed=emotions.contains(emotion) ? "[\(emotion)] " + part : part
+            let spoken = ReadingText.spokenForm(part)
+            let directed=emotions.contains(emotion) ? "[\(emotion)] " + spoken : spoken
             let hasExpression=directed.range(of:"\\[(?:mundane|nervous|tender|angry|excited|stern|sad|contemplative|surprised|joyful)\\]|<(?:pause|sigh|gasp|laugh|giggle|sob|scoff|growl|um|gulp)>|\\(\\(\\(",options:.regularExpression) != nil
             var written=0, cursor=0, tail:[Float]=[]
             for try await batch in model.tokens(text:directed,voice:voice,expressive:expressive,hasExpression:hasExpression) {

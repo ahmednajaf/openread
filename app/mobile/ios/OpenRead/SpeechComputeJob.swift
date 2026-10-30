@@ -3,8 +3,8 @@ import BackgroundTasks
 import UIKit
 import OSLog
 
-/// A finite, user-requested narration job. GPU use starts only after iOS grants
-/// the continued-processing task; an audio session alone is not GPU permission.
+/// A finite, user-requested lease for background GPU work. Foreground GPU
+/// access does not depend on this lease; inactive work otherwise uses CPU.
 @available(iOS 26, *)
 @MainActor final class SpeechComputeJob {
     private static let prefix = (Bundle.main.bundleIdentifier ?? "app.getopenread.reader") + ".speech."
@@ -33,7 +33,7 @@ import OSLog
                 task.expirationHandler = { [weak job] in
                     Task { @MainActor in
                         guard let job, !job.finished else { return }
-                        job.finish(success: false); request.expired()
+                        request.expired(); job.finish(success: false)
                     }
                 }
                 request.continuation.resume(returning: job)

@@ -13,9 +13,9 @@ stay on your device. Existing Qwen downloads and saved personal voice files are
 left untouched, but its experimental Apple/web controls have been removed.
 Android's paused source still contains its earlier Qwen integration.
 
-Kitten TTS 2 is a separate model under local evaluation, with more voices,
-cloning and expression. It is not part of these shipped packs. See the
-[evaluation and native-port status](KITTEN2-EVALUATION.md).
+Kitten TTS 2 is an optional Apple-app beta with 115 speaker presets, including
+Arabic, and expression controls. It shares about 2.1 GB of downloaded models;
+voice cloning is not part of the preset port. See the [native pack guide](kitten2-native.md).
 
 ## Import a complete book
 

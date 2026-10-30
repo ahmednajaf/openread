@@ -13,6 +13,7 @@ Model files, Python environments, and generated Safari builds are downloaded/gen
 | pypdf | Local PDF text extraction | [py-pdf/pypdf](https://github.com/py-pdf/pypdf), BSD-3-Clause |
 | PyObjC / macOS Vision | Python bridge to installed native OCR framework | [ronaldoussoren/pyobjc](https://github.com/ronaldoussoren/pyobjc), MIT bridge; Apple frameworks are supplied by macOS |
 | Kitten TTS Mini 0.8 (optional) | Eight additional English voices | [KittenML/kitten-tts-mini-0.8](https://huggingface.co/KittenML/kitten-tts-mini-0.8), Apache-2.0; token alphabet/input preparation adapted from KittenTTS 0.8, [retained Apache license](docs/notices/KittenTTS-LICENSE.txt). This does not include differently licensed Kitten TTS 2. |
+| Kitten TTS 2 (optional Apple beta) | Larger multilingual speech pack | [Pinned KittenML weights](https://huggingface.co/KittenML/kitten-tts-2/tree/c93cb7c271baa51d9ae8204d5277988906f235a2), Stellon Labs Community License; native runtime MIT notices in [kitten2/NOTICES.txt](app/mobile/shared/kitten2/NOTICES.txt). OpenRead’s adapter is GPL-3.0-or-later. |
 | Qwen3 4B (optional) | Local summaries, document chat, podcast scripts and notes | [Qwen/Qwen3-4B](https://huggingface.co/Qwen/Qwen3-4B), Apache-2.0 |
 | Ollama (optional) | Local Qwen runner | [ollama/ollama](https://github.com/ollama/ollama), MIT; model notices separate |
 | Whisper Base (optional) | Local speech recognition | [openai/whisper](https://github.com/openai/whisper), MIT; converted [Systran weights](https://huggingface.co/Systran/faster-whisper-base) |

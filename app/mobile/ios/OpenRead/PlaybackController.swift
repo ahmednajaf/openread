@@ -2,6 +2,10 @@ import Foundation
 import Combine
 import AVFoundation
 import MediaPlayer
+import OpenReadKitten2
+#if os(iOS)
+import UIKit
+#endif
 
 @MainActor final class PlaybackController: NSObject, ObservableObject {
     @Published var reading: Reading?
@@ -52,6 +56,10 @@ import MediaPlayer
     private var routeObserver: NSObjectProtocol?
     private var downloadObserver: AnyCancellable?
     private var assetObserver: AnyCancellable?
+    #if os(iOS)
+    private var backgroundComputeGranted = false
+    private var computeObservers: [NSObjectProtocol] = []
+    #endif
     var onPosition: ((String, Int) -> Void)?
 
     override init() {
@@ -74,6 +82,14 @@ import MediaPlayer
         }
         tick = Timer.scheduledTimer(withTimeInterval: 0.04, repeats: true) { [weak self] _ in Task { @MainActor in self?.updateClock() } }
         #if os(iOS)
+        // Drain Metal synchronously before UIKit finishes deactivation. The
+        // native worker preserves its generation context and continues on CPU.
+        Kitten2LanguageModel.setGPUAllowed(UIApplication.shared.applicationState == .active)
+        for (event, active) in [(UIApplication.willResignActiveNotification, false), (UIApplication.didBecomeActiveNotification, true)] {
+            computeObservers.append(NotificationCenter.default.addObserver(forName: event, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.setComputeVisibility(active) }
+            })
+        }
         interruptionObserver = NotificationCenter.default.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main) { [weak self] notification in
             if notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt == AVAudioSession.InterruptionType.began.rawValue {
                 Task { @MainActor in self?.pause() }
@@ -161,6 +177,10 @@ import MediaPlayer
     func stop() {
         let completed = status == "Finished"
         generation = UUID(); task?.cancel();
+        #if os(iOS)
+        backgroundComputeGranted = false
+        setComputeVisibility(UIApplication.shared.applicationState == .active)
+        #endif
         streamAudio?.stop(); streamAudio = nil
         words = []; streamPassages = []; highlighted = nil; timingWarning = nil
         isPlaying = false; isPreparing = false; status = "Ready"; if !completed { persistPosition() }; nowPlaying()
@@ -229,25 +249,48 @@ import MediaPlayer
         try AVAudioSession.sharedInstance().setActive(true)
         #endif
     }
+    #if os(iOS)
+    private func setComputeVisibility(_ active: Bool) {
+        Kitten2LanguageModel.setGPUAllowed(active || backgroundComputeGranted)
+    }
+    #endif
     private func generateAndPlay() {
         let token = UUID(); generation = token; error = nil; isPreparing = true; status = "Preparing on your device…"
         let chosenVoice = voice
         task = Task {
             #if os(iOS)
             var compute: Any?
-            if VoiceEngine.isKitten2(chosenVoice), #available(iOS 26, *) {
-                compute = await SpeechComputeJob.start(title: reading?.title ?? "OpenRead", passages: passages.count - index) { [weak self] in
+            var computeResolved = false
+            backgroundComputeGranted = false
+            setComputeVisibility(UIApplication.shared.applicationState == .active)
+            // Request background permission alongside foreground preparation;
+            // a delayed lease must never delay ordinary foreground GPU work.
+            let computeRequest = Task { @MainActor in
+                defer { computeResolved = true }
+                guard VoiceEngine.isKitten2(chosenVoice), #available(iOS 26, *) else { return }
+                let job = await SpeechComputeJob.start(title: reading?.title ?? "OpenRead", passages: passages.count - index) { [weak self] in
                     guard let self, token == self.generation else { return }
-                    self.stop(); self.error = "iOS stopped the background narration task. Reopen OpenRead to continue."
+                    self.backgroundComputeGranted = false
+                    self.setComputeVisibility(UIApplication.shared.applicationState == .active)
+                    self.timingWarning = "Background GPU time ended. Narration continues on CPU when OpenRead is inactive."
                 }
+                guard token == generation, !Task.isCancelled else { job?.finish(success: false); return }
+                compute = job
+                backgroundComputeGranted = job != nil
+                setComputeVisibility(UIApplication.shared.applicationState == .active)
             }
             var generated = false
-            defer { if #available(iOS 26, *) { (compute as? SpeechComputeJob)?.finish(success: generated) } }
-            let useGPU = compute != nil
-            let computeNotice: String? = VoiceEngine.isKitten2(chosenVoice) && !useGPU ? "iOS couldn’t enable accelerated narration. This voice may buffer." : nil
+            defer {
+                computeRequest.cancel()
+                if token == generation {
+                    backgroundComputeGranted = false
+                    setComputeVisibility(UIApplication.shared.applicationState == .active)
+                }
+                if #available(iOS 26, *) { (compute as? SpeechComputeJob)?.finish(success: generated) }
+            }
+            let useGPU = true // The lifecycle gate limits GPU work to permitted states.
             #else
             let useGPU = true
-            let computeNotice: String? = nil
             #endif
             do {
                 try Task.checkCancellation()
@@ -290,6 +333,12 @@ import MediaPlayer
                     var reachedStart = next != first || firstOffset == nil
                     for try await chunk in await engine.stream(part.text, voice: chosenVoice) {
                         guard token == generation, !Task.isCancelled else { return }
+                        #if os(iOS)
+                        let computeNotice: String? = VoiceEngine.isKitten2(chosenVoice) && computeResolved && !backgroundComputeGranted
+                            ? "Background GPU access wasn’t granted. Narration uses CPU when OpenRead is inactive." : nil
+                        #else
+                        let computeNotice: String? = nil
+                        #endif
                         let notices = [computeNotice, chunk.timingWarning].compactMap { $0 }
                         timingWarning = notices.isEmpty ? nil : notices.joined(separator: " ")
                         let audible: SpokenClip

@@ -86,6 +86,24 @@ struct ReadingPassage: Sendable {
 }
 
 enum ReadingText {
+    /// PDF fonts often expose presentation glyphs (Arabic forms, Latin ligatures)
+    /// instead of the underlying letters. Normalize only the spoken copy so
+    /// existing books, bookmarks and source offsets remain unchanged.
+    static func spokenForm(_ text: String) -> String {
+        text.map { character in
+            let original = String(character)
+            let normalized = original.precomposedStringWithCompatibilityMapping
+            // Spacing diacritic glyphs can decompose to a synthetic space plus
+            // combining marks. Keep the marks attached to their original word.
+            if !original.unicodeScalars.contains(where: { CharacterSet.whitespacesAndNewlines.contains($0) }),
+               normalized.unicodeScalars.first == " ",
+               normalized.unicodeScalars.dropFirst().allSatisfy({ CharacterSet.nonBaseCharacters.contains($0) }) {
+                return String(String.UnicodeScalarView(normalized.unicodeScalars.dropFirst()))
+            }
+            return normalized
+        }.joined().precomposedStringWithCanonicalMapping
+    }
+
     static func passages(_ reading: Reading, limit: Int = 420) -> [ReadingPassage] {
         guard !reading.chapterList.isEmpty else { return passages(reading.text, limit: limit) }
         let source = reading.text as NSString
