@@ -36,5 +36,28 @@
       "url": "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.1/voices-v1.0.bin",
       "license": "Apache-2.0"
     }
+  ],
+  "kitten2Assets": [
+    {
+      "name": "kitten2-lm-q4.gguf",
+      "url": "https://github.com/ahmednajaf/openread/releases/download/kitten2-pack-2026-10-28/kitten2-lm-q4.gguf",
+      "sha256": "dd34192baa98dceb4560932b27bc872e10280354b616e4a7fd1006710096dbc6",
+      "license": "Stellon-Labs-Community-License",
+      "bytes": 1447458656
+    },
+    {
+      "name": "kitten2-decoder.ort",
+      "url": "https://github.com/ahmednajaf/openread/releases/download/kitten2-pack-2026-10-28/kitten2-decoder.ort",
+      "sha256": "ba64551e961775c82b507725b9f4aa9971b3a7913e2ad1a924f28fa1b2988b8c",
+      "license": "Stellon-Labs-Community-License",
+      "bytes": 538653312
+    },
+    {
+      "name": "kitten2-voices.sqlite",
+      "url": "https://github.com/ahmednajaf/openread/releases/download/kitten2-pack-2026-10-28/kitten2-voices.sqlite",
+      "sha256": "9a649030d1abee0b4b85c9391c06fad984ed457079c677021b9c1f467aa2e3ec",
+      "license": "Stellon-Labs-Community-License",
+      "bytes": 92348416
+    }
   ]
 }

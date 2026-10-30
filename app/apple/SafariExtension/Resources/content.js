@@ -8,7 +8,7 @@
   const previousFocus = document.activeElement;
   const chatAvailable = OpenReadChat.available(document);
   const chatChanged = 'The conversation changed. Press Listen to chat again, or refresh loaded messages in Reading options.';
-  let selection = null; let source = chatAvailable ? 'chat' : 'page'; let sample; let view; let unlockButton; let destroyed = false; let interacted = false; let error = '';
+  let selection = null; let source = chatAvailable ? 'chat' : 'page'; let sample; let view; let unlockButton; let destroyed = false; let interacted = false; let error = ''; let playbackNotice = '';
   let preferences = { voice: OpenReadCore.defaultVoice, voiceRevision: 2, rate: 1, highlight: true, follow: true, announceSenders: true };
   let availableVoices = voices.filter(v => !v.pack).map(v => v.id); let voiceAvailabilityKnown = false;
   let sleepTimer; let sleepMinutes = 0;
@@ -22,7 +22,7 @@
   document.documentElement.append(host);
   const request = message => api.runtime.sendMessage(message);
   function snapshot() {
-    return { ...phase, preferences: { ...preferences }, source, sleepMinutes, availableVoices, hasSelection: !!selection, chatAvailable, messageCount: article.messageCount || 0, error,
+    return { ...phase, preferences: { ...preferences }, source, sleepMinutes, availableVoices, hasSelection: !!selection, chatAvailable, messageCount: article.messageCount || 0, error, notice: playbackNotice,
       title: article.title, sourceName: source === 'chat' ? 'WhatsApp Web' : source === 'paste' ? 'Pasted text' : source === 'selection' ? 'Selected text' : location.hostname.replace(/^www\./u, ''),
       minutes: Math.max(1, Math.ceil(words(article.text) / (165 * preferences.rate))), previewStatus: sample?.status || 'idle', needsPageGesture: !!(player.needsPageGesture || sample?.needsPageGesture) };
   }
@@ -38,6 +38,7 @@
     void request({ type: 'openread:state', state }).catch(() => {});
     void request({ type: 'playbackState', status: phase.status, error }).catch(() => {});
   }
+  function playbackMessage(text = '') { playbackNotice = text; publish(); }
   function notice(text = '') { error = text; publish(); }
   function validateChat(item) {
     if (article.source !== 'chat') return;
@@ -51,10 +52,10 @@
   let highlighter;
   const player = new OpenReadPlayer({ request, AudioClass: Audio,
     validate: validateChat,
-    onChange: state => { phase = state; if (state.status === 'idle' || state.status === 'ended') highlighter?.clear(); publish(); },
+    onChange: state => { phase = state; if (preferences.voice.startsWith('kitten2:')) preferences.rate = Math.min(2, state.rate || preferences.rate); if (state.status === 'idle' || state.status === 'ended') highlighter?.clear(); publish(); },
     onWordClear: () => highlighter?.clear(),
     onWord: (offset, length) => { if (preferences.highlight && article.source !== 'paste') highlighter.show(player.items[player.index], offset, length); },
-    onError: message => { if (message === chatChanged) player.stop(); notice(message); } });
+    onNotice: playbackMessage, onError: message => { if (message === chatChanged) player.stop(); notice(message); } });
   highlighter = new OpenReadHighlighter({ layer, follow: preferences.follow,
     onStale: () => { player.pause(); highlighter.clear(); notice('The page changed. Stop and start listening to refresh its text.'); } });
   function captureSelection() {
@@ -94,7 +95,7 @@
       }
       case 'previous': case 'next': sample?.stop(); highlighter.clear(); player.seek(player.index + (action === 'next' ? 1 : -1)); break;
       case 'stop': sample?.stop(); player.stop(); highlighter.clear(); break;
-      case 'set-rate': preferences.rate = Math.max(.5, Math.min(5, Number(value) || 1)); sample?.configure({ rate: preferences.rate }); player.configure({ rate: preferences.rate }); save(); break;
+      case 'set-rate': preferences.rate = Math.max(.5, Math.min(preferences.voice.startsWith('kitten2:') ? 2 : 5, Number(value) || 1)); sample?.configure({ rate: preferences.rate }); player.configure({ rate: preferences.rate }); save(); break;
       case 'set-voice':
         if (!voices.some(v => v.id === value)) break;
         sample?.stop(); error = ''; preferences.voice = value; player.configure({ voice: value }); save(); break;

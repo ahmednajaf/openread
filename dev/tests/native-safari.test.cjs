@@ -40,3 +40,18 @@ test('Safari forwards supported Kokoro languages and rejects retired packs', asy
   await h.send({type:'synthesize',text:'Read this.',voice:'qwen:ryan'});
   assert.equal(h.requests.length, 8);
 });
+
+test('app-owned Safari playback uses the browser tab identity and validates size and speed', async () => {
+  const h=host();
+  const input={type:'startListening',title:'Book',voice:'kitten2:ArabicFalconer',items:['حين نقرأ'],index:0,rate:1.5,tab:99,source:'https://forged.example'};
+  await h.send(input);
+  assert.equal(h.requests[0].tab,1);
+  assert.equal(h.requests[0].source,'https://example.com/article');
+  for (const invalid of [{rate:5},{items:['x'.repeat(250001)]},{index:5},{voice:'qwen:sohee'}]) await h.send({...input,...invalid});
+  assert.equal(h.requests.length,1);
+  const id='EA9EAAB0-BF3F-47A6-8537-89E2B304682F';
+  await h.send({type:'listeningCommand',id,tab:99,action:'pause'});
+  assert.equal(h.requests[1].tab,1);
+  await h.send({type:'listeningState',id:'../../private'});
+  assert.equal(h.requests.length,2);
+});

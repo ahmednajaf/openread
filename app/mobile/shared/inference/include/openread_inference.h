@@ -14,6 +14,11 @@ int openread_inference_run(void *session, const int64_t *tokens, size_t token_co
 int openread_context_inference_run(void *session, const int64_t *tokens, const int64_t *mask,
                                   size_t batch, size_t width, float **scores, size_t *score_count,
                                   float **grammar, size_t *grammar_count);
+// App-owned Kitten TTS 2 decoder; the ordinary Safari model guard is unchanged.
+void *openread_kitten2_decoder_create(const char *path);
+int openread_kitten2_decoder_run(void *session, const int64_t *tokens, size_t count,
+    const int64_t *prompt, size_t prompt_count, const float *features, size_t feature_count,
+    const float *embedding, size_t embedding_count, uint32_t seed, float **samples, size_t *sample_count);
 void openread_inference_free(void *buffer);
 #ifdef __cplusplus
 }

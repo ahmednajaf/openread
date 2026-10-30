@@ -11,16 +11,19 @@
 #include <memory>
 #include <cstdlib>
 #include <cstring>
+#include <random>
+#include <vector>
+#include <cmath>
 
 namespace {
 struct MappedModel {
     void *bytes = MAP_FAILED;
     size_t size = 0;
-    explicit MappedModel(const char *path) {
+    explicit MappedModel(const char *path, size_t limit = 200000000) {
         int fd = open(path, O_RDONLY);
         if (fd < 0) throw std::runtime_error("Model unavailable");
         struct stat info{};
-        if (fstat(fd, &info) || info.st_size < 8 || info.st_size > 200000000) { close(fd); throw std::runtime_error("Invalid model"); }
+        if (fstat(fd, &info) || info.st_size < 8 || static_cast<uint64_t>(info.st_size) > limit) { close(fd); throw std::runtime_error("Invalid model"); }
         size = static_cast<size_t>(info.st_size);
         bytes = mmap(nullptr, size, PROT_READ, MAP_PRIVATE, fd, 0);
         close(fd);
@@ -33,7 +36,7 @@ struct Inference {
     MappedModel model;
     Ort::Env environment{ORT_LOGGING_LEVEL_WARNING, "OpenRead"};
     Ort::Session session{nullptr};
-    explicit Inference(const char *path) : model(path) {
+    explicit Inference(const char *path, size_t limit = 200000000) : model(path, limit) {
         Ort::SessionOptions options;
         options.SetIntraOpNumThreads(2);
         options.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_DISABLE_ALL);
@@ -98,4 +101,43 @@ extern "C" int openread_context_inference_run(void *session, const int64_t *toke
         std::memcpy(first,result[0].GetTensorData<float>(),a*sizeof(float));std::memcpy(second,result[1].GetTensorData<float>(),b*sizeof(float));
         *scores=first;*grammar=second;*score_count=a;*grammar_count=b;return 1;
     }catch(...){return 0;}
+}
+
+
+// The larger decoder is app-owned. Safari retains its existing 200 MB path.
+extern "C" void *openread_kitten2_decoder_create(const char *path) {
+    try { return path ? new Inference(path, 700000000) : nullptr; } catch (...) { return nullptr; }
+}
+extern "C" int openread_kitten2_decoder_run(void *session, const int64_t *tokens, size_t count,
+    const int64_t *prompt, size_t prompt_count, const float *features, size_t feature_count,
+    const float *embedding, size_t embedding_count, uint32_t seed, float **samples, size_t *sample_count) {
+    if (!session || !tokens || count < 4 || count > 320 || !prompt || !prompt_count || prompt_count > 300 ||
+        !features || (feature_count != prompt_count * 2 * 80 && feature_count != (prompt_count * 2 + 1) * 80) || !embedding || embedding_count != 192 || !samples || !sample_count) return 0;
+    *samples = nullptr; *sample_count = 0;
+    try {
+        auto memory = Ort::MemoryInfo::CreateCpu(OrtDeviceAllocator, OrtMemTypeDefault);
+        std::array<int64_t,2> token_shape{1,static_cast<int64_t>(count)}, prompt_shape{1,static_cast<int64_t>(prompt_count)}, embedding_shape{1,192};
+        // The codec uses 25 Hz tokens and 50 Hz reference frames. STFT can
+        // leave one unpaired trailing frame; align to complete codec frames.
+        const size_t aligned_features = prompt_count * 2 * 80;
+        std::array<int64_t,3> feature_shape{1,static_cast<int64_t>(prompt_count*2),80}, noise_shape{1,80,static_cast<int64_t>(count*2)};
+        std::vector<float> noise(count*2*80);
+        std::mt19937 random(seed); std::normal_distribution<float> normal;
+        for (auto &value:noise) value=normal(random);
+        std::array<Ort::Value,5> inputs{
+            Ort::Value::CreateTensor<int64_t>(memory,const_cast<int64_t *>(tokens),count,token_shape.data(),2),
+            Ort::Value::CreateTensor<int64_t>(memory,const_cast<int64_t *>(prompt),prompt_count,prompt_shape.data(),2),
+            Ort::Value::CreateTensor<float>(memory,const_cast<float *>(features),aligned_features,feature_shape.data(),3),
+            Ort::Value::CreateTensor<float>(memory,const_cast<float *>(embedding),embedding_count,embedding_shape.data(),2),
+            Ort::Value::CreateTensor<float>(memory,noise.data(),noise.size(),noise_shape.data(),3)};
+        const char *names[]={"tokens","prompt_token","prompt_feat","embedding","noise"}, *outputs[]={"waveform"};
+        auto result=static_cast<Inference *>(session)->session.Run(Ort::RunOptions{nullptr},names,inputs.data(),inputs.size(),outputs,1);
+        const auto info=result[0].GetTensorTypeAndShapeInfo(); const auto size=info.GetElementCount();
+        if (info.GetElementType()!=ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT || size!=count*960) return 0;
+        const float *data=result[0].GetTensorData<float>();
+        for (size_t i=0;i<size;++i) if (!std::isfinite(data[i])) return 0;
+        auto copy=static_cast<float *>(std::malloc(size*sizeof(float)));
+        if (!copy) return 0;
+        std::memcpy(copy,data,size*sizeof(float)); *samples=copy; *sample_count=size; return 1;
+    } catch (...) { return 0; }
 }

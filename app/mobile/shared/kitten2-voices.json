@@ -1,0 +1,807 @@
+[
+  {
+    "id": "kitten2:AirportAnnouncer",
+    "name": "Airport Announcer",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Alfred",
+    "name": "Alfred",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Arabic",
+    "name": "Arabic",
+    "detail": "Arabic · Expressive",
+    "lang": "ar-SA",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:ArabicFalconer",
+    "name": "Arabic Falconer",
+    "detail": "Arabic · Expressive",
+    "lang": "ar-SA",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:ArabicMother",
+    "name": "Arabic Mother",
+    "detail": "Arabic · Expressive",
+    "lang": "ar-SA",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:ArabicNews",
+    "name": "Arabic News",
+    "detail": "Arabic · Expressive",
+    "lang": "ar-SA",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:AudiobookNarratorFemale",
+    "name": "Audiobook Narrator Female",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Bella",
+    "name": "Bella",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:BoredTeenager",
+    "name": "Bored Teenager",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Bruno",
+    "name": "Bruno",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:CalmHostageNegotiator",
+    "name": "Calm Hostage Negotiator",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Chinese",
+    "name": "Chinese",
+    "detail": "Chinese · Expressive",
+    "lang": "zh-CN",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:ChineseLivestreamSeller",
+    "name": "Chinese Livestream Seller",
+    "detail": "Chinese · Expressive",
+    "lang": "zh-CN",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:ChineseNewsCctv",
+    "name": "Chinese News Cctv",
+    "detail": "Chinese · Expressive",
+    "lang": "zh-CN",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:ChineseXianxiaMaster",
+    "name": "Chinese Xianxia Master",
+    "detail": "Chinese · Expressive",
+    "lang": "zh-CN",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Claire",
+    "name": "Claire",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Dante",
+    "name": "Dante",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Diana",
+    "name": "Diana",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Dolores",
+    "name": "Dolores",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:DutchBaker",
+    "name": "Dutch Baker",
+    "detail": "Dutch · Expressive",
+    "lang": "nl-NL",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:DutchGrandpaStory",
+    "name": "Dutch Grandpa Story",
+    "detail": "Dutch · Expressive",
+    "lang": "nl-NL",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:DutchWeatherPresenter",
+    "name": "Dutch Weather Presenter",
+    "detail": "Dutch · Expressive",
+    "lang": "nl-NL",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Edith",
+    "name": "Edith",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Eleanor",
+    "name": "Eleanor",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Elliot",
+    "name": "Elliot",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:FairytaleNarratorWhimsical",
+    "name": "Fairytale Narrator Whimsical",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Frank",
+    "name": "Frank",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:French",
+    "name": "French",
+    "detail": "French · Expressive",
+    "lang": "fr-FR",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:FrenchDocumentary",
+    "name": "French Documentary",
+    "detail": "French · Expressive",
+    "lang": "fr-FR",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:FrenchGrandmereRecette",
+    "name": "French Grandmere Recette",
+    "detail": "French · Expressive",
+    "lang": "fr-FR",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:FrenchTeacher",
+    "name": "French Teacher",
+    "detail": "French · Expressive",
+    "lang": "fr-FR",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:FrenchWaiter",
+    "name": "French Waiter",
+    "detail": "French · Expressive",
+    "lang": "fr-FR",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:German",
+    "name": "German",
+    "detail": "German · Expressive",
+    "lang": "de-DE",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:GermanKneipe",
+    "name": "German Kneipe",
+    "detail": "German · Expressive",
+    "lang": "de-DE",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:GermanProfessor",
+    "name": "German Professor",
+    "detail": "German · Expressive",
+    "lang": "de-DE",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:GermanTrainAnnouncement",
+    "name": "German Train Announcement",
+    "detail": "German · Expressive",
+    "lang": "de-DE",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Grace",
+    "name": "Grace",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:GrandmaBedtimeStory",
+    "name": "Grandma Bedtime Story",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:GriefEulogy",
+    "name": "Grief Eulogy",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Herbert",
+    "name": "Herbert",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Hindi",
+    "name": "Hindi",
+    "detail": "Hindi · Expressive",
+    "lang": "hi-IN",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:HindiBollywoodDrama",
+    "name": "Hindi Bollywood Drama",
+    "detail": "Hindi · Expressive",
+    "lang": "hi-IN",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:HindiCollegeFriends",
+    "name": "Hindi College Friends",
+    "detail": "Hindi · Expressive",
+    "lang": "hi-IN",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:HindiDadiKahani",
+    "name": "Hindi Dadi Kahani",
+    "detail": "Hindi · Expressive",
+    "lang": "hi-IN",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:HindiYogaTeacher",
+    "name": "Hindi Yoga Teacher",
+    "detail": "Hindi · Expressive",
+    "lang": "hi-IN",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Hugo",
+    "name": "Hugo",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:IndonesianNewsAnchor",
+    "name": "Indonesian News Anchor",
+    "detail": "Indonesian · Expressive",
+    "lang": "id-ID",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:IndonesianTourGuide",
+    "name": "Indonesian Tour Guide",
+    "detail": "Indonesian · Expressive",
+    "lang": "id-ID",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Iris",
+    "name": "Iris",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Italian",
+    "name": "Italian",
+    "detail": "Italian · Expressive",
+    "lang": "it-IT",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:ItalianFashionDesigner",
+    "name": "Italian Fashion Designer",
+    "detail": "Italian · Expressive",
+    "lang": "it-IT",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:ItalianFootballFan",
+    "name": "Italian Football Fan",
+    "detail": "Italian · Expressive",
+    "lang": "it-IT",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:ItalianGondolier",
+    "name": "Italian Gondolier",
+    "detail": "Italian · Expressive",
+    "lang": "it-IT",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:ItalianNonnaKitchen",
+    "name": "Italian Nonna Kitchen",
+    "detail": "Italian · Expressive",
+    "lang": "it-IT",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:ItalianOperaTenor",
+    "name": "Italian Opera Tenor",
+    "detail": "Italian · Expressive",
+    "lang": "it-IT",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:JapaneseAnimeHeroine",
+    "name": "Japanese Anime Heroine",
+    "detail": "Japanese · Expressive",
+    "lang": "ja-JP",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:JapaneseGrandma",
+    "name": "Japanese Grandma",
+    "detail": "Japanese · Expressive",
+    "lang": "ja-JP",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:JapaneseSalarymanApology",
+    "name": "Japanese Salaryman Apology",
+    "detail": "Japanese · Expressive",
+    "lang": "ja-JP",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:JapaneseTrainConductor",
+    "name": "Japanese Train Conductor",
+    "detail": "Japanese · Expressive",
+    "lang": "ja-JP",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Jasper",
+    "name": "Jasper",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Julian",
+    "name": "Julian",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Kiki",
+    "name": "Kiki",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:KoreanGrandpaAdvice",
+    "name": "Korean Grandpa Advice",
+    "detail": "Korean · Expressive",
+    "lang": "ko-KR",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:KoreanKdramaConfession",
+    "name": "Korean Kdrama Confession",
+    "detail": "Korean · Expressive",
+    "lang": "ko-KR",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:KoreanNewsAnchor",
+    "name": "Korean News Anchor",
+    "detail": "Korean · Expressive",
+    "lang": "ko-KR",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Laurence",
+    "name": "Laurence",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Leo",
+    "name": "Leo",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Luna",
+    "name": "Luna",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Maeve",
+    "name": "Maeve",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Marcus",
+    "name": "Marcus",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Martha",
+    "name": "Martha",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Matthew",
+    "name": "Matthew",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Miles",
+    "name": "Miles",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:NervousFirstDate",
+    "name": "Nervous First Date",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:NewsAnchorFemale",
+    "name": "News Anchor Female",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Otis",
+    "name": "Otis",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:PilotCabinAnnouncement",
+    "name": "Pilot Cabin Announcement",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:PolishBabciaPierogi",
+    "name": "Polish Babcia Pierogi",
+    "detail": "Polish · Expressive",
+    "lang": "pl-PL",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:PolishMountainGuide",
+    "name": "Polish Mountain Guide",
+    "detail": "Polish · Expressive",
+    "lang": "pl-PL",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:PolishNewsAnchor",
+    "name": "Polish News Anchor",
+    "detail": "Polish · Expressive",
+    "lang": "pl-PL",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:PolishPoetryStudent",
+    "name": "Polish Poetry Student",
+    "detail": "Polish · Expressive",
+    "lang": "pl-PL",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Portuguese",
+    "name": "Portuguese",
+    "detail": "Portuguese · Expressive",
+    "lang": "pt-BR",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:PortugueseBeach",
+    "name": "Portuguese Beach",
+    "detail": "Portuguese · Expressive",
+    "lang": "pt-BR",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:PortugueseBusiness",
+    "name": "Portuguese Business",
+    "detail": "Portuguese · Expressive",
+    "lang": "pt-BR",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:PortugueseFado",
+    "name": "Portuguese Fado",
+    "detail": "Portuguese · Expressive",
+    "lang": "pt-BR",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:PortugueseGrandpaFarm",
+    "name": "Portuguese Grandpa Farm",
+    "detail": "Portuguese · Expressive",
+    "lang": "pt-BR",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:PortugueseNewsAnchor",
+    "name": "Portuguese News Anchor",
+    "detail": "Portuguese · Expressive",
+    "lang": "pt-BR",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Raven",
+    "name": "Raven",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Reginald",
+    "name": "Reginald",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Rosie",
+    "name": "Rosie",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Russian",
+    "name": "Russian",
+    "detail": "Russian · Expressive",
+    "lang": "ru-RU",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:RussianBabushka",
+    "name": "Russian Babushka",
+    "detail": "Russian · Expressive",
+    "lang": "ru-RU",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:RussianFairyTale",
+    "name": "Russian Fairy Tale",
+    "detail": "Russian · Expressive",
+    "lang": "ru-RU",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:RussianHockeyCheer",
+    "name": "Russian Hockey Cheer",
+    "detail": "Russian · Expressive",
+    "lang": "ru-RU",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:RussianLiteratureTeacher",
+    "name": "Russian Literature Teacher",
+    "detail": "Russian · Expressive",
+    "lang": "ru-RU",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:RussianSpaceControl",
+    "name": "Russian Space Control",
+    "detail": "Russian · Expressive",
+    "lang": "ru-RU",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:RussianTaxiDriver",
+    "name": "Russian Taxi Driver",
+    "detail": "Russian · Expressive",
+    "lang": "ru-RU",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Sable",
+    "name": "Sable",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Saoirse",
+    "name": "Saoirse",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:SarcasticCoworker",
+    "name": "Sarcastic Coworker",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Serena",
+    "name": "Serena",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Spanish",
+    "name": "Spanish",
+    "detail": "Spanish · Expressive",
+    "lang": "es-ES",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:SpanishAbuela",
+    "name": "Spanish Abuela",
+    "detail": "Spanish · Expressive",
+    "lang": "es-ES",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:SpanishBreakupSad",
+    "name": "Spanish Breakup Sad",
+    "detail": "Spanish · Expressive",
+    "lang": "es-ES",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:SpanishNews",
+    "name": "Spanish News",
+    "detail": "Spanish · Expressive",
+    "lang": "es-ES",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:SpanishTango",
+    "name": "Spanish Tango",
+    "detail": "Spanish · Expressive",
+    "lang": "es-ES",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:TurkishFisherman",
+    "name": "Turkish Fisherman",
+    "detail": "Turkish · Expressive",
+    "lang": "tr-TR",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:TurkishGrandmaCooking",
+    "name": "Turkish Grandma Cooking",
+    "detail": "Turkish · Expressive",
+    "lang": "tr-TR",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:TurkishNewsAnchor",
+    "name": "Turkish News Anchor",
+    "detail": "Turkish · Expressive",
+    "lang": "tr-TR",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Victor",
+    "name": "Victor",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Victoria",
+    "name": "Victoria",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Vincent",
+    "name": "Vincent",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Walter",
+    "name": "Walter",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:WeatherPresenterCheerful",
+    "name": "Weather Presenter Cheerful",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  },
+  {
+    "id": "kitten2:Willow",
+    "name": "Willow",
+    "detail": "English · Expressive",
+    "lang": "en-US",
+    "pack": "kitten2"
+  }
+]
