@@ -165,7 +165,17 @@ final class BookPaginationTests: XCTestCase {
         func highlightCount() -> Int {
             var count = 0
             for view in textViews(controller.view) {
-                view.textStorage.enumerateAttribute(.backgroundColor, in: NSRange(location: 0, length: view.textStorage.length)) { value,_,_ in if value != nil { count += 1 } }
+                guard let manager = view.textLayoutManager, let document = manager.textContentManager?.documentRange else {
+                    XCTFail("A selectable reader must keep TextKit 2"); continue
+                }
+                manager.ensureLayout(for: document)
+                manager.enumerateRenderingAttributes(from: document.location, reverse: false) { _, attributes, _ in
+                    if attributes[.backgroundColor] != nil { count += 1 }
+                    return true
+                }
+                view.textStorage.enumerateAttribute(.backgroundColor, in: NSRange(location: 0, length: view.textStorage.length)) { value,_,_ in
+                    XCTAssertNil(value, "Highlighting must not edit the backing document")
+                }
             }
             return count
         }
@@ -182,6 +192,81 @@ final class BookPaginationTests: XCTestCase {
         let pagination = try XCTUnwrap(controller.pagination)
         XCTAssertTrue(NSLocationInRange(anchor, pagination.ranges[controller.currentPage]))
         XCTAssertEqual(browsed.count, 1, "A resize must not seek or restart narration")
+    }
+    @MainActor func testArabicSelectionSurvivesHighlightsReflowAndChapterReplacement() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
+        let window = UIWindow(windowScene: scene)
+        let host = UIViewController(); window.rootViewController = host
+        let view = NarrationTextView(); view.isEditable = false; view.isSelectable = true
+        host.view.addSubview(view); window.isHidden = false
+        defer { window.isHidden = true }
+        let text = String(repeating: "قَرَأَ القصةَ، ثم قال: «أهلاً بالعالم!» Arabic 🌊 café.\n\n", count: 40)
+        let original = BookPagination.attributed(text, font: BookPagination.font(for: .large))
+        view.replaceText(original)
+        let words = ReadingText.words(in: text)
+        for index in 0..<80 {
+            view.frame = CGRect(x: 0, y: 0, width: index.isMultiple(of: 2) ? 320 : 600, height: 400)
+            let manager = try XCTUnwrap(view.textLayoutManager)
+            manager.ensureLayout(for: try XCTUnwrap(manager.textContentManager).documentRange)
+            view.selectedRange = words[index]
+            view.setNarrationHighlight(words[index + 1])
+            if let selection = view.selectedTextRange { _ = view.selectionRects(for: selection) }
+            view.layoutIfNeeded()
+            XCTAssertEqual(view.selectedRange, words[index], "Narration must not replace the user's selection")
+            XCTAssertEqual(view.attributedText, original, "Narration must not mutate Arabic text storage")
+            try await Task.sleep(for: .milliseconds(5)) // Let deferred selection/layout callbacks run.
+            if index.isMultiple(of: 10) {
+                _ = UIGraphicsImageRenderer(size: view.bounds.size).image { _ in
+                    view.drawHierarchy(in: view.bounds, afterScreenUpdates: true)
+                }
+                let content = try XCTUnwrap(manager.textContentManager)
+                var painted: [NSRange] = []
+                manager.enumerateRenderingAttributes(from: content.documentRange.location, reverse: false) { _, attributes, range in
+                    if attributes[.backgroundColor] != nil {
+                        painted.append(NSRange(location: content.offset(from: content.documentRange.location, to: range.location),
+                            length: content.offset(from: range.location, to: range.endLocation)))
+                    }
+                    return true
+                }
+                XCTAssertEqual(painted, [words[index + 1]], "Only the current word should remain painted after reflow")
+                XCTAssertNotNil(view.textLayoutManager)
+            }
+        }
+        view.replaceText(BookPagination.attributed("فصل جديد 🌊", font: BookPagination.font(for: .large)))
+        view.setNarrationHighlight(NSRange(location: Int.max, length: 1))
+        view.setNarrationHighlight(NSRange(location: 0, length: Int.max))
+        XCTAssertNil(view.narrationHighlight)
+        XCTAssertLessThanOrEqual(NSMaxRange(view.selectedRange), view.text.utf16.count)
+        let manager = try XCTUnwrap(view.textLayoutManager)
+        manager.ensureLayout(for: try XCTUnwrap(manager.textContentManager).documentRange)
+        view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(150))
+        XCTAssertEqual(view.text, "فصل جديد 🌊")
+    }
+    @MainActor func testArabicPagedReaderKeepsModernLayoutWhileFollowingAndTurning() async throws {
+        let text = String(repeating: "قَرَأَ القصةَ، ثم قال: «أهلاً بالعالم!» Arabic 🌊 café.\n\n", count: 100)
+        let controller = BookPagerController(); controller.loadViewIfNeeded()
+        let words = ReadingText.words(in: text)
+        let command = BookPageCommand()
+        for index in stride(from: 0, to: 300, by: 7) {
+            controller.view.frame.size = index.isMultiple(of: 2) ? CGSize(width: 390, height: 600) : CGSize(width: 850, height: 430)
+            controller.update(PagedBookView(text: text, sourceOffset: 0, position: 0, highlighted: words[index], follow: true,
+                title: "كتاب", pages: index.isMultiple(of: 2) ? 1 : 2, gutter: 24, fold: 0, reduceMotion: true,
+                command: command, onBrowse: { _ in XCTFail("Following must not seek") }, onPageInfo: { _,_ in }, onBoundary: { _ in }))
+            controller.view.layoutIfNeeded()
+            for _ in 0..<5 { await Task.yield() }
+            func inspect(_ view: UIView) {
+                if let text = view as? UITextView {
+                    XCTAssertNotNil(text.textLayoutManager)
+                    XCTAssertTrue(text.isSelectable)
+                    if let selection = text.selectedTextRange { _ = text.selectionRects(for: selection) }
+                }
+                view.subviews.forEach(inspect)
+            }
+            inspect(controller.view)
+            let pages = try XCTUnwrap(controller.pagination)
+            XCTAssertTrue(pages.ranges.indices.contains(controller.currentPage))
+        }
     }
     @MainActor func testPageCurlStaysCoherentWhenPhoneRotatesDuringATurn() {
         let finished = expectation(description: "Native phone rotations finish")

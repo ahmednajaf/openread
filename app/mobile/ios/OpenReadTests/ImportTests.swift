@@ -29,6 +29,24 @@ final class ImportTests: XCTestCase {
         let reading = try await DocumentImporter().file(fixture("ordered", "epub"))
         XCTAssertTrue(reading.text.range(of: "first chapter")!.lowerBound < reading.text.range(of: "second chapter")!.lowerBound)
     }
+    func testIncompleteEPUBGivesAnActionableErrorWithoutChangingTheSource() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let book = folder.appendingPathComponent("unfinished.epub")
+        let data = Data(try Data(contentsOf: fixture("ordered", "epub")).dropLast(22))
+        try data.write(to: book)
+        let before = Set(try FileManager.default.contentsOfDirectory(atPath: FileManager.default.temporaryDirectory.path).filter { $0.hasPrefix("OpenRead-import-") })
+        do { _ = try await DocumentImporter().file(book); XCTFail("A truncated EPUB cannot be imported") }
+        catch {
+            XCTAssertTrue(error is ImportFailure)
+            XCTAssertTrue(error.localizedDescription.contains("Download it again"))
+            XCTAssertFalse(error.localizedDescription.contains("ArchiveError"))
+        }
+        XCTAssertEqual(try Data(contentsOf: book), data)
+        let after = Set(try FileManager.default.contentsOfDirectory(atPath: FileManager.default.temporaryDirectory.path).filter { $0.hasPrefix("OpenRead-import-") })
+        XCTAssertEqual(after, before, "Failed imports must remove their temporary copies")
+    }
     func testDOCXParagraphsRemainSeparate() async throws {
         let reading = try await DocumentImporter().file(fixture("paragraphs", "docx"))
         XCTAssertTrue(reading.text.contains("The first paragraph.\n\nThe second paragraph."))

@@ -278,12 +278,11 @@ private final class BookSheetController: UIViewController {
 
 private final class BookPaperView: UIView {
     static let paper = UIColor { $0.userInterfaceStyle == .dark ? UIColor(red: 0.105, green: 0.10, blue: 0.125, alpha: 1) : UIColor(red: 0.993, green: 0.985, blue: 0.965, alpha: 1) }
-    private let textView = UITextView(usingTextLayoutManager: false)
+    private let textView = NarrationTextView()
     private let heading = UILabel()
     private let footer = UILabel()
     private let spine = CAGradientLayer()
     private var sourceRange = NSRange(location: 0, length: 0)
-    private var previous: NSRange?
     private var inset = UIEdgeInsets.zero
     private var innerLeft = false
     override init(frame: CGRect) {
@@ -305,7 +304,7 @@ private final class BookPaperView: UIView {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     func configure(text: String, range: NSRange, font: UIFont, title: String, page: Int?, inset: UIEdgeInsets, innerLeft: Bool) {
         self.sourceRange = range; self.inset = inset; self.innerLeft = innerLeft
-        textView.attributedText = BookPagination.attributed(text, font: font)
+        textView.replaceText(BookPagination.attributed(text, font: font))
         heading.text = title.uppercased(); footer.text = page.map(String.init) ?? ""
         footer.accessibilityLabel = page.map { "Page \($0) in this section" }
     }
@@ -313,12 +312,10 @@ private final class BookPaperView: UIView {
         super.layoutSubviews()
         heading.frame = CGRect(x: inset.left, y: 18, width: bounds.width - inset.left - inset.right, height: 16)
         textView.frame = bounds.inset(by: inset)
-        let source = textView.text as NSString
-        var end = source.length
-        while end > 0, let scalar = UnicodeScalar(source.character(at: end - 1)), CharacterSet.whitespacesAndNewlines.contains(scalar) { end -= 1 }
-        let glyphs = textView.layoutManager.glyphRange(forCharacterRange: NSRange(location: 0, length: end), actualCharacterRange: nil)
-        let used = textView.layoutManager.boundingRect(forGlyphRange: glyphs, in: textView.textContainer)
-        textView.isScrollEnabled = used.maxY > textView.bounds.height + 2
+        if let manager = textView.textLayoutManager, let document = manager.textContentManager?.documentRange {
+            manager.ensureLayout(for: document)
+            textView.isScrollEnabled = manager.usageBoundsForTextContainer.maxY > textView.bounds.height + 2
+        }
         footer.frame = CGRect(x: 0, y: bounds.height - 29, width: bounds.width, height: 16)
         spine.frame = CGRect(x: innerLeft ? 0 : bounds.width - 25, y: 0, width: 25, height: bounds.height)
     }
@@ -332,14 +329,10 @@ private final class BookPaperView: UIView {
             let match = NSIntersectionRange(word, page)
             return match.length > 0 ? NSRange(location: match.location - page.location, length: match.length) : nil
         }
-        guard local != previous else { return }
-        if let previous, NSMaxRange(previous) <= textView.textStorage.length {
-            textView.textStorage.removeAttribute(.backgroundColor, range: previous)
+        let moved = local != textView.narrationHighlight
+        textView.setNarrationHighlight(local)
+        if moved, let local = textView.narrationHighlight, textView.isScrollEnabled && follow {
+            textView.scrollRangeToVisible(local)
         }
-        if let local, NSMaxRange(local) <= textView.textStorage.length {
-            textView.textStorage.addAttribute(.backgroundColor, value: UIColor.systemOrange.withAlphaComponent(0.25), range: local)
-            if textView.isScrollEnabled && follow { textView.scrollRangeToVisible(local) }
-        }
-        previous = local
     }
 }

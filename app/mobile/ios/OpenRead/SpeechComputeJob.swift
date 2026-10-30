@@ -1,6 +1,7 @@
 #if os(iOS)
 import BackgroundTasks
 import UIKit
+import OSLog
 
 /// A finite, user-requested narration job. GPU use starts only after iOS grants
 /// the continued-processing task; an audio session alone is not GPU permission.
@@ -12,15 +13,16 @@ import UIKit
         let total: Int
         let expired: () -> Void
     }
-    private static var registered = false
+    private static let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "OpenRead", category: "NarrationGPU")
     private static var pending: [String: Request] = [:]
     private let task: BGContinuedProcessingTask
     private var finished = false
     private init(_ task: BGContinuedProcessingTask) { self.task = task }
 
-    static func register() {
-        guard !registered, BGTaskScheduler.supportedResources.contains(.gpu) else { return }
-        registered = BGTaskScheduler.shared.register(forTaskWithIdentifier: prefix + "*", using: .main) { task in
+    private static func register(_ identifier: String) -> Bool {
+        // The plist allows the wildcard family; the launch handler must match
+        // the exact identifier submitted for this user-started job.
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: identifier, using: .main) { task in
             Task { @MainActor in
                 guard let task = task as? BGContinuedProcessingTask,
                       let request = pending.removeValue(forKey: task.identifier) else {
@@ -40,9 +42,12 @@ import UIKit
     }
     static func start(title: String, passages: Int, expired: @escaping () -> Void) async -> SpeechComputeJob? {
         guard BGTaskScheduler.supportedResources.contains(.gpu), UIApplication.shared.applicationState != .background else { return nil }
-        register()
-        guard registered else { return nil }
+        guard !Task.isCancelled else { return nil }
         let identifier = prefix + UUID().uuidString
+        guard register(identifier) else {
+            log.error("Could not register the narration GPU launch handler")
+            return nil
+        }
         return await withTaskCancellationHandler {
             if Task.isCancelled { return nil }
             return await withCheckedContinuation { continuation in
@@ -55,11 +60,16 @@ import UIKit
                             if #available(iOS 27, *) { try await BGTaskScheduler.shared.submitTaskRequest(request) }
                             else { try BGTaskScheduler.shared.submit(request) }
                         }.value
-                    } catch { cancel(identifier) }
+                    } catch {
+                        let failure = error as NSError
+                        log.error("Narration GPU request rejected: \(failure.domain, privacy: .public) \(failure.code)")
+                        cancel(identifier)
+                    }
                 }
                 // A rejected or delayed launch must not leave Play spinning.
                 Task {
                     try? await Task.sleep(for: .seconds(5))
+                    if pending[identifier] != nil { log.error("Narration GPU launch timed out") }
                     cancel(identifier)
                 }
             }
