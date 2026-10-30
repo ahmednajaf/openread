@@ -3,6 +3,8 @@
 #include "Kitten2Runtime.h"
 #include "llama.h"
 #include "sampling.h"
+#include "sampling_guard.h"
+#include <cstdio>
 #include <atomic>
 #include <cstring>
 #include <cstdlib>
@@ -144,11 +146,12 @@ extern "C" int kitten2_generate(void *handle, const char *text, const char *voic
         const int count=llama_vocab_n_tokens(vocab);
         std::unique_lock<std::mutex> gpu_lease(gpu_work, std::defer_lock);
         Context context(nullptr, llama_free);
+        bool force_cpu = false;
         auto ensure_mode = [&] {
-            bool desired = runtime.prefers_gpu && gpu_allowed.load() && llama_supports_gpu_offload();
+            bool desired = runtime.prefers_gpu && !force_cpu && gpu_allowed.load() && llama_supports_gpu_offload();
             if (context && desired == runtime.gpu) return;
             if (!gpu_lease.owns_lock()) gpu_lease.lock();
-            desired = runtime.prefers_gpu && gpu_allowed.load() && llama_supports_gpu_offload();
+            desired = runtime.prefers_gpu && !force_cpu && gpu_allowed.load() && llama_supports_gpu_offload();
             std::vector<uint8_t> state;
             if (context) {
                 llama_synchronize(context.get());
@@ -178,24 +181,46 @@ extern "C" int kitten2_generate(void *handle, const char *text, const char *voic
             }
             return true;
         };
-        { Batch batch(1, int(speaker.size())); std::copy(speaker.begin(), speaker.end(), batch.value.embd);
-          batch.position(0,0,false); if (!decode(batch.value)) return -1; }
-        for (size_t offset=1; offset<prompt.size();) {
-            int count = int(std::min(size_t(128),prompt.size()-offset)); Batch batch(count);
-            for (int i=0;i<count;++i) { batch.value.token[i]=prompt[offset+i]; batch.position(i,int(offset)+i,offset+i+1==prompt.size()); }
-            if (!decode(batch.value)) return -1;
-            offset+=count;
-        }
+        auto prefill = [&](const std::vector<int> &tokens) {
+            { Batch batch(1, int(speaker.size())); std::copy(speaker.begin(), speaker.end(), batch.value.embd);
+              batch.position(0,0,false); if (!decode(batch.value)) return false; }
+            for (size_t offset=1; offset<tokens.size();) {
+                int amount = int(std::min(size_t(128),tokens.size()-offset)); Batch batch(amount);
+                for (int i=0;i<amount;++i) { batch.value.token[i]=tokens[offset+i]; batch.position(i,int(offset)+i,offset+i+1==tokens.size()); }
+                if (!decode(batch.value)) return false;
+                offset+=amount;
+            }
+            return true;
+        };
+        if (!prefill(prompt)) return -1;
         kitten::sampling settings;
         if (expressive & 1) { settings.temperature=0.9f; settings.top_p=0.9f; }
         std::mt19937 random(seed);
         auto history=prompt; std::vector<int32_t> audio;
+        bool recovered = false;
         for (int step=0;step<max_tokens;++step) {
             if (runtime.cancelled.load()) return -1;
-            const float *raw=llama_get_logits_ith(context.get(),-1);
-            std::vector<float> scores(raw,raw+count);
-            kitten::process(scores,history,prompt.size(),map,settings);
-            int token=kitten::sample(scores,random,false); history.push_back(token);
+            int token;
+            try {
+                const float *raw=llama_get_logits_ith(context.get(),-1);
+                if (!raw) throw openread::InvalidLogits();
+                std::vector<float> scores(raw,raw+count);
+                openread::guard_logits(scores);
+                kitten::process(scores,history,prompt.size(),map,settings);
+                openread::guard_logits(scores);
+                token=kitten::sample(scores,random,false);
+            } catch (const openread::InvalidLogits &) {
+                if (recovered) throw std::runtime_error("This voice could not continue safely. Try another voice or a shorter passage.");
+                recovered = true; force_cpu = true;
+                std::fprintf(stderr,"OpenRead: recovering invalid voice scores with a clean CPU context\n");
+                // Replay the exact accepted prefix, keeping emitted audio and
+                // the sampler RNG. Never replay words to the listener or retry
+                // indefinitely if the model remains numerically invalid.
+                context.reset(); ensure_mode();
+                if (!prefill(history)) return -1;
+                --step; continue;
+            }
+            history.push_back(token);
             if (token==map.speech_end || token==map.stop) {
                 if (audio.empty()) throw std::runtime_error("The voice returned no audio tokens.");
                 return callback(user,audio.data(),audio.size(),1) ? 1 : -1;

@@ -7,8 +7,8 @@ let folder = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
 let runtime: Target = FileManager.default.fileExists(atPath: folder.appendingPathComponent("Kitten2Runtime.xcframework").path)
     ? .binaryTarget(name: "Kitten2Runtime", path: "Kitten2Runtime.xcframework")
     : .binaryTarget(name: "Kitten2Runtime",
-        url: "https://github.com/ahmednajaf/openread/releases/download/kitten2-runtime-2026-10-30-handoff/Kitten2Runtime.xcframework.zip",
-        checksum: "e24a50c6cc49269e2ec1a889bea95e5735dc66fd0c85b962f7445e040f8f6f1d")
+        url: "https://github.com/ahmednajaf/openread/releases/download/kitten2-runtime-2026-10-30-sampling/Kitten2Runtime.xcframework.zip",
+        checksum: "ccb0c9d15acb7ea70d39f0046aa7974955858260326663bc20d33070e20e2c7b")
 
 let package = Package(
     name: "OpenReadKitten2",
