@@ -20,6 +20,7 @@ packages:
     exactVersion: 0.9.19
 settings:
   base:
+    ARCHS: arm64
     SWIFT_VERSION: "5.0"
     SWIFT_STRICT_CONCURRENCY: targeted
     MARKETING_VERSION: 0.6.4

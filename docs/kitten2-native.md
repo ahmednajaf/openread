@@ -6,8 +6,8 @@ pack remains a beta while device playback and word timing are validated.
 
 Kitten Mini and Kokoro remain the smaller everyday packs. Kitten TTS 2 provides
 115 speaker presets in 16 language groups, including Arabic and Arabic Falconer.
-All presets share about 2.1 GB of model files. Its weights retain the Stellon Labs
-Community License, separately from OpenRead's GPL code. See the full agreement
+The prebuilt Mac beta targets Apple silicon. All presets share about 2.1 GB of
+model files. Its weights retain the Stellon Labs Community License, separately from OpenRead's GPL code. See the full agreement
 and notices in `app/mobile/shared/NOTICES.txt`. Powered by KittenML.
 
 ## Build the runtime
