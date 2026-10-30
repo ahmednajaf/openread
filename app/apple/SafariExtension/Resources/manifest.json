@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "OpenRead",
-  "version": "0.6.4",
+  "version": "0.6.5",
   "homepage_url": "https://getopenread.vercel.app",
   "description": "Listen to the web, at your pace. Local voices, focused reading, no subscription.",
   "permissions": [

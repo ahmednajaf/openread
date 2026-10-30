@@ -15,8 +15,35 @@ struct ImportFailure: LocalizedError { let message: String; var errorDescription
 actor DocumentImporter {
     func file(_ url: URL) async throws -> Reading {
         let granted = url.startAccessingSecurityScopedResource(); defer { if granted { url.stopAccessingSecurityScopedResource() } }
-        let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
-        guard size <= 100 * 1_024 * 1_024 else { throw ReadingError.fileTooLarge }
+        // File-provider URLs can still be downloading or changing. Coordinate
+        // access, then parse an owned snapshot while the security scope is open.
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("OpenRead-import-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let snapshot = folder.appendingPathComponent(url.lastPathComponent)
+        var coordinationError: NSError?
+        var copied: Result<Void, Error>?
+        NSFileCoordinator().coordinate(readingItemAt: url, options: .withoutChanges, error: &coordinationError) { source in
+            copied = Result {
+                let values = try source.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey])
+                guard values.isRegularFile == true else { throw ReadingError.unsupportedFile }
+                guard (values.fileSize ?? 0) <= 100 * 1_024 * 1_024 else { throw ReadingError.fileTooLarge }
+                try FileManager.default.copyItem(at: source, to: snapshot)
+                let copiedSize = try snapshot.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+                guard copiedSize <= 100 * 1_024 * 1_024 else { throw ReadingError.fileTooLarge }
+            }
+        }
+        if let coordinationError { throw coordinationError }
+        guard let copied else { throw ImportFailure(message: "This file isn't available yet. Download it in Files, then try again.") }
+        try copied.get()
+        do { return try readFile(snapshot) }
+        catch let error as Archive.ArchiveError {
+            if case .cancelledOperation = error { throw CancellationError() }
+            let format = url.pathExtension.uppercased()
+            throw ImportFailure(message: "This \(format) file is incomplete or damaged. Download it again, then import the new copy. If it still fails, try another DRM-free copy.")
+        }
+    }
+    private func readFile(_ url: URL) throws -> Reading {
         let title = String(url.deletingPathExtension().lastPathComponent.prefix(240))
         let text: String
         switch url.pathExtension.lowercased() {
